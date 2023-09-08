@@ -1,20 +1,50 @@
-/**
- * This is not a production server yet!
- * This is only a minimal backend to get started.
- */
-
-import { Logger } from '@nestjs/common';
-import { NestFactory } from '@nestjs/core';
-
-import { AppModule } from './app/app.module';
+import { AppModule } from '@sep6/app';
+import {
+  BucketMetadata,
+  LambdaMetadata,
+  NestModule,
+  NestNode,
+  flatMapModule,
+  getBucketMetadata,
+  getLambdaMetadata,
+  logNestTree,
+} from '@sep6/utils';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
-  const globalPrefix = 'api';
-  app.setGlobalPrefix(globalPrefix);
-  const port = process.env.PORT || 3000;
-  await app.listen(port);
-  Logger.log(`🚀 Application is running on: http://localhost:${port}/${globalPrefix}`);
+  logNestTree(AppModule);
+
+  const lambdas = findLambdaModules(AppModule);
+
+  for (const lambda of lambdas) {
+    console.log(`Lambda ${lambda.handlerFilePath}`);
+    for (const bucket of findBucketModules(lambda.node.module)) {
+      console.log(` -- Bucket: ${bucket.bucketId}`);
+    }
+  }
 }
 
 bootstrap();
+
+function findLambdaModules(
+  module: NestModule
+): (LambdaMetadata & { node: NestNode })[] {
+  return flatMapModule(module, (node) => {
+    const lambda = getLambdaMetadata(node.module);
+    if (lambda) {
+      return [{ ...lambda, node }];
+    }
+    return [];
+  });
+}
+
+function findBucketModules(
+  module: NestModule
+): (BucketMetadata & { node: NestNode })[] {
+  return flatMapModule(module, (node) => {
+    const bucket = getBucketMetadata(node.module);
+    if (bucket) {
+      return [{ ...bucket, node }];
+    }
+    return [];
+  });
+}

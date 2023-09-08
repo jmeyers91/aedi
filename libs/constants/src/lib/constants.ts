@@ -1,0 +1,3 @@
+export enum BucketId {
+  CONTACT_PHOTO_BUCKET = 'CONTACT_PHOTO_BUCKET',
+}
