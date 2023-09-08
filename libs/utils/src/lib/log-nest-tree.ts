@@ -1,21 +1,21 @@
-import { NestModule, getNestControllerInfo, walkModule } from './reflect-utils';
+import { getResourceMetadata } from './decorators/resource-module';
+import { NestModule, getModuleName, walkModule } from './reflect-utils';
 
 export function logNestTree(nestModule: NestModule): void {
   walkModule(nestModule, (node, depth) => {
-    const space = ''.padStart(depth + 1, ' ');
+    const space = ''.padStart(depth * 2 + 1, ' ');
 
-    console.log(`${space}- ${node.module.name}`);
+    console.log(`${space}- ${node.name}`);
     console.log(
-      `${space}  - Imports: ${node.imports
-        .map((importedModule) => importedModule.name)
-        .join(', ')}`
+      `${space}  - Imports: ${node.imports.map(getModuleName).join(', ')}`
     );
+
     console.log(
       `${space}  - Controllers: ${node.controllers
         .map(
           (controller) =>
-            `${controller.name}\n${getNestControllerInfo(controller)
-              .routes.map(
+            `${controller.name}\n${controller.routes
+              .map(
                 (route) =>
                   `${space}    - ${route.name.toString()} ${route.method} ${
                     route.path
@@ -32,8 +32,11 @@ export function logNestTree(nestModule: NestModule): void {
     );
     console.log(
       `${space}  - Exports: ${node.exports
-        .map((providerOrModule) => providerOrModule.name)
+        .map((providerOrModule) => getModuleName(providerOrModule))
         .join(', ')}`
+    );
+    console.log(
+      `${space}  - Resources: ${getResourceMetadata(node.module)?.type}`
     );
     console.log();
   });

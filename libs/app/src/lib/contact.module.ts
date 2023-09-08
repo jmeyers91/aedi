@@ -1,15 +1,19 @@
-import { DbModule } from './db.module';
 import { ContactService } from './contact.service';
 import { ContactController } from './contact.controller';
 import { LambdaModule } from '@sep6/utils';
-import { ContactPhotoBucketModule } from './contact-photo-bucket.module';
+import { UserModule } from './user.module';
+import { DynamicModule } from '@nestjs/common';
+import { ContactTableModule } from './resources/contact-table.module';
 
 export * from './contact.service';
 
 @LambdaModule({
-  imports: [DbModule, ContactPhotoBucketModule],
+  imports: [UserModule, ContactTableModule.grant({ read: true, write: true })],
   providers: [ContactService],
-  controllers: [ContactController],
   exports: [ContactService],
 })
-export class ContactModule {}
+export class ContactModule {
+  static withControllers(): DynamicModule {
+    return { module: this, controllers: [ContactController] };
+  }
+}

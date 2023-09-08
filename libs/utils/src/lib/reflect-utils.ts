@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Type } from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
+import { DynamicModule, Type } from '@nestjs/common';
 import {
   RequestMethodString,
   getRequestMethodString,
@@ -8,24 +7,43 @@ import {
 import { METHOD_METADATA } from '@nestjs/common/constants';
 import { PATH_METADATA } from '@nestjs/common/constants';
 import { RequestMethod } from '@nestjs/common';
+import { reflector } from './reflector';
+import {
+  ResourceMetadata,
+  ResourceType,
+  getResourceMetadata,
+} from './decorators/resource-module';
+import { uniqBy } from './array-utils';
+import { mergeDynamoMetadata } from './decorators/dynamo-module';
 
-export const reflector = new Reflector();
-
-export type NestModule = (() => any) | Type<any>;
+export type NestModule = (() => any) | Type<any> | DynamicModule;
 export type NestController = (() => any) | Type<any>;
 export type NestProvider = (() => any) | Type<any>;
 
 export interface NestNode {
+  parent: NestNode | null;
   name: string;
   module: NestModule;
   imports: NestModule[];
-  controllers: NestController[];
+  controllers: NestControllerInfo[];
   providers: NestProvider[];
   exports: (NestProvider | NestModule)[];
 }
 
+export interface NestResourceNode<T extends ResourceType = ResourceType>
+  extends NestNode {
+  resourceMetadata: Extract<ResourceMetadata, { type: T }>;
+}
+
+export interface MergedNestResourceNode<T extends ResourceType> {
+  resourceId: string;
+  resourceNodes: NestResourceNode<T>[];
+  mergedMetadata: ResourceMetadata<T>;
+}
+
 export interface NestRouteInfo {
   name: string | symbol;
+  controller: NestController;
   method: RequestMethodString;
   path: string;
 }
@@ -37,11 +55,39 @@ export interface NestControllerInfo {
 }
 
 export function getNestNode(module: NestModule): NestNode {
+  if ('module' in module) {
+    const dynamicParent = getNestNode(module.module);
+    return {
+      module,
+      parent: null,
+      name: module.module.name,
+      imports: [
+        ...dynamicParent.imports,
+        ...((module.imports ?? []) as NestModule[]),
+      ],
+      controllers: [
+        ...dynamicParent.controllers,
+        ...(module.controllers ?? ([] as NestController[])).map((controller) =>
+          getNestControllerInfo(controller)
+        ),
+      ],
+      providers: [
+        ...dynamicParent.providers,
+        ...((module.providers ?? []) as NestProvider[]),
+      ],
+      exports: [
+        ...dynamicParent.exports,
+        ...((module.exports ?? []) as NestNode['exports']),
+      ],
+    };
+  }
+
   const imports = (
     reflector.get<NestModule[] | undefined>('imports', module) ?? []
   ).filter((other) => other !== module);
-  const controllers =
-    reflector.get<NestController[] | undefined>('controllers', module) ?? [];
+  const controllers = (
+    reflector.get<NestController[] | undefined>('controllers', module) ?? []
+  ).map(getNestControllerInfo);
   const providers =
     reflector.get<NestProvider[] | undefined>('providers', module) ?? [];
   const moduleExports =
@@ -52,6 +98,7 @@ export function getNestNode(module: NestModule): NestNode {
 
   return {
     name: module.name,
+    parent: null,
     module,
     imports,
     controllers,
@@ -60,9 +107,14 @@ export function getNestNode(module: NestModule): NestNode {
   };
 }
 
+export function getModuleName(module: NestModule): string {
+  return 'module' in module ? module.module.name : module.name;
+}
+
 export function walkModule(
   module: NestModule,
   fn: (node: NestNode, depth: number) => void,
+  parent: NestNode | null = null,
   depth = 0,
   visited = new Set<NestModule>()
 ): void {
@@ -72,20 +124,14 @@ export function walkModule(
   visited.add(module);
 
   const node = getNestNode(module);
+  if (parent) {
+    node.parent = parent;
+  }
   fn(node, depth);
 
   for (const importedModule of node.imports) {
-    walkModule(importedModule, fn, depth + 1, visited);
+    walkModule(importedModule, fn, node, depth + 1, visited);
   }
-}
-
-export function filterModule(
-  module: NestModule,
-  filterFn: (node: NestNode, depth: number) => boolean
-): NestNode[] {
-  return flatMapModule(module, (node, depth) =>
-    filterFn(node, depth) ? [node] : []
-  );
 }
 
 export function flatMapModule<T>(
@@ -99,6 +145,110 @@ export function flatMapModule<T>(
   return results;
 }
 
+export function searchUpModuleTree(
+  node: NestNode | null | undefined,
+  fn: (node: NestNode) => boolean
+): NestNode | undefined {
+  if (!node) {
+    return undefined;
+  }
+  if (fn(node)) {
+    return node;
+  }
+  return searchUpModuleTree(node.parent, fn);
+}
+
+export function collectModuleControllers(
+  module: NestModule
+): NestControllerInfo[] {
+  return flatMapModule(module, (node) => node.controllers);
+}
+
+export function collectModuleRoutes(module: NestModule): NestRouteInfo[] {
+  return collectModuleControllers(module).flatMap(
+    (controller) => controller.routes
+  );
+}
+
+export function collectModuleResources<T extends ResourceType = ResourceType>(
+  module: NestModule,
+  type?: T
+): NestResourceNode<T>[] {
+  return flatMapModule(module, (node) => {
+    const resourceMetadata = getResourceMetadata(node.module);
+    if (!resourceMetadata) {
+      return [];
+    }
+    if (type && resourceMetadata.type !== type) {
+      return [];
+    }
+    return [{ ...node, resourceMetadata }] as NestResourceNode<T>[];
+  });
+}
+
+export function isResourceMetadataType<T extends ResourceType>(
+  value: ResourceMetadata<any>,
+  resourceType: T
+): value is ResourceMetadata<T> {
+  return value.type === resourceType;
+}
+
+function mergeResourceMetadata<
+  T extends ResourceType,
+  A extends ResourceMetadata<T>
+>(a: A, b: ResourceMetadata<T>): A {
+  if (a.type !== b.type) {
+    throw new Error(
+      `Cannot merge metadatas with different types: ${a.id} (${a.type}) + ${b.id} (${b.type})`
+    );
+  }
+
+  if (
+    isResourceMetadataType(a, ResourceType.DYNAMO_TABLE) &&
+    isResourceMetadataType(b, ResourceType.DYNAMO_TABLE)
+  ) {
+    return mergeDynamoMetadata(a, b) as any;
+  }
+
+  return { ...a, ...b };
+}
+
+export function collectMergedModuleResources<T extends ResourceType>(
+  module: NestModule,
+  type: T
+): MergedNestResourceNode<T>[] {
+  const moduleResources = collectModuleResources(module, type);
+  // Group resource nodes by type
+  const resourceIdMap = new Map<string, NestResourceNode<T>[]>();
+  for (const moduleResource of moduleResources) {
+    let resourceArray = resourceIdMap.get(moduleResource.resourceMetadata.id);
+    if (!Array.isArray(resourceArray)) {
+      resourceArray = [];
+      resourceIdMap.set(moduleResource.resourceMetadata.id, resourceArray);
+    }
+    resourceArray.push(moduleResource);
+  }
+  return Array.from(resourceIdMap.keys()).map((resourceId) => {
+    const resourceNodes = resourceIdMap.get(resourceId) ?? [];
+    let mergedMetadata: ResourceMetadata<T> = {
+      ...resourceNodes[0].resourceMetadata,
+    } as any;
+
+    for (const other of resourceNodes.slice(1)) {
+      mergedMetadata = mergeResourceMetadata(
+        mergedMetadata,
+        other.resourceMetadata
+      );
+    }
+
+    return {
+      resourceId,
+      resourceNodes,
+      mergedMetadata,
+    };
+  });
+}
+
 export function getNestControllerInfo(
   controller: NestController
 ): NestControllerInfo {
@@ -106,12 +256,14 @@ export function getNestControllerInfo(
     reflector.get<string | undefined>(PATH_METADATA, controller) ?? ''
   ).split('/');
   const routes: NestRouteInfo[] = [];
-
-  for (const key of [
+  const controllerKeys = [
     ...Object.getOwnPropertyNames(controller.prototype),
     ...Object.getOwnPropertySymbols(controller.prototype),
-  ]) {
+  ];
+
+  for (const key of controllerKeys) {
     const value = controller.prototype[key as keyof typeof controller];
+
     if (typeof value !== 'function') {
       continue;
     }
@@ -119,18 +271,25 @@ export function getNestControllerInfo(
       METHOD_METADATA,
       value
     );
-    if (!method) {
+    if (typeof method !== 'number') {
       continue;
     }
     const pathParts = (
       reflector.get<string | undefined>(PATH_METADATA, value) ?? ''
     ).split('/');
+    let path = [...controllerPathParts, ...pathParts]
+      .filter((it) => it.length > 0)
+      .join('/');
+
+    if (path.length === 0) {
+      path = '/';
+    }
+
     routes.push({
+      controller,
       name: key,
       method: getRequestMethodString(method),
-      path: [...controllerPathParts, ...pathParts]
-        .filter((it) => it.length > 0)
-        .join('/'),
+      path,
     });
   }
 
@@ -139,20 +298,4 @@ export function getNestControllerInfo(
     controller,
     routes,
   };
-}
-
-export function callsites(): NodeJS.CallSite[] {
-  const _prepareStackTrace = Error.prepareStackTrace;
-  try {
-    let result: NodeJS.CallSite[] = [];
-    Error.prepareStackTrace = (_, callSites) => {
-      const callSitesWithoutCurrent = callSites.slice(1);
-      result = callSitesWithoutCurrent;
-      return callSitesWithoutCurrent;
-    };
-    new Error().stack;
-    return result;
-  } finally {
-    Error.prepareStackTrace = _prepareStackTrace;
-  }
 }

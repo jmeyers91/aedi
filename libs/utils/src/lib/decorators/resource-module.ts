@@ -1,22 +1,38 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { SetMetadata, Type } from '@nestjs/common';
-import { reflector } from '../reflect-utils';
-import { BucketId } from '@sep6/constants';
+import { DynamicModule, SetMetadata } from '@nestjs/common';
+import { BucketId, TableId } from '@sep6/constants';
+import { reflector } from '../reflector';
+import { NestModule } from '../reflect-utils';
 
-const RESOURCE_METADATA = Symbol('RESOURCE_METADATA');
+export const RESOURCE_METADATA = Symbol('RESOURCE_METADATA');
 
 export enum ResourceType {
   LAMBDA_FUNCTION = 'LAMBDA_FUNCTION',
   S3_BUCKET = 'S3_BUCKET',
+  DYNAMO_TABLE = 'DYNAMO_TABLE',
 }
 
-export interface ResourceValueMap extends Record<ResourceType, any> {
+export enum AttributeType {
+  BINARY = 'BINARY',
+  NUMBER = 'NUMBER',
+  STRING = 'STRING',
+}
+
+export interface ResourceValueMap extends Record<ResourceType, object> {
   [ResourceType.LAMBDA_FUNCTION]: {
+    id: string;
     handlerFilePath: string;
   };
 
   [ResourceType.S3_BUCKET]: {
-    bucketId: BucketId;
+    id: BucketId;
+  };
+
+  [ResourceType.DYNAMO_TABLE]: {
+    id: TableId;
+    partitionKey: { name: string; type: AttributeType };
+    sortKey?: { name: string; type: AttributeType };
+    permissions?: { read?: boolean; write?: boolean };
   };
 }
 
@@ -26,8 +42,15 @@ export type ResourceMetadata<
   [K in keyof ResourceValueMap]: { type: K } & ResourceValueMap[K];
 }[K];
 
+export type DynamicResourceModule<
+  K extends keyof ResourceValueMap = keyof ResourceValueMap
+> = DynamicModule & {
+  [RESOURCE_METADATA]: Partial<Omit<ResourceMetadata<K>, 'type' | 'id'>>;
+};
+
 export type LambdaMetadata = ResourceMetadata<ResourceType.LAMBDA_FUNCTION>;
 export type BucketMetadata = ResourceMetadata<ResourceType.S3_BUCKET>;
+export type DynamoMetadata = ResourceMetadata<ResourceType.DYNAMO_TABLE>;
 
 export function Resource<
   K extends keyof ResourceValueMap = keyof ResourceValueMap
@@ -37,13 +60,23 @@ export function Resource<
 
 export function getResourceMetadata<
   K extends keyof ResourceValueMap = keyof ResourceValueMap
->(module: Type<any> | (() => void), type?: K): ResourceMetadata<K> | undefined {
-  const metadata = reflector.get(RESOURCE_METADATA, module);
-  if (!metadata) {
+>(module: NestModule, type?: K): ResourceMetadata<K> | undefined {
+  const dynamicModule = 'module' in module ? module : null;
+  const staticModule = 'module' in module ? module.module : module;
+  const staticMetadata = reflector.get(RESOURCE_METADATA, staticModule);
+  const dynamicMetadata = dynamicModule
+    ? (dynamicModule as { [RESOURCE_METADATA]?: ResourceMetadata })[
+        RESOURCE_METADATA
+      ]
+    : null;
+
+  if (!staticMetadata) {
     return;
   }
-  if (type && metadata.type !== type) {
+
+  if (type && staticMetadata.type !== type) {
     return;
   }
-  return metadata;
+
+  return { ...staticMetadata, ...dynamicMetadata };
 }

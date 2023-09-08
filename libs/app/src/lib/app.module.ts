@@ -1,12 +1,12 @@
 import { Module } from '@nestjs/common';
-import { UserModule } from './user.module';
+import { HealthcheckModule } from './healthcheck.module';
 import { ContactModule } from './contact.module';
-import { AppController } from './app.controller';
+import { UserModule } from './user.module';
+import { withControllers } from '@sep6/utils';
 
-export * from './app.controller';
+export * from './healthcheck.controller';
 
 @Module({
-  imports: [UserModule, ContactModule],
-  controllers: [AppController],
+  imports: withControllers([HealthcheckModule, ContactModule, UserModule]),
 })
 export class AppModule {}

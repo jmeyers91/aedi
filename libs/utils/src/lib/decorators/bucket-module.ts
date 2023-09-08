@@ -34,11 +34,11 @@ export class Bucket {
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async putFile(key: string, _: string) {
-    console.log(`Saving file ${key} to bucket ${this.metadata.bucketId}`);
+    console.log(`Saving file ${key} to bucket ${this.metadata.id}`);
   }
 
   async getFile(key: string): Promise<string | null> {
-    console.log(`Retrieving file ${key} from bucket ${this.metadata.bucketId}`);
+    console.log(`Retrieving file ${key} from bucket ${this.metadata.id}`);
     return null;
   }
 }
