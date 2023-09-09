@@ -5,6 +5,7 @@ dist
 tmp
 /out-tsc
 /cdk.out
+/debug.md
 
 # dependencies
 node_modules

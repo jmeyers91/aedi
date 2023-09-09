@@ -3,7 +3,7 @@ import { ContactController } from './contact.controller';
 import { LambdaModule } from '@sep6/utils';
 import { UserModule } from './user.module';
 import { DynamicModule } from '@nestjs/common';
-import { ContactTableModule } from './resources/contact-table.module';
+import { ContactTableModule } from './tables/contact.table';
 
 export * from './contact.service';
 

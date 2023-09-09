@@ -14,11 +14,27 @@ import { AppModule } from '@sep6/app';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { Runtime } from 'aws-cdk-lib/aws-lambda';
 import { AttributeType, Table } from 'aws-cdk-lib/aws-dynamodb';
+import { existsSync, unlinkSync } from 'fs';
+import { appendFile } from 'fs/promises';
+import { WebApp } from '../constructs/web-app';
+import { resolve } from 'path';
 
 export class ApiStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
 
+    let logQueue = Promise.resolve();
+    if (existsSync('./debug.md')) {
+      unlinkSync('./debug.md');
+    }
+    const debug = (...args: any[]) => {
+      logQueue = logQueue.then(() =>
+        appendFile(
+          './debug.md',
+          args.map((arg) => String(arg)).join(' ') + '\n'
+        )
+      );
+    };
     const restApi = new RestApi(this, 'rest-api');
 
     const lambdaResources = collectModuleResources(
@@ -29,12 +45,15 @@ export class ApiStack extends Stack {
       AppModule,
       ResourceType.DYNAMO_TABLE
     );
+    const webAppResources = collectMergedModuleResources(
+      AppModule,
+      ResourceType.WEB_APP
+    );
 
-    //
     const dynamoTables = dynamoResources.map((dynamoResource) => {
       const metadata = dynamoResource.mergedMetadata;
 
-      console.log(`-- Dynamo table ${dynamoResource.mergedMetadata.id}`);
+      debug(` -- TABLE ${dynamoResource.mergedMetadata.id}`);
 
       return Object.assign(
         new Table(this, metadata.id, {
@@ -59,10 +78,6 @@ export class ApiStack extends Stack {
     const lambdas = lambdaResources.flatMap((lambdaResource) => {
       // Modules without any controllers
       if (lambdaResource.controllers.length === 0) {
-        console.log(
-          `Ignoring empty lambda (no controllers registered)`,
-          lambdaResource.name
-        );
         return [];
       }
 
@@ -79,7 +94,7 @@ export class ApiStack extends Stack {
         );
         return [];
       }
-      console.log(
+      debug(
         `-- LAMBDA ${lambdaResource.name} -> ${lambdaResource.resourceMetadata.handlerFilePath}`
       );
 
@@ -108,7 +123,7 @@ export class ApiStack extends Stack {
         mergedMetadata,
       } of childDynamoDbTableResources) {
         const allMetadata = resourceNodes.map((node) => node.resourceMetadata);
-        console.log(`   -- Table - ${resourceId}`, allMetadata);
+        debug(`   -- Table - ${resourceId}`, allMetadata);
         const dynamoDbTable = dynamoTables.find(
           (table) => table.nestResource.mergedMetadata.id === resourceId
         );
@@ -122,16 +137,16 @@ export class ApiStack extends Stack {
           mergedMetadata.permissions.write
         ) {
           dynamoDbTable.grantReadWriteData(fn);
-          console.log(
+          debug(
             `       -- GRANT: READ/WRITE on ${mergedMetadata.id} TO ${lambdaResource.name}`
           );
         } else if (mergedMetadata.permissions?.read) {
-          console.log(
+          debug(
             `       -- GRANT: READ on ${mergedMetadata.id} TO ${lambdaResource.name}`
           );
           dynamoDbTable.grantReadData(fn);
         } else if (mergedMetadata.permissions?.write) {
-          console.log(
+          debug(
             `       -- GRANT: WRITE on ${mergedMetadata.id} TO ${lambdaResource.name}`
           );
           dynamoDbTable.grantWriteData(fn);
@@ -141,7 +156,7 @@ export class ApiStack extends Stack {
       // Add API gateway routes for the lambda
       const routes = collectModuleRoutes(lambdaResource.module);
       for (const route of routes) {
-        console.log(
+        debug(
           `   -- ROUTE ${lambdaResource.name}.${route.controller.name}.${String(
             route.name
           )} ${route.method} ${route.path}`
@@ -161,6 +176,16 @@ export class ApiStack extends Stack {
       }
 
       return [{ ...lambdaResource, fn }];
+    });
+
+    const webApps = webAppResources.map((webAppResource) => {
+      const metadata = webAppResource.mergedMetadata;
+
+      debug(` -- WEB APP ${resolve(metadata.distPath)}`);
+      return new WebApp(this, metadata.id, {
+        distPath: metadata.distPath,
+        clientConfig: { apiUrl: restApi.url },
+      });
     });
   }
 }

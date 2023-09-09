@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { DynamicModule, SetMetadata } from '@nestjs/common';
-import { BucketId, TableId } from '@sep6/constants';
+import { BucketId, TableId, WebAppId } from '@sep6/constants';
 import { reflector } from '../reflector';
-import { NestModule } from '../reflect-utils';
+import { NestModule, mergeResourceMetadata } from '../reflect-utils';
 
 export const RESOURCE_METADATA = Symbol('RESOURCE_METADATA');
 
@@ -10,6 +10,7 @@ export enum ResourceType {
   LAMBDA_FUNCTION = 'LAMBDA_FUNCTION',
   S3_BUCKET = 'S3_BUCKET',
   DYNAMO_TABLE = 'DYNAMO_TABLE',
+  WEB_APP = 'WEB_APP',
 }
 
 export enum AttributeType {
@@ -34,6 +35,11 @@ export interface ResourceValueMap extends Record<ResourceType, object> {
     sortKey?: { name: string; type: AttributeType };
     permissions?: { read?: boolean; write?: boolean };
   };
+
+  [ResourceType.WEB_APP]: {
+    id: WebAppId;
+    distPath: string;
+  };
 }
 
 export type ResourceMetadata<
@@ -51,6 +57,7 @@ export type DynamicResourceModule<
 export type LambdaMetadata = ResourceMetadata<ResourceType.LAMBDA_FUNCTION>;
 export type BucketMetadata = ResourceMetadata<ResourceType.S3_BUCKET>;
 export type DynamoMetadata = ResourceMetadata<ResourceType.DYNAMO_TABLE>;
+export type WebAppMetadata = ResourceMetadata<ResourceType.WEB_APP>;
 
 export function Resource<
   K extends keyof ResourceValueMap = keyof ResourceValueMap
@@ -78,5 +85,7 @@ export function getResourceMetadata<
     return;
   }
 
-  return { ...staticMetadata, ...dynamicMetadata };
+  return dynamicMetadata
+    ? mergeResourceMetadata(staticMetadata, dynamicMetadata)
+    : staticMetadata;
 }

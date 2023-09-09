@@ -1,5 +1,5 @@
 import { Controller, Get, Inject, Param, Post } from '@nestjs/common';
-import { CountTable } from './resources/count-table.module';
+import { CountTable } from './tables/count.table';
 import { RequireAuth, UserId } from './utils/auth-guard';
 
 @Controller()

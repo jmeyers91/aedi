@@ -4,7 +4,7 @@ import {
   ContactTable,
   ContactTableKey,
   ContactTableRow,
-} from './resources/contact-table.module';
+} from './tables/contact.table';
 
 @Injectable()
 export class ContactService {

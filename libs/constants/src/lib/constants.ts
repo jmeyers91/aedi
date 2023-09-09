@@ -6,3 +6,8 @@ export enum TableId {
   COUNT = 'counter-table',
   CONTACT = 'contact-table',
 }
+
+export enum WebAppId {
+  APP = 'sep6',
+  ADMIN = 'sep6-admin', // TODO
+}

@@ -1,7 +1,7 @@
 import { DynamicModule } from '@nestjs/common';
 import { HealthcheckController } from './healthcheck.controller';
 import { LambdaModule } from '@sep6/utils';
-import { CountTableModule } from './resources/count-table.module';
+import { CountTableModule } from './tables/count.table';
 
 export * from './healthcheck.controller';
 

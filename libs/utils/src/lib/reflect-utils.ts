@@ -193,21 +193,15 @@ export function isResourceMetadataType<T extends ResourceType>(
   return value.type === resourceType;
 }
 
-function mergeResourceMetadata<
+export function mergeResourceMetadata<
   T extends ResourceType,
   A extends ResourceMetadata<T>
 >(a: A, b: ResourceMetadata<T>): A {
-  if (a.type !== b.type) {
-    throw new Error(
-      `Cannot merge metadatas with different types: ${a.id} (${a.type}) + ${b.id} (${b.type})`
-    );
-  }
-
   if (
-    isResourceMetadataType(a, ResourceType.DYNAMO_TABLE) &&
+    isResourceMetadataType(a, ResourceType.DYNAMO_TABLE) ||
     isResourceMetadataType(b, ResourceType.DYNAMO_TABLE)
   ) {
-    return mergeDynamoMetadata(a, b) as any;
+    return mergeDynamoMetadata(a as any, b as any) as any;
   }
 
   return { ...a, ...b };

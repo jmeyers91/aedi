@@ -16,17 +16,20 @@ import {
 import { NestFactory } from '@nestjs/core';
 import serverlessExpress from '@vendia/serverless-express';
 import { APIGatewayEvent, Callback, Context, Handler } from 'aws-lambda';
+import { relative } from 'path';
 
 export function LambdaModule({
   lambda: partialLambdaMetadata = {},
   ...metadata
 }: ModuleMetadata & { lambda?: Partial<LambdaMetadata> }) {
-  const handlerFilePath =
+  const absoluteHandlerFilePath =
     partialLambdaMetadata.handlerFilePath ?? callsites()[1]?.getFileName();
 
-  if (!handlerFilePath) {
+  if (!absoluteHandlerFilePath) {
     throw new Error(`Unable to find lambda handler`);
   }
+
+  const handlerFilePath = relative('.', absoluteHandlerFilePath);
 
   const addHandlerFunctionDecorator: ClassDecorator = (target: any) => {
     target.lambdaHandler = createNestLambdaHandler(
@@ -56,7 +59,9 @@ export function createNestLambdaHandler(appModule: NestModule): Handler {
   let server: Handler;
 
   const bootstrap = async (): Promise<Handler> => {
-    const app = await NestFactory.create(appModule);
+    const app = await NestFactory.create(appModule, {
+      cors: true, // TODO: Add dynamic origin handling once domains are added
+    });
     await app.init();
 
     const expressApp = app.getHttpAdapter().getInstance();
