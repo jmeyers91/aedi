@@ -1,13 +1,15 @@
 import Axios, { AxiosInstance } from 'axios';
-import { ApiConfig, clientConfig } from './client-config';
+import { ClientConfig, getClientConfig } from '@sep6/client-config';
 
 const axiosCache = new Map<string, AxiosInstance>();
 
-export function getModuleClient(moduleName: keyof ApiConfig) {
+export function getModuleClient(moduleName: keyof ClientConfig['api']) {
   let axios = axiosCache.get(moduleName);
 
   if (!axios) {
-    axios = Axios.create({ baseURL: clientConfig.api[moduleName].baseURL });
+    axios = Axios.create({
+      baseURL: getClientConfig().api[moduleName].baseURL,
+    });
   }
 
   return axios;

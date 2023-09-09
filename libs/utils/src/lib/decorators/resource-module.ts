@@ -1,6 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { DynamicModule, SetMetadata } from '@nestjs/common';
-import { BucketId, DomainId, TableId, WebAppId } from '@sep6/constants';
+import {
+  BucketId,
+  DomainId,
+  TableId,
+  UserPoolId,
+  WebAppId,
+} from '@sep6/constants';
 import { reflector } from '../reflector';
 import { NestModule, mergeResourceMetadata } from '../reflect-utils';
 
@@ -11,6 +17,7 @@ export enum ResourceType {
   S3_BUCKET = 'S3_BUCKET',
   DYNAMO_TABLE = 'DYNAMO_TABLE',
   WEB_APP = 'WEB_APP',
+  USER_POOL = 'USER_POOL',
 }
 
 export enum AttributeType {
@@ -42,6 +49,11 @@ export interface ResourceValueMap extends Record<ResourceType, object> {
     id: WebAppId;
     distPath: string;
     domain?: DomainId;
+    userPool?: UserPoolId;
+  };
+
+  [ResourceType.USER_POOL]: {
+    id: UserPoolId;
   };
 }
 
@@ -61,6 +73,7 @@ export type LambdaMetadata = ResourceMetadata<ResourceType.LAMBDA_FUNCTION>;
 export type BucketMetadata = ResourceMetadata<ResourceType.S3_BUCKET>;
 export type DynamoMetadata = ResourceMetadata<ResourceType.DYNAMO_TABLE>;
 export type WebAppMetadata = ResourceMetadata<ResourceType.WEB_APP>;
+export type UserPoolMetadata = ResourceMetadata<ResourceType.USER_POOL>;
 
 export function Resource<
   K extends keyof ResourceValueMap = keyof ResourceValueMap

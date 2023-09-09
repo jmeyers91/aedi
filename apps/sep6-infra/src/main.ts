@@ -1,6 +1,6 @@
 import { App, Environment } from 'aws-cdk-lib';
 import { ApiStack } from './stacks/api-stack';
-import { DomainId } from '@sep6/constants';
+import { DomainId, UserPoolId } from '@sep6/constants';
 
 const app = new App();
 const env: Environment = {
@@ -28,5 +28,8 @@ new ApiStack(app, 'sep6-api-stack', {
       domainName: 'api.admin.sep6.smplj.xyz',
       domainZone: 'smplj.xyz',
     },
+  },
+  userPoolDomainPrefixes: {
+    [UserPoolId.APP_USER_POOL]: 'sep6-dev-pool-v2',
   },
 });

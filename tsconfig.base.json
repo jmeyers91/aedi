@@ -17,6 +17,7 @@
     "baseUrl": ".",
     "paths": {
       "@sep6/app": ["libs/app/src/index.ts"],
+      "@sep6/client-config": ["libs/client-config/src/index.ts"],
       "@sep6/constants": ["libs/constants/src/index.ts"],
       "@sep6/utils": ["libs/utils/src/index.ts"]
     }

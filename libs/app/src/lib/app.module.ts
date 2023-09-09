@@ -6,14 +6,20 @@ import { Sep6WebApp } from './web-apps/sep6.web-app';
 import { Sep6WebAdminApp } from './web-apps/sep6-admin.web-app';
 import { AdminModule } from './modules/admin/admin.module';
 import { UserModule } from './modules/user/user.module';
+import { AppUserPoolModule } from './user-pools/app.user-pool';
 
 export * from './modules/healthcheck/healthcheck.controller';
 
 @Module({
   imports: withControllers([
+    // User pools
+    AppUserPoolModule,
+
+    // Web apps
     Sep6WebApp,
     Sep6WebAdminApp,
 
+    // Lambdas
     AdminModule,
     HealthcheckModule,
     ContactModule,

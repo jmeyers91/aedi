@@ -18,3 +18,7 @@ export enum DomainId {
   API = 'API',
   ADMIN_API = 'ADMIN_API',
 }
+
+export enum UserPoolId {
+  APP_USER_POOL = 'app-user-pool',
+}

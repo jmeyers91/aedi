@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { Duration, Environment, Stack, StackProps } from 'aws-cdk-lib';
+import c from 'ansi-colors';
 import {
-  Cors,
   CorsOptions,
   LambdaIntegration,
   ResponseType,
@@ -22,7 +22,7 @@ import { Runtime } from 'aws-cdk-lib/aws-lambda';
 import { AttributeType, Table } from 'aws-cdk-lib/aws-dynamodb';
 import { WebApp, WebAppDns } from '../constructs/web-app';
 import { resolve } from 'path';
-import { DomainId } from '@sep6/constants';
+import { DomainId, UserPoolId } from '@sep6/constants';
 import {
   Certificate,
   CertificateValidation,
@@ -35,6 +35,8 @@ import {
 } from 'aws-cdk-lib/aws-route53';
 import * as targets from 'aws-cdk-lib/aws-route53-targets';
 import { debug } from '../utils/debug';
+import { AppUserPool } from '../constructs/app-user-pool';
+import { UserPoolClient } from 'aws-cdk-lib/aws-cognito';
 
 export interface ApiStackProps {
   env: Environment;
@@ -42,13 +44,21 @@ export interface ApiStackProps {
   domains?: {
     [K in DomainId]?: DomainPair;
   };
+  userPoolDomainPrefixes: {
+    [K in UserPoolId]: string;
+  };
 }
 
 export class ApiStack extends Stack {
   constructor(
     scope: Construct,
     id: string,
-    { domains, defaultApiDomain, ...props }: StackProps & ApiStackProps
+    {
+      domains,
+      defaultApiDomain,
+      userPoolDomainPrefixes,
+      ...props
+    }: StackProps & ApiStackProps
   ) {
     super(scope, id, { ...props, crossRegionReferences: true });
 
@@ -105,6 +115,10 @@ export class ApiStack extends Stack {
       AppModule,
       ResourceType.DYNAMO_TABLE
     );
+    const userPoolResources = collectMergedModuleResources(
+      AppModule,
+      ResourceType.USER_POOL
+    );
     const webAppResources = collectMergedModuleResources(
       AppModule,
       ResourceType.WEB_APP
@@ -119,7 +133,7 @@ export class ApiStack extends Stack {
         ? domainMap.get(metadata.domain)
         : null;
 
-      debug(` -- WEB APP ${resolve(metadata.distPath)}`);
+      debug(` -- ${c.blue('WEB APP')} ${resolve(metadata.distPath)}`);
 
       if (domainPair) {
         const certificate = getCert(
@@ -134,7 +148,7 @@ export class ApiStack extends Stack {
           certificate,
           hostedZone,
         };
-        debug(`    -- DOMAIN ${domainPair.domainName}`);
+        debug(`    -- ${c.yellow('DOMAIN')} ${domainPair.domainName}`);
       }
 
       return { ...webAppResource, dns };
@@ -144,7 +158,7 @@ export class ApiStack extends Stack {
     const dynamoTables = dynamoResources.map((dynamoResource) => {
       const metadata = dynamoResource.mergedMetadata;
 
-      debug(` -- TABLE ${dynamoResource.mergedMetadata.id}`);
+      debug(` -- ${c.red('TABLE')} ${dynamoResource.mergedMetadata.id}`);
 
       return Object.assign(
         new Table(this, metadata.id, {
@@ -166,6 +180,21 @@ export class ApiStack extends Stack {
       );
     });
 
+    const userPools = userPoolResources.map((userPoolResource) => {
+      debug(
+        ` -- ${c.green('USER POOL')} ${userPoolResource.mergedMetadata.id}`
+      );
+      return new AppUserPool(
+        this,
+        `user-pool-${userPoolResource.mergedMetadata.id}`,
+        {
+          userPoolResource,
+          domainPrefix:
+            userPoolDomainPrefixes[userPoolResource.mergedMetadata.id],
+        }
+      );
+    });
+
     const NO_DOMAIN = Symbol('NO_DOMAIN');
     const restApis = new Map<string | typeof NO_DOMAIN, RestApi>([]);
     const defaultCorsPreflightOptions: CorsOptions = {
@@ -176,7 +205,6 @@ export class ApiStack extends Stack {
         .filter(Boolean)
         .map((domainName) => `https://${domainName}`),
     };
-    console.log({ defaultCorsPreflightOptions });
     const getRestApi = (metadataDomainId: DomainId | null | undefined) => {
       const domainId = metadataDomainId ?? defaultApiDomain;
       const domainPair = domainId ? domainMap.get(domainId) : null;
@@ -279,7 +307,7 @@ export class ApiStack extends Stack {
         return [];
       }
       debug(
-        `-- LAMBDA ${lambdaResource.name} -> ${
+        `-- ${c.cyan('LAMBDA')} ${lambdaResource.name} -> ${
           lambdaResource.resourceMetadata.handlerFilePath
         } (${lambdaResource.resourceMetadata.domain ?? 'NO DOMAIN'})`
       );
@@ -402,10 +430,51 @@ export class ApiStack extends Stack {
     // Create cloudfront distributions for all the web-apps
     const webApps = webAppResourcesWithDns.map((webAppResource) => {
       const metadata = webAppResource.mergedMetadata;
+      const userPool = metadata.userPool
+        ? userPools.find(
+            (pool) =>
+              pool.userPoolResource.mergedMetadata.id === metadata.userPool
+          )
+        : null;
+
+      let userPoolPair: {
+        userPool: AppUserPool;
+        userPoolClient: UserPoolClient;
+      } | null;
+
+      if (metadata.userPool) {
+        const userPool = userPools.find(
+          (pool) =>
+            pool.userPoolResource.mergedMetadata.id === metadata.userPool
+        );
+        if (!userPool) {
+          throw new Error(
+            `Unable to resolve user pool ${metadata.userPool} for web app ${webAppResource.mergedMetadata.id}`
+          );
+        }
+
+        userPoolPair = {
+          userPool,
+          userPoolClient: userPool.addClient(
+            `${webAppResource.mergedMetadata.id}-user-pool-client`
+          ),
+        };
+      } else {
+        userPoolPair = null;
+      }
 
       return new WebApp(this, metadata.id, {
         distPath: metadata.distPath,
         clientConfig: {
+          auth: userPoolPair
+            ? {
+                userPoolId: userPoolPair.userPool.userPoolId,
+                userPoolWebClientId:
+                  userPoolPair.userPoolClient.userPoolClientId,
+                region: Stack.of(userPoolPair.userPool).region,
+              }
+            : undefined,
+
           api: lambdas.reduce(
             (apiConfig, lambda) => ({ ...apiConfig, ...lambda.clientConfig }),
             {}
