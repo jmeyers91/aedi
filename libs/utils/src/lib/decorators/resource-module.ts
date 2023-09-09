@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { DynamicModule, SetMetadata } from '@nestjs/common';
-import { BucketId, TableId, WebAppId } from '@sep6/constants';
+import { BucketId, DomainId, TableId, WebAppId } from '@sep6/constants';
 import { reflector } from '../reflector';
 import { NestModule, mergeResourceMetadata } from '../reflect-utils';
 
@@ -23,6 +23,7 @@ export interface ResourceValueMap extends Record<ResourceType, object> {
   [ResourceType.LAMBDA_FUNCTION]: {
     id: string;
     handlerFilePath: string;
+    domainName?: DomainId;
   };
 
   [ResourceType.S3_BUCKET]: {
@@ -39,6 +40,7 @@ export interface ResourceValueMap extends Record<ResourceType, object> {
   [ResourceType.WEB_APP]: {
     id: WebAppId;
     distPath: string;
+    domainName?: DomainId;
   };
 }
 

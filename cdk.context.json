@@ -1,0 +1,10 @@
+{
+  "hosted-zone:account=664290008299:domainName=smplj.xyz:region=us-east-1": {
+    "Id": "/hostedzone/Z07741811GUTFDLS487UM",
+    "Name": "smplj.xyz."
+  },
+  "hosted-zone:account=664290008299:domainName=smplj.xyz:region=us-west-2": {
+    "Id": "/hostedzone/Z07741811GUTFDLS487UM",
+    "Name": "smplj.xyz."
+  }
+}

@@ -1,4 +1,4 @@
-import { CfnOutput, RemovalPolicy, Stack } from 'aws-cdk-lib';
+import { CfnOutput, RemovalPolicy } from 'aws-cdk-lib';
 import {
   Distribution,
   OriginAccessIdentity,
@@ -8,6 +8,16 @@ import { S3Origin } from 'aws-cdk-lib/aws-cloudfront-origins';
 import { BlockPublicAccess, Bucket } from 'aws-cdk-lib/aws-s3';
 import { BucketDeployment, Source } from 'aws-cdk-lib/aws-s3-deployment';
 import { Construct } from 'constructs';
+import { Certificate } from 'aws-cdk-lib/aws-certificatemanager';
+import { ARecord, IHostedZone, RecordTarget } from 'aws-cdk-lib/aws-route53';
+import { CloudFrontTarget } from 'aws-cdk-lib/aws-route53-targets';
+import { DomainPair } from '@sep6/utils';
+
+export interface WebAppDns {
+  domainPair: DomainPair;
+  certificate: Certificate;
+  hostedZone: IHostedZone;
+}
 
 export class WebApp extends Construct {
   public readonly distribution;
@@ -18,7 +28,12 @@ export class WebApp extends Construct {
     {
       distPath,
       clientConfig,
-    }: { distPath: string; clientConfig?: Record<string, unknown> }
+      dns,
+    }: {
+      distPath: string;
+      clientConfig?: Record<string, unknown>;
+      dns?: WebAppDns;
+    }
   ) {
     super(scope, id);
 
@@ -49,6 +64,13 @@ export class WebApp extends Construct {
           responsePagePath: '/index.html',
         },
       ],
+
+      ...(dns
+        ? {
+            domainNames: [dns.domainPair.domainName],
+            certificate: dns.certificate,
+          }
+        : {}),
     });
 
     new BucketDeployment(this, 'deployment', {
@@ -69,9 +91,17 @@ export class WebApp extends Construct {
     });
 
     new CfnOutput(this, 'url', {
-      value: `https://${this.distribution.domainName}`,
-      description: 'The distribution URL',
-      exportName: `${Stack.of(this).stackName}-CloudfrontURL`,
+      value: `https://${
+        dns ? dns.domainPair.domainName : this.distribution.domainName
+      }`,
     });
+
+    if (dns) {
+      new ARecord(this, 'ARecord', {
+        recordName: dns.domainPair.domainName,
+        target: RecordTarget.fromAlias(new CloudFrontTarget(this.distribution)),
+        zone: dns.hostedZone,
+      });
+    }
   }
 }

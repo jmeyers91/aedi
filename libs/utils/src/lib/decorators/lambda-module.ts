@@ -18,18 +18,18 @@ import serverlessExpress from '@vendia/serverless-express';
 import { APIGatewayEvent, Callback, Context, Handler } from 'aws-lambda';
 import { relative } from 'path';
 
-export function LambdaModule({
-  lambda: partialLambdaMetadata = {},
-  ...metadata
-}: ModuleMetadata & { lambda?: Partial<LambdaMetadata> }) {
+export function LambdaModule(
+  { handlerFilePath, ...rest }: Partial<LambdaMetadata>,
+  metadata: ModuleMetadata
+) {
   const absoluteHandlerFilePath =
-    partialLambdaMetadata.handlerFilePath ?? callsites()[1]?.getFileName();
+    handlerFilePath ?? callsites()[1]?.getFileName();
 
   if (!absoluteHandlerFilePath) {
     throw new Error(`Unable to find lambda handler`);
   }
 
-  const handlerFilePath = relative('.', absoluteHandlerFilePath);
+  const relativeHandlerFilePath = relative('.', absoluteHandlerFilePath);
 
   const addHandlerFunctionDecorator: ClassDecorator = (target: any) => {
     target.lambdaHandler = createNestLambdaHandler(
@@ -39,9 +39,10 @@ export function LambdaModule({
 
   return applyDecorators(
     Resource({
+      ...rest,
       type: ResourceType.LAMBDA_FUNCTION,
-      id: handlerFilePath,
-      handlerFilePath,
+      id: relativeHandlerFilePath,
+      handlerFilePath: relativeHandlerFilePath,
     }),
     Module(metadata),
     addHandlerFunctionDecorator

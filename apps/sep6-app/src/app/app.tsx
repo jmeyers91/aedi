@@ -1,4 +1,4 @@
-import { apiAxios } from '../api';
+import { getModuleClient } from '../module-client';
 
 import { Route, Routes, Link } from 'react-router-dom';
 
@@ -7,11 +7,40 @@ export function App() {
     <div>
       <button
         onClick={async () => {
-          const response = await apiAxios.get('/healthcheck');
+          const response = await getModuleClient('HealthcheckModule').get(
+            '/healthcheck'
+          );
           console.log('Healthcheck success', response.data);
         }}
       >
         Healthcheck
+      </button>
+      <button
+        onClick={async () => {
+          const response = await getModuleClient('ContactModule').get(
+            '/contacts',
+            {
+              headers: {
+                Authorization: 'jim',
+              },
+            }
+          );
+          console.log('Contact list', response.data);
+        }}
+      >
+        List contacts
+      </button>
+      <button
+        onClick={async () => {
+          const response = await getModuleClient('UserModule').get('/user', {
+            headers: {
+              Authorization: 'jim',
+            },
+          });
+          console.log('Contact list', response.data);
+        }}
+      >
+        Get current user
       </button>
       <div role="navigation">
         <ul>
@@ -22,7 +51,6 @@ export function App() {
             <Link to="/page-2">Page 2</Link>
           </li>
         </ul>
-        Bb
       </div>
       <Routes>
         <Route

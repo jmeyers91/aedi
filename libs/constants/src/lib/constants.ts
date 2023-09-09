@@ -1,5 +1,5 @@
 export enum BucketId {
-  CONTACT_PHOTO_BUCKET = 'CONTACT_PHOTO_BUCKET',
+  CONTACT_PHOTO_BUCKET = 'contact-photo-bucket',
 }
 
 export enum TableId {
@@ -10,4 +10,10 @@ export enum TableId {
 export enum WebAppId {
   APP = 'sep6',
   ADMIN = 'sep6-admin', // TODO
+}
+
+export enum DomainId {
+  APP = 'APP',
+  ADMIN = 'ADMIN',
+  API = 'API',
 }

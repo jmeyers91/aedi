@@ -2,7 +2,7 @@ import { WebAppId } from '@sep6/constants';
 import { WebAppModule } from '@sep6/utils';
 
 @WebAppModule({
-  id: WebAppId.APP,
-  distPath: 'dist/apps/sep6-app',
+  id: WebAppId.ADMIN,
+  distPath: 'dist/apps/sep6-admin',
 })
-export class PublicWebApp {}
+export class Sep6WebAdminApp {}

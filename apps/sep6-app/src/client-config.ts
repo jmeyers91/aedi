@@ -1,5 +1,17 @@
+export interface ApiConfig {
+  ContactModule: {
+    baseURL: string;
+  };
+  HealthcheckModule: {
+    baseURL: string;
+  };
+  UserModule: {
+    baseURL: string;
+  };
+}
+
 export interface ClientConfig {
-  apiUrl: string;
+  api: ApiConfig;
 }
 
 export const clientConfig = resolveClientConfig();
@@ -9,9 +21,15 @@ function resolveClientConfig(): ClientConfig {
   if (configContainer.__clientConfig) {
     return configContainer.__clientConfig;
   }
-  return (
-    configContainer.__clientConfig ?? {
-      apiUrl: '/',
-    }
-  );
+  if (configContainer.__clientConfig) {
+    return configContainer.__clientConfig;
+  }
+  const localModule = { baseURL: '/' };
+  return {
+    api: {
+      ContactModule: localModule,
+      HealthcheckModule: localModule,
+      UserModule: localModule,
+    },
+  };
 }

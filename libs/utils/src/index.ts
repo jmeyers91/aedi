@@ -7,3 +7,4 @@ export * from './lib/decorators/resource-module';
 export * from './lib/array-utils';
 export * from './lib/decorators/dynamo-module';
 export * from './lib/decorators/web-app-module';
+export * from './lib/domain-utils';
