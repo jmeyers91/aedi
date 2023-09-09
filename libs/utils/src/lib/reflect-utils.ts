@@ -14,6 +14,11 @@ import {
   getResourceMetadata,
 } from './decorators/resource-module';
 import { mergeDynamoMetadata } from './decorators/dynamo-module';
+import { UserPoolId } from '@sep6/constants';
+import {
+  COGNITO_AUTHORIZER,
+  CognitoAuthorizerRouteMetadata,
+} from './decorators/cognito-authorizer-guard';
 
 export type NestModule = (() => any) | Type<any> | DynamicModule;
 export type NestController = (() => any) | Type<any>;
@@ -45,6 +50,7 @@ export interface NestRouteInfo {
   controller: NestController;
   method: RequestMethodString;
   path: string;
+  cognitoAuthorizer?: CognitoAuthorizerRouteMetadata;
 }
 
 export interface NestControllerInfo {
@@ -248,6 +254,9 @@ export function getNestControllerInfo(
   const controllerPathParts = (
     reflector.get<string | undefined>(PATH_METADATA, controller) ?? ''
   ).split('/');
+  const controllerCognitoAuthorizer = reflector.get<
+    CognitoAuthorizerRouteMetadata | undefined
+  >(COGNITO_AUTHORIZER, controller);
   const routes: NestRouteInfo[] = [];
   const controllerKeys = [
     ...Object.getOwnPropertyNames(controller.prototype),
@@ -267,6 +276,13 @@ export function getNestControllerInfo(
     if (typeof method !== 'number') {
       continue;
     }
+
+    const cognitoAuthorizer =
+      reflector.get<CognitoAuthorizerRouteMetadata | undefined>(
+        COGNITO_AUTHORIZER,
+        value
+      ) ?? controllerCognitoAuthorizer;
+
     const pathParts = (
       reflector.get<string | undefined>(PATH_METADATA, value) ?? ''
     ).split('/');
@@ -283,6 +299,7 @@ export function getNestControllerInfo(
       name: key,
       method: getRequestMethodString(method),
       path,
+      cognitoAuthorizer,
     });
   }
 

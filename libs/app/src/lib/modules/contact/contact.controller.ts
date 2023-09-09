@@ -11,17 +11,20 @@ import {
 } from '@nestjs/common';
 import { ContactService } from './contact.service';
 import { DevExceptionFilter } from '../../utils/dev-exception-filter';
-import { RequireAuth, UserId } from '../../utils/auth-guard';
+import { UserId } from '../../utils/auth-guard';
+import { UserPoolId } from '@sep6/constants';
+import { UseCognitoGuard } from '@sep6/utils';
 
 @Controller('contacts')
 @UseFilters(DevExceptionFilter)
-@RequireAuth()
+@UseCognitoGuard(UserPoolId.APP_USER_POOL)
 export class ContactController {
   constructor(
     @Inject(ContactService) private readonly contactService: ContactService
   ) {}
 
   @Get(':contactId')
+  // @CognitoAuthorizer(UserPoolId.APP_USER_POOL)
   async findContact(
     @UserId() userId: string,
     @Param('contactId') contactId: string

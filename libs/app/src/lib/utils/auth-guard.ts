@@ -2,8 +2,6 @@ import {
   Injectable,
   CanActivate,
   ExecutionContext,
-  applyDecorators,
-  SetMetadata,
   UseGuards,
   createParamDecorator,
   UnauthorizedException,
@@ -11,7 +9,6 @@ import {
 import { Observable } from 'rxjs';
 import { Request } from 'express';
 
-export const REQUIRE_AUTH = Symbol('REQUIRE_AUTH');
 export type AuthRequest = Request & { userId: string };
 export type MaybeAuthRequest = Request & { userId?: string };
 
@@ -33,7 +30,7 @@ export class AuthGuard implements CanActivate {
 }
 
 export function RequireAuth() {
-  return applyDecorators(SetMetadata(REQUIRE_AUTH, true), UseGuards(AuthGuard));
+  return UseGuards(AuthGuard);
 }
 
 export const UserId = createParamDecorator(

@@ -9,3 +9,4 @@ export * from './lib/decorators/dynamo-module';
 export * from './lib/decorators/web-app-module';
 export * from './lib/decorators/user-pool-module';
 export * from './lib/domain-utils';
+export * from './lib/decorators/cognito-authorizer-guard';

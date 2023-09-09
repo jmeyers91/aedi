@@ -2,6 +2,8 @@
 import { Duration, Environment, Stack, StackProps } from 'aws-cdk-lib';
 import c from 'ansi-colors';
 import {
+  AuthorizationType,
+  CognitoUserPoolsAuthorizer,
   CorsOptions,
   LambdaIntegration,
   ResponseType,
@@ -194,6 +196,15 @@ export class ApiStack extends Stack {
         }
       );
     });
+    const getUserPool = (userPoolId: UserPoolId): AppUserPool => {
+      const pool = userPools.find(
+        (pool) => userPoolId === pool.userPoolResource.mergedMetadata.id
+      );
+      if (!pool) {
+        throw new Error(`Unable to find pool ${userPoolId}`);
+      }
+      return pool;
+    };
 
     const NO_DOMAIN = Symbol('NO_DOMAIN');
     const restApis = new Map<string | typeof NO_DOMAIN, RestApi>([]);
@@ -265,6 +276,19 @@ export class ApiStack extends Stack {
       }
 
       return restApi;
+    };
+
+    const cognitoAuthorizers = new Map<string, CognitoUserPoolsAuthorizer>();
+    const getCognitoAuthorizer = (userPool: AppUserPool) => {
+      const authorizerId = `${userPool.userPoolResource.mergedMetadata.id}-authorizer`;
+      let authorizer = cognitoAuthorizers.get(authorizerId);
+      if (!authorizer) {
+        authorizer = new CognitoUserPoolsAuthorizer(this, authorizerId, {
+          cognitoUserPools: [userPool],
+        });
+        cognitoAuthorizers.set(authorizerId, authorizer);
+      }
+      return authorizer;
     };
 
     // Create lambdas for all the lambda modules found in the app tree
@@ -403,6 +427,16 @@ export class ApiStack extends Stack {
           )} ${route.method} ${route.path}`
         );
 
+        if (route.cognitoAuthorizer) {
+          debug(`     -- AUTHORIZER: ${route.cognitoAuthorizer.userPool}`);
+        }
+        const routeUserPool = route.cognitoAuthorizer
+          ? getUserPool(route.cognitoAuthorizer.userPool)
+          : null;
+        const routeCognitoAuthorizer = routeUserPool
+          ? getCognitoAuthorizer(routeUserPool)
+          : null;
+
         const routeParts = route.path
           .split('/')
           .filter((part) => part.length > 0)
@@ -413,7 +447,16 @@ export class ApiStack extends Stack {
             resource.getResource(routePart) ?? resource.addResource(routePart),
           restApi.root
         );
-        routeResource.addMethod(route.method, new LambdaIntegration(fn));
+        routeResource.addMethod(
+          route.method,
+          new LambdaIntegration(fn),
+          routeCognitoAuthorizer
+            ? {
+                authorizer: routeCognitoAuthorizer,
+                authorizationType: AuthorizationType.COGNITO,
+              }
+            : {}
+        );
       }
 
       const clientConfig = {
