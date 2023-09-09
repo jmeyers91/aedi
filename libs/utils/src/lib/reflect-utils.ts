@@ -13,7 +13,6 @@ import {
   ResourceType,
   getResourceMetadata,
 } from './decorators/resource-module';
-import { uniqBy } from './array-utils';
 import { mergeDynamoMetadata } from './decorators/dynamo-module';
 
 export type NestModule = (() => any) | Type<any> | DynamicModule;
