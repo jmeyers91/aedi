@@ -9,6 +9,7 @@ const env: Environment = {
 };
 
 new ApiStack(app, 'sep6-api-stack', {
+  envName: 'sep6-dev',
   env,
   defaultApiDomain: DomainId.API,
   domains: {

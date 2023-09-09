@@ -13,7 +13,6 @@ import {
   ResourceType,
   getResourceMetadata,
 } from './decorators/resource-module';
-import { uniqBy } from './array-utils';
 import { mergeDynamoMetadata } from './decorators/dynamo-module';
 
 export type NestModule = (() => any) | Type<any> | DynamicModule;
@@ -36,6 +35,7 @@ export interface NestResourceNode<T extends ResourceType = ResourceType>
 }
 
 export interface MergedNestResourceNode<T extends ResourceType> {
+  name: string;
   resourceId: string;
   resourceNodes: NestResourceNode<T>[];
   mergedMetadata: ResourceMetadata<T>;
@@ -236,6 +236,7 @@ export function collectMergedModuleResources<T extends ResourceType>(
     }
 
     return {
+      name: resourceNodes[0].name,
       resourceId,
       resourceNodes,
       mergedMetadata,

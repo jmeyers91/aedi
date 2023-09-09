@@ -1,10 +1,18 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { DynamicModule, SetMetadata } from '@nestjs/common';
+import {
+  DynamicModule,
+  Module,
+  ModuleMetadata,
+  SetMetadata,
+  Type,
+  applyDecorators,
+} from '@nestjs/common';
 import { BucketId, DomainId, TableId, WebAppId } from '@sep6/constants';
 import { reflector } from '../reflector';
 import { NestModule, mergeResourceMetadata } from '../reflect-utils';
 
 export const RESOURCE_METADATA = Symbol('RESOURCE_METADATA');
+export const REGISTER_METADATA = Symbol('REGISTER_METADATA');
 
 export enum ResourceType {
   LAMBDA_FUNCTION = 'LAMBDA_FUNCTION',
@@ -62,10 +70,40 @@ export type BucketMetadata = ResourceMetadata<ResourceType.S3_BUCKET>;
 export type DynamoMetadata = ResourceMetadata<ResourceType.DYNAMO_TABLE>;
 export type WebAppMetadata = ResourceMetadata<ResourceType.WEB_APP>;
 
-export function Resource<
+export function ResourceModule<
   K extends keyof ResourceValueMap = keyof ResourceValueMap
->(resourceMetadata: Extract<ResourceMetadata, { type: K }>) {
-  return SetMetadata(RESOURCE_METADATA, resourceMetadata);
+>(
+  resourceMetadata: Extract<ResourceMetadata, { type: K }>,
+  moduleMetadata: ModuleMetadata
+) {
+  const addRegister: ClassDecorator = (target: any) => {
+    target.registerResource = function (): DynamicModule & {
+      [REGISTER_METADATA]: true;
+    } {
+      return {
+        module: this,
+        [REGISTER_METADATA]: true,
+      };
+    };
+  };
+
+  return applyDecorators(
+    SetMetadata(RESOURCE_METADATA, resourceMetadata),
+    Module(moduleMetadata),
+    addRegister
+  );
+}
+
+export function registerResources(modules: any[]): Type<any>[] {
+  return modules.map((module) => {
+    if (
+      'registerResource' in module &&
+      typeof module.registerResource === 'function'
+    ) {
+      return module.registerResource() as DynamicModule;
+    }
+    return module;
+  });
 }
 
 export function getResourceMetadata<

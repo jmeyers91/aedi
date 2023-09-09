@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {
-  Module,
   ModuleMetadata,
   NestModule,
   Type,
@@ -9,7 +8,7 @@ import {
 import { callsites } from '../callsites';
 import {
   LambdaMetadata,
-  Resource,
+  ResourceModule,
   ResourceType,
   getResourceMetadata,
 } from './resource-module';
@@ -39,13 +38,15 @@ export function LambdaModule(
   };
 
   return applyDecorators(
-    Resource({
-      ...rest,
-      type: ResourceType.LAMBDA_FUNCTION,
-      id: relativeHandlerFilePath,
-      handlerFilePath: relativeHandlerFilePath,
-    }),
-    Module(metadata),
+    ResourceModule(
+      {
+        ...rest,
+        type: ResourceType.LAMBDA_FUNCTION,
+        id: relativeHandlerFilePath,
+        handlerFilePath: relativeHandlerFilePath,
+      },
+      metadata
+    ),
     addHandlerFunctionDecorator
   );
 }
@@ -83,16 +84,6 @@ export function createNestLambdaHandler(appModule: NestModule): Handler {
   };
 
   return handler;
-}
-
-export function withControllers(
-  imports: Parameters<typeof Module>[0]['imports']
-) {
-  return imports?.map((module) =>
-    'withControllers' in module && typeof module.withControllers === 'function'
-      ? module.withControllers()
-      : module
-  );
 }
 
 function getCorsConfig(): boolean | CorsOptions {

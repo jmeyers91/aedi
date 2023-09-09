@@ -8,19 +8,10 @@ import { S3Origin } from 'aws-cdk-lib/aws-cloudfront-origins';
 import { BlockPublicAccess, Bucket } from 'aws-cdk-lib/aws-s3';
 import { BucketDeployment, Source } from 'aws-cdk-lib/aws-s3-deployment';
 import { Construct } from 'constructs';
-import { Certificate } from 'aws-cdk-lib/aws-certificatemanager';
-import { ARecord, IHostedZone, RecordTarget } from 'aws-cdk-lib/aws-route53';
+import { ARecord, RecordTarget } from 'aws-cdk-lib/aws-route53';
 import { CloudFrontTarget } from 'aws-cdk-lib/aws-route53-targets';
-import { DomainPair } from '@sep6/utils';
-import { DomainId } from '@sep6/constants';
 import { debug } from '../utils/debug';
-
-export interface WebAppDns {
-  domainId: DomainId;
-  domainPair: DomainPair;
-  certificate: Certificate;
-  hostedZone: IHostedZone;
-}
+import { CertifiedDomain } from './dns-manager';
 
 export class WebApp extends Construct {
   public readonly distribution;
@@ -35,7 +26,7 @@ export class WebApp extends Construct {
     }: {
       distPath: string;
       clientConfig?: Record<string, unknown>;
-      dns?: WebAppDns;
+      dns?: CertifiedDomain;
     }
   ) {
     super(scope, id);

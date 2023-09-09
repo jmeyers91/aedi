@@ -1,22 +1,21 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Module, ModuleMetadata, Type, applyDecorators } from '@nestjs/common';
+import { ModuleMetadata, Type, applyDecorators } from '@nestjs/common';
 import {
   BucketMetadata,
-  Resource,
+  ResourceModule,
   ResourceType,
   getResourceMetadata,
 } from './resource-module';
 
-export function BucketModule({
-  imports,
-  exports,
-  controllers,
-  providers,
-  ...rest
-}: ModuleMetadata & Omit<BucketMetadata, 'type'>) {
+export function BucketModule(
+  bucketMetadata: Omit<BucketMetadata, 'type'>,
+  moduleMetadata: ModuleMetadata
+) {
   return applyDecorators(
-    Resource({ ...rest, type: ResourceType.S3_BUCKET }),
-    Module({ imports, exports, controllers, providers })
+    ResourceModule(
+      { ...bucketMetadata, type: ResourceType.S3_BUCKET },
+      moduleMetadata
+    )
   );
 }
 

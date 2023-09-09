@@ -1,5 +1,9 @@
-import { ModuleMetadata, applyDecorators, Module } from '@nestjs/common';
-import { ResourceType, Resource, WebAppMetadata } from './resource-module';
+import { ModuleMetadata, applyDecorators } from '@nestjs/common';
+import {
+  ResourceType,
+  ResourceModule,
+  WebAppMetadata,
+} from './resource-module';
 
 export function WebAppModule(
   partialMetadata: Omit<WebAppMetadata, 'type'>,
@@ -9,5 +13,5 @@ export function WebAppModule(
     ...partialMetadata,
     type: ResourceType.WEB_APP,
   };
-  return applyDecorators(Resource(metadata), Module(moduleMetadata));
+  return applyDecorators(ResourceModule(metadata, moduleMetadata));
 }

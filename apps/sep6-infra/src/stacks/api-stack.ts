@@ -1,15 +1,12 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { Duration, Environment, Stack, StackProps } from 'aws-cdk-lib';
+import { App, Duration, Environment, Stack, StackProps } from 'aws-cdk-lib';
 import {
-  Cors,
   CorsOptions,
   LambdaIntegration,
   ResponseType,
   RestApi,
 } from 'aws-cdk-lib/aws-apigateway';
-import { Construct } from 'constructs';
 import {
-  DomainPair,
   ResourceType,
   collectMergedModuleResources,
   collectModuleRoutes,
@@ -20,82 +17,40 @@ import { AppModule } from '@sep6/app';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { Runtime } from 'aws-cdk-lib/aws-lambda';
 import { AttributeType, Table } from 'aws-cdk-lib/aws-dynamodb';
-import { WebApp, WebAppDns } from '../constructs/web-app';
+import { WebApp } from '../constructs/web-app';
 import { resolve } from 'path';
 import { DomainId } from '@sep6/constants';
-import {
-  Certificate,
-  CertificateValidation,
-} from 'aws-cdk-lib/aws-certificatemanager';
-import {
-  ARecord,
-  HostedZone,
-  IHostedZone,
-  RecordTarget,
-} from 'aws-cdk-lib/aws-route53';
-import * as targets from 'aws-cdk-lib/aws-route53-targets';
 import { debug } from '../utils/debug';
+import { RestApiCache } from '../constructs/rest-api-cache';
+import { DnsManager, DomainMap } from '../constructs/dns-manager';
+import { DynamoTableResourceConstruct } from '../constructs/dynamo-table-resource';
+import { NestRestApi } from '../constructs/nest-rest-api';
+import { NestLambdaResource } from '../constructs/nest-lambda-resource';
 
 export interface ApiStackProps {
+  envName: string;
   env: Environment;
   defaultApiDomain?: DomainId;
-  domains?: {
-    [K in DomainId]?: DomainPair;
-  };
+  domains?: DomainMap;
 }
 
 export class ApiStack extends Stack {
   constructor(
-    scope: Construct,
+    scope: App,
     id: string,
-    { domains, defaultApiDomain, ...props }: StackProps & ApiStackProps
+    {
+      envName,
+      domains = {},
+      defaultApiDomain,
+      ...props
+    }: StackProps & ApiStackProps
   ) {
     super(scope, id, { ...props, crossRegionReferences: true });
 
-    const hostedZones = new Map<string, IHostedZone>();
-    const domainMap = new Map(Object.entries(domains ?? {}));
-
-    // Cloudfront requires certs in us-east-1, so this stack is just used to hold those certs
-    let cachedUsEastCertStack: Stack | null = null;
-
-    // Lazily create the us-east-1 stack in case it isn't needed
-    const getUsEastCertStack = () => {
-      if (!cachedUsEastCertStack) {
-        cachedUsEastCertStack = new Stack(scope, `${id}-east1-cert-stack`, {
-          ...props,
-          env: {
-            ...props.env,
-            region: 'us-east-1',
-          },
-          crossRegionReferences: true,
-        });
-      }
-      return cachedUsEastCertStack;
-    };
-
-    // Cached lookup of hosted zones based on their domain
-    const getHostedZone = (scope: Construct, domainZone: string) => {
-      let hostedZone = hostedZones.get(domainZone);
-      if (!hostedZone) {
-        hostedZone = HostedZone.fromLookup(
-          scope,
-          `hosted-zone-${domainZone.replace(/\./g, '-')}`,
-          { domainName: domainZone }
-        );
-        hostedZones.set(domainZone, hostedZone);
-      }
-      return hostedZone;
-    };
-
-    // Get a cert for a specific domain in a scope (could be the app region or us-east-1)
-    const getCert = (scope: Construct, id: string, domainPair: DomainPair) => {
-      return new Certificate(scope, id, {
-        domainName: domainPair.domainName,
-        validation: CertificateValidation.fromDns(
-          getHostedZone(scope, domainPair.domainZone)
-        ),
-      });
-    };
+    const dnsManager = new DnsManager(this, 'dns-manager', {
+      app: scope,
+      domains,
+    });
 
     const lambdaResources = collectMergedModuleResources(
       AppModule,
@@ -113,131 +68,47 @@ export class ApiStack extends Stack {
     // Resolve web-app DNS before lambdas are created (used to handle CORS)
     const webAppResourcesWithDns = webAppResources.map((webAppResource) => {
       const metadata = webAppResource.mergedMetadata;
-      let dns: WebAppDns | undefined = undefined;
-
-      const domainPair = metadata.domain
-        ? domainMap.get(metadata.domain)
-        : null;
 
       debug(` -- WEB APP ${resolve(metadata.distPath)}`);
 
-      if (domainPair) {
-        const certificate = getCert(
-          getUsEastCertStack(),
-          `${metadata.id}-cert`,
-          domainPair
-        );
-        const hostedZone = getHostedZone(this, domainPair.domainZone);
-        dns = {
-          domainId: metadata.domain as DomainId,
-          domainPair,
-          certificate,
-          hostedZone,
-        };
-        debug(`    -- DOMAIN ${domainPair.domainName}`);
-      }
-
-      return { ...webAppResource, dns };
+      return {
+        ...webAppResource,
+        dns: dnsManager.getDomainCert(metadata.domain, { region: 'us-east-1' }),
+      };
     });
 
     // Create dynamo tables for all the dynamo modules found in the app tree
     const dynamoTables = dynamoResources.map((dynamoResource) => {
-      const metadata = dynamoResource.mergedMetadata;
-
       debug(` -- TABLE ${dynamoResource.mergedMetadata.id}`);
 
-      return Object.assign(
-        new Table(this, metadata.id, {
-          tableName: metadata.id,
-          partitionKey: {
-            name: metadata.partitionKey.name,
-            type: AttributeType[metadata.partitionKey.type],
-          },
-          ...(metadata.sortKey
-            ? {
-                sortKey: {
-                  name: metadata.sortKey.name,
-                  type: AttributeType[metadata.sortKey.type],
-                },
-              }
-            : {}),
-        }),
-        { nestResource: dynamoResource }
+      return new DynamoTableResourceConstruct(
+        this,
+        dynamoResource.mergedMetadata.id,
+        {
+          envName,
+          dynamoResource,
+        }
       );
     });
 
-    const NO_DOMAIN = Symbol('NO_DOMAIN');
-    const restApis = new Map<string | typeof NO_DOMAIN, RestApi>([]);
-    const defaultCorsPreflightOptions: CorsOptions = {
-      allowCredentials: true,
-      // Allow all origins
-      allowOrigins: webAppResourcesWithDns
-        .map((webApp) => webApp.dns?.domainPair.domainName)
-        .filter(Boolean)
-        .map((domainName) => `https://${domainName}`),
-    };
-    console.log({ defaultCorsPreflightOptions });
-    const getRestApi = (metadataDomainId: DomainId | null | undefined) => {
-      const domainId = metadataDomainId ?? defaultApiDomain;
-      const domainPair = domainId ? domainMap.get(domainId) : null;
-      if (!domainId || !domainPair) {
-        let restApi = restApis.get(NO_DOMAIN);
-        if (!restApi) {
-          restApi = new RestApi(this, 'rest-api', {
-            defaultCorsPreflightOptions,
-          });
-          restApi.addGatewayResponse('unauthorized-response', {
-            type: ResponseType.UNAUTHORIZED,
-            statusCode: '401',
-            responseHeaders: {
-              'Access-Control-Allow-Origin': "'*'",
-            },
-            templates: {
-              'application/json':
-                '{ "message": $context.error.messageString, "statusCode": "401", "type": "$context.error.responseType" }',
-            },
-          });
-          restApis.set(NO_DOMAIN, restApi);
-        }
-        return restApi;
-      }
-
-      const { domainName, domainZone } = domainPair;
-      let restApi = restApis.get(domainName);
-      if (!restApi) {
-        const restApiId = `rest-api-${domainId
-          .toLowerCase()
-          .replace(/_/g, '-')}`;
-        restApi = new RestApi(this, restApiId, {
-          defaultCorsPreflightOptions,
-          domainName: {
-            domainName,
-            certificate: getCert(this, `${restApiId}-cert`, domainPair),
-          },
-        });
-        restApi.addGatewayResponse('unauthorized-response', {
-          type: ResponseType.UNAUTHORIZED,
-          statusCode: '401',
-          responseHeaders: {
-            'Access-Control-Allow-Origin': "'*'",
-          },
-          templates: {
-            'application/json':
-              '{ "message": $context.error.messageString, "statusCode": "401", "type": "$context.error.responseType" }',
-          },
-        });
-        new ARecord(this, `${restApiId}-a-record`, {
-          recordName: domainName,
-          target: RecordTarget.fromAlias(new targets.ApiGateway(restApi)),
-          zone: getHostedZone(this, domainZone),
-        });
-        debug(`[A-Record] ${domainName} -> ${restApi.node.id}`);
-
-        restApis.set(domainName, restApi);
-      }
-
-      return restApi;
-    };
+    const restApiCache = new RestApiCache(
+      this,
+      'rest-apis',
+      (cacheScope, domain) =>
+        new NestRestApi(
+          cacheScope,
+          `rest-api-${domain?.toLowerCase() ?? 'default'}`,
+          {
+            envName,
+            domain,
+            dnsManager,
+            defaultCorsOrigins: webAppResourcesWithDns
+              .map((webApp) => webApp.dns?.domainPair.domainName)
+              .filter(Boolean)
+              .map((domainName) => `https://${domainName}`),
+          }
+        )
+    );
 
     // Create lambdas for all the lambda modules found in the app tree
     const lambdas = lambdaResources.flatMap((lambdaResourceGroup) => {
@@ -258,11 +129,6 @@ export class ApiStack extends Stack {
         throw new Error(
           `Unable to find static lambda node: ${lambdaResourceGroup.mergedMetadata.id}`
         );
-      }
-
-      // Modules without any controllers
-      if (lambdaResource.controllers.length === 0) {
-        return [];
       }
 
       // Ignore lambda modules that are registered inside other lambda modules
@@ -290,7 +156,7 @@ export class ApiStack extends Stack {
       const allowedCorsWebApps = Array.isArray(allowCorsDomains)
         ? webAppResourcesWithDns.filter(
             (webApp) =>
-              webApp.dns && allowCorsDomains.includes(webApp.dns.domainId)
+              webApp.dns && allowCorsDomains.includes(webApp.dns.domain)
           )
         : webAppResourcesWithDns; // Allow cross-origin requests from all web-apps by default
 
@@ -306,7 +172,13 @@ export class ApiStack extends Stack {
 
       debug(`  -- CORS origins: ${corsOrigins?.join(', ') ?? '*'}`);
 
-      const fn = new NodejsFunction(this, lambdaResource.name, {
+      const fn = new NestLambdaResource(this, lambdaResource.name, {
+        lambdaResource,
+        envName,
+        corsOrigins,
+      });
+
+      new NodejsFunction(this, lambdaResource.name, {
         runtime: Runtime.NODEJS_18_X,
         entry: lambdaResource.resourceMetadata.handlerFilePath,
         handler: `index.${lambdaResource.name}.lambdaHandler`,
@@ -317,14 +189,19 @@ export class ApiStack extends Stack {
             '@nestjs/websockets/socket-module',
           ],
         },
-        environment: corsOrigins
-          ? {
-              CORS_ORIGINS: JSON.stringify(corsOrigins),
-            }
-          : {},
+        environment: {
+          ENV_NAME: envName,
+          ...(corsOrigins
+            ? {
+                CORS_ORIGINS: JSON.stringify(corsOrigins),
+              }
+            : {}),
+        },
       });
 
-      const restApi = getRestApi(lambdaResource.resourceMetadata.domain);
+      const restApi = restApiCache.findOrCreateRestApi(
+        lambdaResource.resourceMetadata.domain
+      );
       debug(`    -- Rest API: ${restApi.node.id}`);
       // Gather dynamo table and grant access
       const childDynamoDbTableResources = collectMergedModuleResources(

@@ -2,7 +2,6 @@
 import {
   Inject,
   Injectable,
-  Module,
   ModuleMetadata,
   Type,
   applyDecorators,
@@ -11,7 +10,7 @@ import {
   DynamicResourceModule,
   DynamoMetadata,
   RESOURCE_METADATA,
-  Resource,
+  ResourceModule,
   ResourceType,
   getResourceMetadata,
 } from './resource-module';
@@ -55,8 +54,7 @@ export function DynamoModule(
     type: ResourceType.DYNAMO_TABLE,
   };
   return applyDecorators(
-    Resource(metadata),
-    Module({
+    ResourceModule(metadata, {
       imports: moduleMetadata.imports,
       controllers: moduleMetadata.controllers,
       providers: [
