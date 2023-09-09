@@ -286,6 +286,7 @@ export function getNestControllerInfo(
     const pathParts = (
       reflector.get<string | undefined>(PATH_METADATA, value) ?? ''
     ).split('/');
+
     let path = [...controllerPathParts, ...pathParts]
       .filter((it) => it.length > 0)
       .join('/');

@@ -1,13 +1,16 @@
 import { Controller, Get, Param, Put } from '@nestjs/common';
 import { UserPoolId } from '@sep6/constants';
-import { CognitoClaim, UseCognitoGuard } from '@sep6/utils';
+import { CognitoClaim, CognitoUserId, UseCognitoGuard } from '@sep6/utils';
 
 @Controller('/user')
 export class UserController {
   @Get()
   @UseCognitoGuard(UserPoolId.APP_USER_POOL)
-  async getCurrentUser(@CognitoClaim() claim: any) {
-    return { claim };
+  async getCurrentUser(
+    @CognitoClaim() claim: CognitoClaim,
+    @CognitoUserId() userId: string
+  ) {
+    return { claim, userId };
   }
 
   @Put(':userId')

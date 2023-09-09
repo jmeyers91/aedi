@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   Injectable,
   CanActivate,
@@ -18,10 +19,24 @@ import {
 
 export const COGNITO_AUTHORIZER = Symbol('COGNITO_AUTHORIZER');
 
+export interface CognitoClaim {
+  sub: string;
+  email_verified?: string;
+  iss?: string;
+  'cognito:username'?: string;
+  origin_jti?: string;
+  aud?: string;
+  event_id?: string;
+  token_use?: string;
+  auth_time?: string;
+  exp?: string;
+  iat?: string;
+  jti?: string;
+  email?: string;
+}
+
 export interface CognitoAuthRequest {
-  cognitoAuthorizerClaim?: {
-    sub?: string;
-  };
+  cognitoAuthorizerClaim?: CognitoClaim;
 }
 
 export interface CognitoAuthorizerRouteMetadata {
@@ -37,10 +52,19 @@ class CognitoAuthorizerGuard implements CanActivate {
     const invoke = getCurrentInvoke();
     const event: APIGatewayProxyEventBase<APIGatewayProxyCognitoAuthorizer> =
       invoke.event;
+    const { claims } = event.requestContext.authorizer;
 
-    request.cognitoAuthorizerClaim = event.requestContext.authorizer.claims;
+    if (typeof claims['sub'] !== 'string') {
+      console.error(
+        `Received cognito authorizer claim with invalid sub:`,
+        request.cognitoAuthorizerClaim
+      );
+      return false;
+    }
 
-    return !!request.cognitoAuthorizerClaim.sub;
+    request.cognitoAuthorizerClaim = claims as any;
+
+    return true;
   }
 }
 
@@ -64,5 +88,18 @@ export const CognitoClaim = createParamDecorator(
     }
 
     return claim;
+  }
+);
+
+export const CognitoUserId = createParamDecorator(
+  (_: unknown, ctx: ExecutionContext) => {
+    const request = ctx.switchToHttp().getRequest<CognitoAuthRequest>();
+    const claim = request.cognitoAuthorizerClaim;
+
+    if (!claim) {
+      throw new UnauthorizedException();
+    }
+
+    return claim.sub;
   }
 );

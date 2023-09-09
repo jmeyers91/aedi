@@ -1,6 +1,8 @@
 import { Controller, Get, Inject, Param, Post } from '@nestjs/common';
 import { CountTable } from '../../tables/count.table';
-import { RequireAuth, UserId } from '../../utils/auth-guard';
+
+import { CognitoUserId, UseCognitoGuard } from '@sep6/utils';
+import { UserPoolId } from '@sep6/constants';
 
 @Controller()
 export class HealthcheckController {
@@ -16,9 +18,9 @@ export class HealthcheckController {
     return 'Success!';
   }
 
-  @RequireAuth()
   @Get('/healthcheck/user')
-  currentUser(@UserId() userId: string) {
+  @UseCognitoGuard(UserPoolId.APP_USER_POOL)
+  currentUser(@CognitoUserId() userId: string) {
     return `The current user is: ${userId}`;
   }
 
