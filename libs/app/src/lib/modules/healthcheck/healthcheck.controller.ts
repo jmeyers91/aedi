@@ -1,6 +1,6 @@
 import { Controller, Get, Inject, Param, Post } from '@nestjs/common';
-import { CountTable } from './tables/count.table';
-import { RequireAuth, UserId } from './utils/auth-guard';
+import { CountTable } from '../../tables/count.table';
+import { RequireAuth, UserId } from '../../utils/auth-guard';
 
 @Controller()
 export class HealthcheckController {
@@ -37,5 +37,10 @@ export class HealthcheckController {
       console.log('error', error);
       return `Error: ${(error as Error).message}`;
     }
+  }
+
+  @Get('/cors-domains')
+  async getCorsDomains() {
+    return { CORS_ORIGINS: (process.env as any).CORS_ORIGINS };
   }
 }

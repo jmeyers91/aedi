@@ -5,13 +5,10 @@ import { LambdaModule } from '@sep6/utils';
 
 export * from './user.service';
 
-@LambdaModule(
-  {},
-  {
-    providers: [UserService],
-    exports: [UserService],
-  }
-)
+@LambdaModule({
+  providers: [UserService],
+  exports: [UserService],
+})
 export class UserModule {
   static withControllers(): DynamicModule {
     return { module: this, controllers: [UserController] };

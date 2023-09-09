@@ -8,6 +8,9 @@ export interface ApiConfig {
   UserModule: {
     baseURL: string;
   };
+  AdminModule: {
+    baseURL: string;
+  };
 }
 
 export interface ClientConfig {
@@ -30,6 +33,7 @@ function resolveClientConfig(): ClientConfig {
       ContactModule: localModule,
       HealthcheckModule: localModule,
       UserModule: localModule,
+      AdminModule: localModule,
     },
   };
 }

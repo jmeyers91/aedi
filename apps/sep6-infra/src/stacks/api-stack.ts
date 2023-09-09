@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { Duration, Environment, Stack, StackProps } from 'aws-cdk-lib';
 import {
+  Cors,
   CorsOptions,
   LambdaIntegration,
   ResponseType,
@@ -38,6 +39,7 @@ import * as targets from 'aws-cdk-lib/aws-route53-targets';
 
 export interface ApiStackProps {
   env: Environment;
+  defaultApiDomain?: DomainId;
   domains?: {
     [K in DomainId]?: DomainPair;
   };
@@ -47,7 +49,7 @@ export class ApiStack extends Stack {
   constructor(
     scope: Construct,
     id: string,
-    { domains, ...props }: StackProps & ApiStackProps
+    { domains, defaultApiDomain, ...props }: StackProps & ApiStackProps
   ) {
     super(scope, id, { ...props, crossRegionReferences: true });
 
@@ -141,6 +143,7 @@ export class ApiStack extends Stack {
         );
         const hostedZone = getHostedZone(this, domainPair.domainZone);
         dns = {
+          domainId: metadata.domainName as DomainId,
           domainPair,
           certificate,
           hostedZone,
@@ -179,22 +182,14 @@ export class ApiStack extends Stack {
 
     const NO_DOMAIN = Symbol('NO_DOMAIN');
     const restApis = new Map<string | typeof NO_DOMAIN, RestApi>([]);
-    const defaultCorsPreflightOptions: CorsOptions = {
-      allowCredentials: true,
-      // Allow all origins
-      allowOrigins: webAppResourcesWithDns
-        .map((webApp) => webApp.dns?.domainPair.domainName)
-        .filter(Boolean)
-        .map((domainName) => `https://${domainName}`),
-    };
-    const getRestApi = (domainId: DomainId | null | undefined) => {
+
+    const getRestApi = (metadataDomainId: DomainId | null | undefined) => {
+      const domainId = metadataDomainId ?? defaultApiDomain;
       const domainPair = domainId ? domainMap.get(domainId) : null;
       if (!domainId || !domainPair) {
         let restApi = restApis.get(NO_DOMAIN);
         if (!restApi) {
-          restApi = new RestApi(this, 'rest-api', {
-            defaultCorsPreflightOptions,
-          });
+          restApi = new RestApi(this, 'rest-api');
           restApi.addGatewayResponse('unauthorized-response', {
             type: ResponseType.UNAUTHORIZED,
             statusCode: '401',
@@ -222,7 +217,6 @@ export class ApiStack extends Stack {
             domainName,
             certificate: getCert(this, `${restApiId}-cert`, domainPair),
           },
-          defaultCorsPreflightOptions,
         });
         restApi.addGatewayResponse('unauthorized-response', {
           type: ResponseType.UNAUTHORIZED,
@@ -292,6 +286,26 @@ export class ApiStack extends Stack {
         } (${lambdaResource.resourceMetadata.domainName ?? 'NO DOMAIN'})`
       );
 
+      // Allow lambda modules to specify the specific domains they want to allow CORS requests from.
+      // TODO: Add support for specifying external domains as well
+      const { allowCorsDomains } = lambdaResourceGroup.mergedMetadata;
+      const allowedCorsWebApps = Array.isArray(allowCorsDomains)
+        ? webAppResourcesWithDns.filter(
+            (webApp) =>
+              webApp.dns && allowCorsDomains.includes(webApp.dns.domainId)
+          )
+        : webAppResourcesWithDns; // Allow cross-origin requests from all web-apps by default
+
+      // Only set CORS domains if every allowed web app has a real domain - we can't know the generated Cloudfront domain here
+      const corsEnabled = allowedCorsWebApps.every(
+        (webApp) => webApp.dns?.domainPair
+      );
+      const corsOrigins = corsEnabled
+        ? allowedCorsWebApps.map(
+            (webApp) => `https://${webApp.dns?.domainPair.domainName}`
+          )
+        : null;
+
       const fn = new NodejsFunction(this, lambdaResource.name, {
         runtime: Runtime.NODEJS_18_X,
         entry: lambdaResource.resourceMetadata.handlerFilePath,
@@ -303,12 +317,15 @@ export class ApiStack extends Stack {
             '@nestjs/websockets/socket-module',
           ],
         },
+        environment: corsOrigins
+          ? {
+              CORS_ORIGINS: JSON.stringify(corsOrigins),
+            }
+          : {},
       });
 
       const restApi = getRestApi(lambdaResource.resourceMetadata.domainName);
-      debug(
-        `    -- Rest API: ${restApi.domainName?.domainName ?? 'GENERATED'}`
-      );
+      debug(`    -- Rest API: ${restApi.node.id}`);
       // Gather dynamo table and grant access
       const childDynamoDbTableResources = collectMergedModuleResources(
         lambdaResource.module,
@@ -317,11 +334,9 @@ export class ApiStack extends Stack {
 
       for (const {
         resourceId,
-        resourceNodes,
         mergedMetadata,
       } of childDynamoDbTableResources) {
-        const allMetadata = resourceNodes.map((node) => node.resourceMetadata);
-        debug(`   -- Table - ${resourceId}`, allMetadata);
+        debug(`   -- Table - ${resourceId}`);
         const dynamoDbTable = dynamoTables.find(
           (table) => table.nestResource.mergedMetadata.id === resourceId
         );

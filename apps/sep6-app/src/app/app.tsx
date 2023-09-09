@@ -37,10 +37,40 @@ export function App() {
               Authorization: 'jim',
             },
           });
-          console.log('Contact list', response.data);
+          console.log('User', response.data);
         }}
       >
         Get current user
+      </button>
+      <button
+        onClick={async () => {
+          const response = await getModuleClient('HealthcheckModule').get(
+            '/cors-domains',
+            {
+              headers: {
+                Authorization: 'jim',
+              },
+            }
+          );
+          console.log('CORS domains', response.data);
+        }}
+      >
+        Get CORS urls
+      </button>
+      <button
+        onClick={async () => {
+          const response = await getModuleClient('AdminModule').post(
+            '/admin/secret',
+            {
+              headers: {
+                Authorization: 'jim',
+              },
+            }
+          );
+          console.log('Admin secret', response.data);
+        }}
+      >
+        Call admin API
       </button>
       <div role="navigation">
         <ul>

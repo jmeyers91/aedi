@@ -12,8 +12,10 @@ import { Certificate } from 'aws-cdk-lib/aws-certificatemanager';
 import { ARecord, IHostedZone, RecordTarget } from 'aws-cdk-lib/aws-route53';
 import { CloudFrontTarget } from 'aws-cdk-lib/aws-route53-targets';
 import { DomainPair } from '@sep6/utils';
+import { DomainId } from '@sep6/constants';
 
 export interface WebAppDns {
+  domainId: DomainId;
   domainPair: DomainPair;
   certificate: Certificate;
   hostedZone: IHostedZone;

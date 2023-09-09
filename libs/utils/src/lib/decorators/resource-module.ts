@@ -24,6 +24,7 @@ export interface ResourceValueMap extends Record<ResourceType, object> {
     id: string;
     handlerFilePath: string;
     domainName?: DomainId;
+    allowCorsDomains?: DomainId[];
   };
 
   [ResourceType.S3_BUCKET]: {

@@ -10,8 +10,8 @@ import {
   UseFilters,
 } from '@nestjs/common';
 import { ContactService } from './contact.service';
-import { DevExceptionFilter } from './utils/dev-exception-filter';
-import { RequireAuth, UserId } from './utils/auth-guard';
+import { DevExceptionFilter } from '../../utils/dev-exception-filter';
+import { RequireAuth, UserId } from '../../utils/auth-guard';
 
 @Controller('contacts')
 @UseFilters(DevExceptionFilter)

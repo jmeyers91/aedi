@@ -17,10 +17,11 @@ import { NestFactory } from '@nestjs/core';
 import serverlessExpress from '@vendia/serverless-express';
 import { APIGatewayEvent, Callback, Context, Handler } from 'aws-lambda';
 import { relative } from 'path';
+import type { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
 
 export function LambdaModule(
-  { handlerFilePath, ...rest }: Partial<LambdaMetadata>,
-  metadata: ModuleMetadata
+  metadata: ModuleMetadata,
+  { handlerFilePath, ...rest }: Partial<LambdaMetadata> = {}
 ) {
   const absoluteHandlerFilePath =
     handlerFilePath ?? callsites()[1]?.getFileName();
@@ -60,9 +61,12 @@ export function createNestLambdaHandler(appModule: NestModule): Handler {
   let server: Handler;
 
   const bootstrap = async (): Promise<Handler> => {
+    const cors = getCorsConfig();
+    console.log(`----- CORS -----`, cors);
     const app = await NestFactory.create(appModule, {
-      cors: true, // TODO: Add dynamic origin handling once domains are added
+      cors,
     });
+
     await app.init();
 
     const expressApp = app.getHttpAdapter().getInstance();
@@ -89,4 +93,29 @@ export function withControllers(
       ? module.withControllers()
       : module
   );
+}
+
+function getCorsConfig(): boolean | CorsOptions {
+  const CORS_ORIGINS = process.env['CORS_ORIGINS'];
+  const origins = CORS_ORIGINS ? JSON.parse(CORS_ORIGINS) : null;
+
+  if (
+    !Array.isArray(origins) ||
+    origins.length === 0 ||
+    origins.some((it) => typeof it !== 'string')
+  ) {
+    throw new Error(`Invalid CORS_ORIGINS env var: ${CORS_ORIGINS}`);
+  }
+
+  if (!origins) {
+    // TODO: This should throw in production envs
+    return true;
+  }
+
+  return {
+    origin: origins,
+    credentials: true,
+    allowedHeaders: '*',
+    methods: '*',
+  };
 }

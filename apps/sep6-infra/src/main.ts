@@ -10,6 +10,7 @@ const env: Environment = {
 
 new ApiStack(app, 'sep6-api-stack', {
   env,
+  defaultApiDomain: DomainId.API,
   domains: {
     [DomainId.API]: {
       domainName: 'api.sep6.smplj.xyz',
@@ -19,9 +20,9 @@ new ApiStack(app, 'sep6-api-stack', {
       domainName: 'sep6.smplj.xyz',
       domainZone: 'smplj.xyz',
     },
-    // [DomainId.ADMIN]: {
-    //   domainName: '',
-    //   domainZone: '',
-    // },
+    [DomainId.ADMIN]: {
+      domainName: 'admin.sep6.smplj.xyz',
+      domainZone: 'smplj.xyz',
+    },
   },
 });
