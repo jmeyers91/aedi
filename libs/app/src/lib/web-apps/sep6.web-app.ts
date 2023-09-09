@@ -3,7 +3,7 @@ import { WebAppModule } from '@sep6/utils';
 
 @WebAppModule({
   id: WebAppId.APP,
-  domainName: DomainId.APP,
+  domain: DomainId.APP,
   distPath: 'dist/apps/sep6-app',
 })
 export class Sep6WebApp {}

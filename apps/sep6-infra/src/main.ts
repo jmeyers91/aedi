@@ -24,5 +24,9 @@ new ApiStack(app, 'sep6-api-stack', {
       domainName: 'admin.sep6.smplj.xyz',
       domainZone: 'smplj.xyz',
     },
+    [DomainId.ADMIN_API]: {
+      domainName: 'api.admin.sep6.smplj.xyz',
+      domainZone: 'smplj.xyz',
+    },
   },
 });

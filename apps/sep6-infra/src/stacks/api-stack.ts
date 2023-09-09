@@ -20,8 +20,6 @@ import { AppModule } from '@sep6/app';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { Runtime } from 'aws-cdk-lib/aws-lambda';
 import { AttributeType, Table } from 'aws-cdk-lib/aws-dynamodb';
-import { existsSync, unlinkSync } from 'fs';
-import { appendFile } from 'fs/promises';
 import { WebApp, WebAppDns } from '../constructs/web-app';
 import { resolve } from 'path';
 import { DomainId } from '@sep6/constants';
@@ -36,6 +34,7 @@ import {
   RecordTarget,
 } from 'aws-cdk-lib/aws-route53';
 import * as targets from 'aws-cdk-lib/aws-route53-targets';
+import { debug } from '../utils/debug';
 
 export interface ApiStackProps {
   env: Environment;
@@ -98,19 +97,6 @@ export class ApiStack extends Stack {
       });
     };
 
-    let logQueue = Promise.resolve();
-    if (existsSync('./debug.md')) {
-      unlinkSync('./debug.md');
-    }
-    const debug = (...args: any[]) => {
-      logQueue = logQueue.then(() =>
-        appendFile(
-          './debug.md',
-          args.map((arg) => String(arg)).join(' ') + '\n'
-        )
-      );
-    };
-
     const lambdaResources = collectMergedModuleResources(
       AppModule,
       ResourceType.LAMBDA_FUNCTION
@@ -129,8 +115,8 @@ export class ApiStack extends Stack {
       const metadata = webAppResource.mergedMetadata;
       let dns: WebAppDns | undefined = undefined;
 
-      const domainPair = metadata.domainName
-        ? domainMap.get(metadata.domainName)
+      const domainPair = metadata.domain
+        ? domainMap.get(metadata.domain)
         : null;
 
       debug(` -- WEB APP ${resolve(metadata.distPath)}`);
@@ -143,7 +129,7 @@ export class ApiStack extends Stack {
         );
         const hostedZone = getHostedZone(this, domainPair.domainZone);
         dns = {
-          domainId: metadata.domainName as DomainId,
+          domainId: metadata.domain as DomainId,
           domainPair,
           certificate,
           hostedZone,
@@ -182,14 +168,24 @@ export class ApiStack extends Stack {
 
     const NO_DOMAIN = Symbol('NO_DOMAIN');
     const restApis = new Map<string | typeof NO_DOMAIN, RestApi>([]);
-
+    const defaultCorsPreflightOptions: CorsOptions = {
+      allowCredentials: true,
+      // Allow all origins
+      allowOrigins: webAppResourcesWithDns
+        .map((webApp) => webApp.dns?.domainPair.domainName)
+        .filter(Boolean)
+        .map((domainName) => `https://${domainName}`),
+    };
+    console.log({ defaultCorsPreflightOptions });
     const getRestApi = (metadataDomainId: DomainId | null | undefined) => {
       const domainId = metadataDomainId ?? defaultApiDomain;
       const domainPair = domainId ? domainMap.get(domainId) : null;
       if (!domainId || !domainPair) {
         let restApi = restApis.get(NO_DOMAIN);
         if (!restApi) {
-          restApi = new RestApi(this, 'rest-api');
+          restApi = new RestApi(this, 'rest-api', {
+            defaultCorsPreflightOptions,
+          });
           restApi.addGatewayResponse('unauthorized-response', {
             type: ResponseType.UNAUTHORIZED,
             statusCode: '401',
@@ -213,6 +209,7 @@ export class ApiStack extends Stack {
           .toLowerCase()
           .replace(/_/g, '-')}`;
         restApi = new RestApi(this, restApiId, {
+          defaultCorsPreflightOptions,
           domainName: {
             domainName,
             certificate: getCert(this, `${restApiId}-cert`, domainPair),
@@ -234,6 +231,7 @@ export class ApiStack extends Stack {
           target: RecordTarget.fromAlias(new targets.ApiGateway(restApi)),
           zone: getHostedZone(this, domainZone),
         });
+        debug(`[A-Record] ${domainName} -> ${restApi.node.id}`);
 
         restApis.set(domainName, restApi);
       }
@@ -283,7 +281,7 @@ export class ApiStack extends Stack {
       debug(
         `-- LAMBDA ${lambdaResource.name} -> ${
           lambdaResource.resourceMetadata.handlerFilePath
-        } (${lambdaResource.resourceMetadata.domainName ?? 'NO DOMAIN'})`
+        } (${lambdaResource.resourceMetadata.domain ?? 'NO DOMAIN'})`
       );
 
       // Allow lambda modules to specify the specific domains they want to allow CORS requests from.
@@ -306,6 +304,8 @@ export class ApiStack extends Stack {
           )
         : null;
 
+      debug(`  -- CORS origins: ${corsOrigins?.join(', ') ?? '*'}`);
+
       const fn = new NodejsFunction(this, lambdaResource.name, {
         runtime: Runtime.NODEJS_18_X,
         entry: lambdaResource.resourceMetadata.handlerFilePath,
@@ -324,7 +324,7 @@ export class ApiStack extends Stack {
           : {},
       });
 
-      const restApi = getRestApi(lambdaResource.resourceMetadata.domainName);
+      const restApi = getRestApi(lambdaResource.resourceMetadata.domain);
       debug(`    -- Rest API: ${restApi.node.id}`);
       // Gather dynamo table and grant access
       const childDynamoDbTableResources = collectMergedModuleResources(

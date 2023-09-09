@@ -16,4 +16,5 @@ export enum DomainId {
   APP = 'APP',
   ADMIN = 'ADMIN',
   API = 'API',
+  ADMIN_API = 'ADMIN_API',
 }

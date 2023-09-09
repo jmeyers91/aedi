@@ -13,6 +13,7 @@ import { ARecord, IHostedZone, RecordTarget } from 'aws-cdk-lib/aws-route53';
 import { CloudFrontTarget } from 'aws-cdk-lib/aws-route53-targets';
 import { DomainPair } from '@sep6/utils';
 import { DomainId } from '@sep6/constants';
+import { debug } from '../utils/debug';
 
 export interface WebAppDns {
   domainId: DomainId;
@@ -104,6 +105,7 @@ export class WebApp extends Construct {
         target: RecordTarget.fromAlias(new CloudFrontTarget(this.distribution)),
         zone: dns.hostedZone,
       });
+      debug(`[A-Record] ${dns.domainPair.domainName} -> ${id}`);
     }
   }
 }

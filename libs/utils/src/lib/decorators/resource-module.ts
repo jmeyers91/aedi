@@ -23,7 +23,7 @@ export interface ResourceValueMap extends Record<ResourceType, object> {
   [ResourceType.LAMBDA_FUNCTION]: {
     id: string;
     handlerFilePath: string;
-    domainName?: DomainId;
+    domain?: DomainId;
     allowCorsDomains?: DomainId[];
   };
 
@@ -41,7 +41,7 @@ export interface ResourceValueMap extends Record<ResourceType, object> {
   [ResourceType.WEB_APP]: {
     id: WebAppId;
     distPath: string;
-    domainName?: DomainId;
+    domain?: DomainId;
   };
 }
 

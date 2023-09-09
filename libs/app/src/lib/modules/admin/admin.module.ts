@@ -8,7 +8,7 @@ import { DomainId } from '@sep6/constants';
   {
     imports: [ContactModule],
   },
-  { allowCorsDomains: [DomainId.ADMIN] }
+  { domain: DomainId.ADMIN_API, allowCorsDomains: [DomainId.ADMIN] }
 )
 export class AdminModule {
   static withControllers(): DynamicModule {
