@@ -233,25 +233,25 @@ export class ApiStack extends Stack {
 
       debug(` -- ${c.red('TABLE')} ${dynamoResource.mergedMetadata.id}`);
 
+      let streamViewType = metadata.streamViewType;
+      if (!streamViewType && metadata.streams?.length) {
+        streamViewType = StreamViewType.NEW_AND_OLD_IMAGES;
+      }
+
       const table = Object.assign(
         new TableV2(new Construct(this, metadata.id), metadata.id, {
           tableName: metadata.id,
-
           partitionKey: {
             name: metadata.partitionKey.name,
             type: AttributeType[metadata.partitionKey.type],
           },
+          dynamoStream: streamViewType,
           ...(metadata.sortKey
             ? {
                 sortKey: {
                   name: metadata.sortKey.name,
                   type: AttributeType[metadata.sortKey.type],
                 },
-              }
-            : {}),
-          ...(dynamoResource.mergedMetadata.streams?.length
-            ? {
-                dynamoStream: StreamViewType.NEW_AND_OLD_IMAGES, // TODO: Make this configurable
               }
             : {}),
         }),

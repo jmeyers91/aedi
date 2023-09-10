@@ -11,6 +11,7 @@ import { reflector } from '../reflector';
 import { NestModule, mergeResourceMetadata } from '../reflect-utils';
 import type { CfnEventSourceMapping } from 'aws-cdk-lib/aws-lambda';
 import { Context } from 'aws-lambda';
+import type { StreamViewType } from 'aws-cdk-lib/aws-dynamodb';
 
 export const RESOURCE_METADATA = Symbol('RESOURCE_METADATA');
 
@@ -57,6 +58,7 @@ export interface ResourceValueMap extends Record<ResourceType, object> {
     partitionKey: { name: string; type: AttributeType };
     sortKey?: { name: string; type: AttributeType };
     permissions?: { read?: boolean; write?: boolean };
+    streamViewType?: StreamViewType;
     streams?: {
       lambda: any;
       batchSize?: number;
