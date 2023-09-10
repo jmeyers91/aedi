@@ -23,7 +23,7 @@ import {
 import { AppModule } from '@sep6/app';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { Runtime } from 'aws-cdk-lib/aws-lambda';
-import { AttributeType, Table } from 'aws-cdk-lib/aws-dynamodb';
+import { AttributeType, TableV2 } from 'aws-cdk-lib/aws-dynamodb';
 import { WebApp, WebAppDns } from '../constructs/web-app';
 import { resolve } from 'path';
 import { DomainId, UserPoolId } from '@sep6/constants';
@@ -230,7 +230,7 @@ export class ApiStack extends Stack {
       debug(` -- ${c.red('TABLE')} ${dynamoResource.mergedMetadata.id}`);
 
       return Object.assign(
-        new Table(this, metadata.id, {
+        new TableV2(new Construct(this, metadata.id), metadata.id, {
           tableName: metadata.id,
           partitionKey: {
             name: metadata.partitionKey.name,

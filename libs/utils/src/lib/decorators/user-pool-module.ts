@@ -9,5 +9,15 @@ export function UserPoolModule(
     ...partialMetadata,
     type: ResourceType.USER_POOL,
   };
-  return applyDecorators(Resource(metadata), Module(moduleMetadata));
+  return applyDecorators(
+    Resource(metadata),
+    Module({
+      ...moduleMetadata,
+      imports: [
+        // Ensures trigger handler providers can be found in the module tree
+        ...Object.values(partialMetadata.lambdaTriggers ?? {}),
+        ...(moduleMetadata.imports ?? []),
+      ],
+    })
+  );
 }

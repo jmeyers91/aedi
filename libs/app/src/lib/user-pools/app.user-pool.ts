@@ -43,16 +43,11 @@ class EventHandler implements ILambdaEventHandler {
 )
 export class AppUserPoolEventLambdaModule {}
 
-@UserPoolModule(
-  {
-    id: UserPoolId.APP_USER_POOL,
-    lambdaTriggers: {
-      preAuthentication: AppUserPoolEventLambdaModule,
-      preSignUp: AppUserPoolEventLambdaModule,
-    },
+@UserPoolModule({
+  id: UserPoolId.APP_USER_POOL,
+  lambdaTriggers: {
+    preAuthentication: AppUserPoolEventLambdaModule,
+    preSignUp: AppUserPoolEventLambdaModule,
   },
-  {
-    imports: [AppUserPoolEventLambdaModule],
-  }
-)
+})
 export class AppUserPoolModule {}
