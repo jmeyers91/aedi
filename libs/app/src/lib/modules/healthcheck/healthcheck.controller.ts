@@ -43,6 +43,20 @@ export class HealthcheckController {
     }
   }
 
+  @Get('/count/:counterId')
+  @DisableCognitoGuard()
+  async getCount(@Param('counterId') counterId: string) {
+    try {
+      const counter = await this.countTable.get({ counterId });
+      const count = counter?.count ?? 0;
+
+      return `Count: ${count}`;
+    } catch (error) {
+      console.log('error', error);
+      return `Error: ${(error as Error).message}`;
+    }
+  }
+
   @Get('/cors-domains')
   @DisableCognitoGuard()
   async getCorsDomains() {

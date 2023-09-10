@@ -13,6 +13,7 @@ import { Construct } from 'constructs';
 import {
   DomainPair,
   LambdaType,
+  ResourceMetadata,
   ResourceType,
   collectMergedModuleResources,
   collectModuleRoutes,
@@ -39,7 +40,7 @@ import {
 import * as targets from 'aws-cdk-lib/aws-route53-targets';
 import { debug } from '../utils/debug';
 import { AppUserPool } from '../constructs/app-user-pool';
-import { UserPoolClient } from 'aws-cdk-lib/aws-cognito';
+import { UserPoolClient, UserPoolTriggers } from 'aws-cdk-lib/aws-cognito';
 
 export interface ApiStackProps {
   env: Environment;
@@ -132,6 +133,47 @@ export class ApiStack extends Stack {
                 ],
               },
             });
+
+            // Gather dynamo table and grant access
+            const lambdaResource = lambdaResourceGroup.resourceNodes[0];
+            const childDynamoDbTableResources = collectMergedModuleResources(
+              lambdaResource.module,
+              ResourceType.DYNAMO_TABLE
+            );
+
+            for (const {
+              resourceId,
+              mergedMetadata,
+            } of childDynamoDbTableResources) {
+              debug(`   -- Table - ${resourceId}`);
+              const dynamoDbTable = dynamoTables.find(
+                (table) => table.nestResource.mergedMetadata.id === resourceId
+              );
+              if (!dynamoDbTable) {
+                throw new Error(
+                  `Unable to resolve dynamodb table dependency of ${lambdaResource.name}: table ${mergedMetadata.id} could not be found.`
+                );
+              }
+              if (
+                mergedMetadata.permissions?.read &&
+                mergedMetadata.permissions.write
+              ) {
+                dynamoDbTable.grantReadWriteData(nodeJsFunction);
+                debug(
+                  `       -- GRANT: READ/WRITE on ${mergedMetadata.id} TO ${lambdaResource.name}`
+                );
+              } else if (mergedMetadata.permissions?.read) {
+                debug(
+                  `       -- GRANT: READ on ${mergedMetadata.id} TO ${lambdaResource.name}`
+                );
+                dynamoDbTable.grantReadData(nodeJsFunction);
+              } else if (mergedMetadata.permissions?.write) {
+                debug(
+                  `       -- GRANT: WRITE on ${mergedMetadata.id} TO ${lambdaResource.name}`
+                );
+                dynamoDbTable.grantWriteData(nodeJsFunction);
+              }
+            }
           }
 
           return nodeJsFunction;
@@ -207,10 +249,52 @@ export class ApiStack extends Stack {
       );
     });
 
+    // Create user pools for all the user pool modules found in the app tree
     const userPools = userPoolResources.map((userPoolResource) => {
       debug(
         ` -- ${c.green('USER POOL')} ${userPoolResource.mergedMetadata.id}`
       );
+      const { lambdaTriggers = {} } = userPoolResource.mergedMetadata;
+      const userPoolTriggers: {
+        -readonly [K in keyof UserPoolTriggers]: UserPoolTriggers[K];
+      } = {};
+
+      // Resolve cognito trigger lambdas
+      for (const [triggerKey, triggerFnModule] of Object.entries(
+        lambdaTriggers
+      )) {
+        const triggerLambdaMetadata =
+          triggerFnModule.resourceMetadata as ResourceMetadata<ResourceType.LAMBDA_FUNCTION>;
+        if (
+          !triggerLambdaMetadata ||
+          triggerLambdaMetadata.type !== ResourceType.LAMBDA_FUNCTION
+        ) {
+          throw new Error(
+            `Cognito trigger ${triggerKey} in ${userPoolResource.mergedMetadata.id} is not a lambda resource`
+          );
+        }
+        if (triggerLambdaMetadata.lambdaType !== LambdaType.STANDARD) {
+          throw new Error(
+            `Cognito trigger ${triggerKey} in ${userPoolResource.mergedMetadata.id} is not a standard lambda resource. API resources can't be used as trigger handlers.`
+          );
+        }
+        const triggerLambdaResource = lambdaResources.find(
+          (lambdaResource) =>
+            lambdaResource.mergedMetadata.id === triggerLambdaMetadata.id
+        );
+        if (!triggerLambdaResource) {
+          throw new Error(
+            `Unable to find ${triggerKey}: ${triggerFnModule.name} - did you forget to import it?`
+          );
+        }
+        userPoolTriggers[triggerKey] =
+          triggerLambdaResource.getNodeJsFunction();
+
+        debug(
+          `   -- ${triggerKey}: ${triggerFnModule.name} -> ${triggerLambdaResource.resourceId}`
+        );
+      }
+
       return new AppUserPool(
         this,
         `user-pool-${userPoolResource.mergedMetadata.id}`,
@@ -218,6 +302,7 @@ export class ApiStack extends Stack {
           userPoolResource,
           domainPrefix:
             userPoolDomainPrefixes[userPoolResource.mergedMetadata.id],
+          lambdaTriggers: userPoolTriggers,
         }
       );
     });
@@ -410,47 +495,9 @@ export class ApiStack extends Stack {
         )
       );
 
+      // Get the API gateway rest api for the domain and register the lambda's routes
       const restApi = getRestApi(lambdaResource.resourceMetadata.domain);
       debug(`    -- Rest API: ${restApi.node.id}`);
-      // Gather dynamo table and grant access
-      const childDynamoDbTableResources = collectMergedModuleResources(
-        lambdaResource.module,
-        ResourceType.DYNAMO_TABLE
-      );
-
-      for (const {
-        resourceId,
-        mergedMetadata,
-      } of childDynamoDbTableResources) {
-        debug(`   -- Table - ${resourceId}`);
-        const dynamoDbTable = dynamoTables.find(
-          (table) => table.nestResource.mergedMetadata.id === resourceId
-        );
-        if (!dynamoDbTable) {
-          throw new Error(
-            `Unable to resolve dynamodb table dependency of ${lambdaResource.name}: table ${mergedMetadata.id} could not be found.`
-          );
-        }
-        if (
-          mergedMetadata.permissions?.read &&
-          mergedMetadata.permissions.write
-        ) {
-          dynamoDbTable.grantReadWriteData(fn);
-          debug(
-            `       -- GRANT: READ/WRITE on ${mergedMetadata.id} TO ${lambdaResource.name}`
-          );
-        } else if (mergedMetadata.permissions?.read) {
-          debug(
-            `       -- GRANT: READ on ${mergedMetadata.id} TO ${lambdaResource.name}`
-          );
-          dynamoDbTable.grantReadData(fn);
-        } else if (mergedMetadata.permissions?.write) {
-          debug(
-            `       -- GRANT: WRITE on ${mergedMetadata.id} TO ${lambdaResource.name}`
-          );
-          dynamoDbTable.grantWriteData(fn);
-        }
-      }
 
       // Add API gateway routes for the lambda
       const routes = collectModuleRoutes(lambdaResource.module);

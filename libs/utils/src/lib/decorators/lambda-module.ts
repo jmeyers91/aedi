@@ -14,6 +14,7 @@ import {
   LambdaMetadata,
   LambdaType,
   Resource,
+  ResourceMetadata,
   ResourceType,
   getResourceMetadata,
 } from './resource-module';
@@ -31,8 +32,9 @@ export function LambdaModule(
     handlerFilePath,
     lambdaType = LambdaType.API,
     handlerService,
+    name,
     ...rest
-  }: Partial<LambdaMetadata> = {}
+  }: Pick<LambdaMetadata, 'name'> & Partial<LambdaMetadata>
 ) {
   const absoluteHandlerFilePath =
     handlerFilePath ?? callsites()[1]?.getFileName();
@@ -43,7 +45,16 @@ export function LambdaModule(
 
   const relativeHandlerFilePath = relative('.', absoluteHandlerFilePath);
 
+  const resourceMetadata: ResourceMetadata<ResourceType.LAMBDA_FUNCTION> = {
+    ...rest,
+    name,
+    type: ResourceType.LAMBDA_FUNCTION,
+    lambdaType,
+    id: `${relativeHandlerFilePath}-${name}`,
+    handlerFilePath: relativeHandlerFilePath,
+  };
   const addHandlerFunctionDecorator: ClassDecorator = (target: any) => {
+    target.resourceMetadata = resourceMetadata;
     if (lambdaType === LambdaType.API) {
       target.lambdaHandler = createNestApiLambdaHandler(
         target?.withControllers?.() ?? target
@@ -60,13 +71,7 @@ export function LambdaModule(
   };
 
   return applyDecorators(
-    Resource({
-      ...rest,
-      type: ResourceType.LAMBDA_FUNCTION,
-      lambdaType,
-      id: relativeHandlerFilePath,
-      handlerFilePath: relativeHandlerFilePath,
-    }),
+    Resource(resourceMetadata),
     Module(metadata),
     addHandlerFunctionDecorator
   );
@@ -125,8 +130,13 @@ export function createNestLambdaHandler(
     context: Context,
     callback: Callback
   ) => {
-    lambdaEventHandler = lambdaEventHandler ?? (await bootstrap());
-    return lambdaEventHandler.handleLambdaEvent(event, context, callback);
+    try {
+      lambdaEventHandler = lambdaEventHandler ?? (await bootstrap());
+      const result = await lambdaEventHandler.handleLambdaEvent(event, context);
+      callback(null, result);
+    } catch (error) {
+      callback(error as Error);
+    }
   };
 
   return handler;

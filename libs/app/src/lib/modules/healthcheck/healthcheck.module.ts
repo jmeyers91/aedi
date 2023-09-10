@@ -5,9 +5,14 @@ import { CountTableModule } from '../../tables/count.table';
 
 export * from './healthcheck.controller';
 
-@LambdaModule({
-  imports: [CountTableModule.grant({ write: true })],
-})
+@LambdaModule(
+  {
+    imports: [CountTableModule.grant({ write: true })],
+  },
+  {
+    name: 'healthcheck-module',
+  }
+)
 export class HealthcheckModule {
   static withControllers(): DynamicModule {
     return { module: this, controllers: [HealthcheckController] };

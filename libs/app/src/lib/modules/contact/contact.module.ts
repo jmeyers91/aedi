@@ -7,11 +7,19 @@ import { ContactTableModule } from '../../tables/contact.table';
 
 export * from './contact.service';
 
-@LambdaModule({
-  imports: [UserModule, ContactTableModule.grant({ read: true, write: true })],
-  providers: [ContactService],
-  exports: [ContactService],
-})
+@LambdaModule(
+  {
+    imports: [
+      UserModule,
+      ContactTableModule.grant({ read: true, write: true }),
+    ],
+    providers: [ContactService],
+    exports: [ContactService],
+  },
+  {
+    name: 'contact-module',
+  }
+)
 export class ContactModule {
   static withControllers(): DynamicModule {
     return { module: this, controllers: [ContactController] };

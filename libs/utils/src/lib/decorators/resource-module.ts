@@ -33,15 +33,16 @@ export enum LambdaType {
 }
 
 export interface ILambdaEventHandler {
-  handleLambdaEvent(event: unknown, context: Context, callback: Callback): any;
+  handleLambdaEvent(event: unknown, context: Context): any;
 }
 
 export interface ResourceValueMap extends Record<ResourceType, object> {
   [ResourceType.LAMBDA_FUNCTION]: {
     id: string;
+    name: string;
     lambdaType: LambdaType;
     handlerFilePath: string;
-    handlerService?: { new (): ILambdaEventHandler };
+    handlerService?: { new (...args: any[]): ILambdaEventHandler };
     domain?: DomainId;
     allowCorsDomains?: DomainId[];
   };
@@ -66,6 +67,20 @@ export interface ResourceValueMap extends Record<ResourceType, object> {
 
   [ResourceType.USER_POOL]: {
     id: UserPoolId;
+    lambdaTriggers?: {
+      createAuthChallenge?: any; // Creates an authentication challenge.
+      customEmailSender?: any; // Amazon Cognito invokes this trigger to send email notifications to users.
+      customMessage?: any; // A custom Message AWS Lambda trigger.
+      customSmsSender?: any; // Amazon Cognito invokes this trigger to send SMS notifications to users.
+      defineAuthChallenge?: any; // Defines the authentication challenge.
+      postAuthentication?: any; // A post-authentication AWS Lambda trigger.
+      postConfirmation?: any; // A post-confirmation AWS Lambda trigger.
+      preAuthentication?: any; // A pre-authentication AWS Lambda trigger.
+      preSignUp?: any; // A pre-registration AWS Lambda trigger.
+      preTokenGeneration?: any; // A pre-token-generation AWS Lambda trigger.
+      userMigration?: any; // A user-migration AWS Lambda trigger.
+      verifyAuthChallengeResponse?: any; // Verifies the authentication challenge response.
+    };
   };
 }
 
