@@ -6,7 +6,7 @@
     "build": "npx nx run-many -t build",
     "dev": "npx nx serve sep6",
     "cdk": "rm -rf cdk.out && npm run build && npx cdk --profile admin --region us-west-2",
-    "api:deploy": "npm run cdk deploy sep6-api-stack",
+    "api:deploy": "paws admin && npm run cdk deploy sep6-api-stack",
     "api:diff": "./scripts/diff-api",
     "play": "npx ts-node ./scripts/play.ts"
   },
@@ -19,6 +19,7 @@
     "@nestjs/core": "^10.0.2",
     "@nestjs/platform-express": "^10.0.2",
     "@swc/helpers": "~0.5.0",
+    "@tanstack/react-query": "^4.35.0",
     "@vendia/serverless-express": "^4.10.4",
     "aws-amplify": "^5.3.10",
     "aws-lambda": "^1.0.7",

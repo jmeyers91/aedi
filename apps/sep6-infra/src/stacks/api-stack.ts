@@ -490,7 +490,7 @@ export class ApiStack extends Stack {
         const streamFn = triggerLambdaResource.getNodeJsFunction();
         new CfnEventSourceMapping(
           eventSourceMappings,
-          `${dynamoTable.nestResource.mergedMetadata.id}-${triggerLambdaResource.mergedMetadata.moduleName}`,
+          `${dynamoTable.nestResource.mergedMetadata.id}-${triggerLambdaResource.mergedMetadata.lambdaName}`,
           {
             functionName: streamFn.functionName,
             eventSourceArn: dynamoTable.tableStreamArn,
@@ -559,11 +559,11 @@ export class ApiStack extends Stack {
         return [];
       }
       debug(
-        `-- ${c.cyan('LAMBDA')} ${lambdaResource.name} -> ${
-          lambdaResource.resourceMetadata.handlerFilePath
-        } (domain = ${
+        `-- ${c.cyan('LAMBDA')} ${
+          lambdaResource.resourceMetadata.lambdaName
+        } -> ${lambdaResource.resourceMetadata.handlerFilePath} (domain = ${
           lambdaResource.resourceMetadata.domain ?? 'NO DOMAIN'
-        }) (moduleName = ${lambdaResource.resourceMetadata.moduleName})`
+        })`
       );
 
       // Allow lambda modules to specify the specific domains they want to allow CORS requests from.

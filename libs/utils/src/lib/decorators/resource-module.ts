@@ -104,7 +104,7 @@ export type ResourceMetadata<
   K extends keyof ResourceValueMap = keyof ResourceValueMap
 > = {
   [K in keyof ResourceValueMap]: { type: K } & ResourceValueMap[K];
-}[K] & { moduleName?: string };
+}[K];
 
 export type DynamicResourceModule<
   K extends keyof ResourceValueMap = keyof ResourceValueMap

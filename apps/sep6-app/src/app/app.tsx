@@ -1,9 +1,15 @@
 import { Authenticator, useAuthenticator } from '@aws-amplify/ui-react';
 import { getModuleClient } from '../module-client';
+import { useQuery } from '@tanstack/react-query';
 
 export function App() {
   const { route } = useAuthenticator((context) => [context.route]);
   const { user, signOut } = useAuthenticator((context) => [context.user]);
+  const contactCountQuery = useQuery(
+    ['contact-count'],
+    async () =>
+      (await getModuleClient('HealthcheckModule').get('/count/contacts')).data
+  );
   const isAuthenticated = route === 'authenticated';
 
   return (
@@ -96,6 +102,7 @@ export function App() {
       ) : (
         <Authenticator />
       )}
+      <h2>{contactCountQuery.data ?? null}</h2>
     </div>
   );
 }
