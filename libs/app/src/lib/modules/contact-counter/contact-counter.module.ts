@@ -7,7 +7,6 @@ import { CountTableModule } from '../../tables/count.table';
     imports: [CountTableModule.grant({ write: true })],
   },
   {
-    name: 'contact-counter-module',
     lambdaType: LambdaType.STANDARD,
     handlerService: ContactCounterService,
   }

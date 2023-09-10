@@ -8,25 +8,20 @@ import { ContactImageBucketModule } from '../../buckets/contact-image/contact-im
 
 export * from './contact.service';
 
-@LambdaModule(
-  {
-    imports: [
-      UserModule,
-      ContactTableModule.grant({ read: true, write: true }),
-      ContactImageBucketModule.grant({
-        read: true,
-        write: true,
-        put: true,
-        delete: true,
-      }),
-    ],
-    providers: [ContactService],
-    exports: [ContactService],
-  },
-  {
-    name: 'contact-module',
-  }
-)
+@LambdaModule({
+  imports: [
+    UserModule,
+    ContactTableModule.grant({ read: true, write: true }),
+    ContactImageBucketModule.grant({
+      read: true,
+      write: true,
+      put: true,
+      delete: true,
+    }),
+  ],
+  providers: [ContactService],
+  exports: [ContactService],
+})
 export class ContactModule {
   static withControllers(): DynamicModule {
     return { module: this, controllers: [ContactController] };

@@ -243,8 +243,8 @@ export function collectMergedModuleResources<T extends ResourceType>(
 
     for (const other of resourceNodes.slice(1)) {
       mergedMetadata = mergeResourceMetadata(
-        mergedMetadata,
-        other.resourceMetadata
+        mergedMetadata as any,
+        other.resourceMetadata as any
       );
     }
 

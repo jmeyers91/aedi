@@ -120,16 +120,16 @@ export class ApiStack extends Stack {
       AppModule,
       ResourceType.LAMBDA_FUNCTION
     ).map((lambdaResourceGroup) => {
+      const lambdaModuleName = lambdaResourceGroup.mergedMetadata.moduleName;
       let nodeJsFunction: NodejsFunction;
       return {
         ...lambdaResourceGroup,
         getNodeJsFunction: (): NodejsFunction => {
           if (!nodeJsFunction) {
-            const name = lambdaResourceGroup.resourceNodes[0].name;
-            nodeJsFunction = new NodejsFunction(this, name, {
+            nodeJsFunction = new NodejsFunction(this, lambdaModuleName, {
               runtime: Runtime.NODEJS_18_X,
               entry: lambdaResourceGroup.mergedMetadata.handlerFilePath,
-              handler: `index.${name}.lambdaHandler`,
+              handler: `index.${lambdaModuleName}.lambdaHandler`,
               timeout: Duration.seconds(15),
               bundling: {
                 externalModules: [
@@ -148,7 +148,7 @@ export class ApiStack extends Stack {
 
             for (const {
               resourceId,
-              mergedMetadata,
+              mergedMetadata: tableMetadata,
             } of childDynamoDbTableResources) {
               debug(`   -- Table - ${resourceId}`);
               const dynamoDbTable = dynamoTables.find(
@@ -156,25 +156,25 @@ export class ApiStack extends Stack {
               );
               if (!dynamoDbTable) {
                 throw new Error(
-                  `Unable to resolve dynamodb table dependency of ${lambdaResource.name}: table ${mergedMetadata.id} could not be found.`
+                  `Unable to resolve dynamodb table dependency of ${lambdaResource.name}: table ${tableMetadata.id} could not be found.`
                 );
               }
               if (
-                mergedMetadata.permissions?.read &&
-                mergedMetadata.permissions.write
+                tableMetadata.permissions?.read &&
+                tableMetadata.permissions.write
               ) {
                 dynamoDbTable.grantReadWriteData(nodeJsFunction);
                 debug(
-                  `       -- GRANT: READ/WRITE on ${mergedMetadata.id} TO ${lambdaResource.name}`
+                  `       -- GRANT: READ/WRITE on ${tableMetadata.id} TO ${lambdaResource.name}`
                 );
-              } else if (mergedMetadata.permissions?.read) {
+              } else if (tableMetadata.permissions?.read) {
                 debug(
-                  `       -- GRANT: READ on ${mergedMetadata.id} TO ${lambdaResource.name}`
+                  `       -- GRANT: READ on ${tableMetadata.id} TO ${lambdaResource.name}`
                 );
                 dynamoDbTable.grantReadData(nodeJsFunction);
-              } else if (mergedMetadata.permissions?.write) {
+              } else if (tableMetadata.permissions?.write) {
                 debug(
-                  `       -- GRANT: WRITE on ${mergedMetadata.id} TO ${lambdaResource.name}`
+                  `       -- GRANT: WRITE on ${tableMetadata.id} TO ${lambdaResource.name}`
                 );
                 dynamoDbTable.grantWriteData(nodeJsFunction);
               }
@@ -186,18 +186,21 @@ export class ApiStack extends Stack {
               ResourceType.S3_BUCKET
             );
 
-            for (const { resourceId, mergedMetadata } of childBucketResources) {
+            for (const {
+              resourceId,
+              mergedMetadata: bucketMetadata,
+            } of childBucketResources) {
               debug(`   -- Bucket - ${resourceId}`);
               const bucket = buckets.find(
                 (bucket) =>
-                  bucket.bucketResource.mergedMetadata.id === mergedMetadata.id
+                  bucket.bucketResource.mergedMetadata.id === bucketMetadata.id
               );
               if (!bucket) {
                 throw new Error(
-                  `Unable to resolve S3 bucket dependency of ${lambdaResource.name}: bucket ${mergedMetadata.id} could not be found.`
+                  `Unable to resolve S3 bucket dependency of ${lambdaResource.name}: bucket ${bucketMetadata.id} could not be found.`
                 );
               }
-              const permissions = mergedMetadata.permissions ?? {};
+              const permissions = bucketMetadata.permissions ?? {};
               if (permissions.read) {
                 debug(`       -- GRANT: READ`);
                 bucket.grantRead(nodeJsFunction);
@@ -487,7 +490,7 @@ export class ApiStack extends Stack {
         const streamFn = triggerLambdaResource.getNodeJsFunction();
         new CfnEventSourceMapping(
           eventSourceMappings,
-          `${dynamoTable.nestResource.mergedMetadata.id}-${triggerLambdaResource.mergedMetadata.name}`,
+          `${dynamoTable.nestResource.mergedMetadata.id}-${triggerLambdaResource.mergedMetadata.moduleName}`,
           {
             functionName: streamFn.functionName,
             eventSourceArn: dynamoTable.tableStreamArn,
@@ -558,7 +561,9 @@ export class ApiStack extends Stack {
       debug(
         `-- ${c.cyan('LAMBDA')} ${lambdaResource.name} -> ${
           lambdaResource.resourceMetadata.handlerFilePath
-        } (${lambdaResource.resourceMetadata.domain ?? 'NO DOMAIN'})`
+        } (domain = ${
+          lambdaResource.resourceMetadata.domain ?? 'NO DOMAIN'
+        }) (moduleName = ${lambdaResource.resourceMetadata.moduleName})`
       );
 
       // Allow lambda modules to specify the specific domains they want to allow CORS requests from.

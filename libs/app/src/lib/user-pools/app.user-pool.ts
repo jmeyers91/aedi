@@ -36,7 +36,6 @@ class EventHandler implements ILambdaEventHandler {
     imports: [CountTableModule.grant({ write: true })],
   },
   {
-    name: 'app-user-pool-event-handler',
     lambdaType: LambdaType.STANDARD,
     handlerService: EventHandler,
   }

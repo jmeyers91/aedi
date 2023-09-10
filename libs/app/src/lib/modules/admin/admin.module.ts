@@ -9,7 +9,6 @@ import { DomainId } from '@sep6/constants';
     imports: [ContactModule],
   },
   {
-    name: 'admin-module',
     domain: DomainId.ADMIN_API,
     allowCorsDomains: [DomainId.ADMIN],
   }

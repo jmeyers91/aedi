@@ -41,7 +41,7 @@ export interface ILambdaEventHandler {
 export interface ResourceValueMap extends Record<ResourceType, object> {
   [ResourceType.LAMBDA_FUNCTION]: {
     id: string;
-    name: string;
+    moduleName: string;
     lambdaType: LambdaType;
     handlerFilePath: string;
     handlerService?: { new (...args: any[]): ILambdaEventHandler };
@@ -104,7 +104,7 @@ export type ResourceMetadata<
   K extends keyof ResourceValueMap = keyof ResourceValueMap
 > = {
   [K in keyof ResourceValueMap]: { type: K } & ResourceValueMap[K];
-}[K];
+}[K] & { moduleName?: string };
 
 export type DynamicResourceModule<
   K extends keyof ResourceValueMap = keyof ResourceValueMap

@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   DynamicModule,
-  INestApplicationContext,
   Module,
   ModuleMetadata,
   NestModule,
@@ -32,12 +31,12 @@ export function LambdaModule(
     handlerFilePath,
     lambdaType = LambdaType.API,
     handlerService,
-    name,
+    moduleName,
     ...rest
-  }: Pick<LambdaMetadata, 'name'> & Partial<LambdaMetadata>
+  }: Partial<LambdaMetadata> = {}
 ) {
-  const absoluteHandlerFilePath =
-    handlerFilePath ?? callsites()[1]?.getFileName();
+  const callsite = callsites()[1];
+  const absoluteHandlerFilePath = handlerFilePath ?? callsite?.getFileName();
 
   if (!absoluteHandlerFilePath) {
     throw new Error(`Unable to find lambda handler`);
@@ -47,14 +46,23 @@ export function LambdaModule(
 
   const resourceMetadata: ResourceMetadata<ResourceType.LAMBDA_FUNCTION> = {
     ...rest,
-    name,
+    id: ``, // Set in `initLambdaModule`
+    moduleName: '', // Set in `initLambdaModule`
     type: ResourceType.LAMBDA_FUNCTION,
     lambdaType,
-    id: `${relativeHandlerFilePath}-${name}`,
     handlerFilePath: relativeHandlerFilePath,
   };
-  const addHandlerFunctionDecorator: ClassDecorator = (target: any) => {
+
+  const initLambdaModule: ClassDecorator = (target: any) => {
+    // The module class name will be used to identitify the lambda's CDK resource.
+    // This could be an issue if we end up with duplicate lambda module class names.
+    // Set the lambda's `moduleName` input to use an alternative name in case of collisions.
+    resourceMetadata.moduleName = moduleName ?? target.name; // Add the target class name to the lambda metadata
+
+    // Combine the relative file path and the module name to get an id that should be unique
+    resourceMetadata.id = `${relativeHandlerFilePath}-${target.name}`;
     target.resourceMetadata = resourceMetadata;
+
     if (lambdaType === LambdaType.API) {
       target.lambdaHandler = createNestApiLambdaHandler(
         target?.withControllers?.() ?? target
@@ -73,7 +81,7 @@ export function LambdaModule(
   return applyDecorators(
     Resource(resourceMetadata),
     Module(metadata),
-    addHandlerFunctionDecorator
+    initLambdaModule
   );
 }
 
