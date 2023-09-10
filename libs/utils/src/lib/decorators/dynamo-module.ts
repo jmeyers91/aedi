@@ -57,7 +57,10 @@ export function DynamoModule(
   return applyDecorators(
     Resource(metadata),
     Module({
-      imports: moduleMetadata.imports,
+      imports: [
+        ...(metadata.streams?.map((stream) => stream.lambda) ?? []),
+        ...(moduleMetadata.imports ?? []),
+      ],
       controllers: moduleMetadata.controllers,
       providers: [
         { provide: DYNAMO_METADATA, useValue: metadata },

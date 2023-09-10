@@ -1,3 +1,4 @@
+import { Injectable } from '@nestjs/common';
 import { TableId } from '@sep6/constants';
 import {
   AttributeType,
@@ -11,6 +12,7 @@ export interface CountTableRow {
   count: number;
 }
 
+@Injectable()
 export class CountTable extends DynamoTable<
   CountTableRow,
   { counterId: string }

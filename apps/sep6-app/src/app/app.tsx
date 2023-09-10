@@ -31,6 +31,22 @@ export function App() {
         </button>
         <button
           onClick={async () => {
+            const response = await getModuleClient('ContactModule').post(
+              '/contacts',
+              {
+                firstName: 'joe',
+                lastName: 'schmoe',
+                email: 'joe.schmoe@example.com',
+                phone: '+15551231234',
+              }
+            );
+            console.log('Contact created', response.data);
+          }}
+        >
+          Create contact
+        </button>
+        <button
+          onClick={async () => {
             const response = await getModuleClient('UserModule').get('/user', {
               headers: {
                 Authorization: 'jim',

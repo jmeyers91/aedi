@@ -22,8 +22,12 @@ import {
 } from '@sep6/utils';
 import { AppModule } from '@sep6/app';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
-import { Runtime } from 'aws-cdk-lib/aws-lambda';
-import { AttributeType, TableV2 } from 'aws-cdk-lib/aws-dynamodb';
+import { CfnEventSourceMapping, Runtime } from 'aws-cdk-lib/aws-lambda';
+import {
+  AttributeType,
+  StreamViewType,
+  TableV2,
+} from 'aws-cdk-lib/aws-dynamodb';
 import { WebApp, WebAppDns } from '../constructs/web-app';
 import { resolve } from 'path';
 import { DomainId, UserPoolId } from '@sep6/constants';
@@ -229,9 +233,10 @@ export class ApiStack extends Stack {
 
       debug(` -- ${c.red('TABLE')} ${dynamoResource.mergedMetadata.id}`);
 
-      return Object.assign(
+      const table = Object.assign(
         new TableV2(new Construct(this, metadata.id), metadata.id, {
           tableName: metadata.id,
+
           partitionKey: {
             name: metadata.partitionKey.name,
             type: AttributeType[metadata.partitionKey.type],
@@ -244,9 +249,16 @@ export class ApiStack extends Stack {
                 },
               }
             : {}),
+          ...(dynamoResource.mergedMetadata.streams?.length
+            ? {
+                dynamoStream: StreamViewType.NEW_AND_OLD_IMAGES, // TODO: Make this configurable
+              }
+            : {}),
         }),
         { nestResource: dynamoResource }
       );
+
+      return table;
     });
 
     // Create user pools for all the user pool modules found in the app tree
@@ -316,8 +328,6 @@ export class ApiStack extends Stack {
       return pool;
     };
 
-    const NO_DOMAIN = Symbol('NO_DOMAIN');
-    const restApis = new Map<string | typeof NO_DOMAIN, RestApi>([]);
     const defaultCorsPreflightOptions: CorsOptions = {
       allowCredentials: true,
       // Allow all origins
@@ -326,6 +336,10 @@ export class ApiStack extends Stack {
         .filter(Boolean)
         .map((domainName) => `https://${domainName}`),
     };
+
+    // Mapping from domains to rest APIs
+    const NO_DOMAIN = Symbol('NO_DOMAIN');
+    const restApis = new Map<string | typeof NO_DOMAIN, RestApi>([]);
     const getRestApi = (metadataDomainId: DomainId | null | undefined) => {
       const domainId = metadataDomainId ?? defaultApiDomain;
       const domainPair = domainId ? domainMap.get(domainId) : null;
@@ -388,6 +402,7 @@ export class ApiStack extends Stack {
       return restApi;
     };
 
+    // Mapping from user pools to cognito authorizers
     const cognitoAuthorizers = new Map<string, CognitoUserPoolsAuthorizer>();
     const getCognitoAuthorizer = (userPool: AppUserPool) => {
       const authorizerId = `${userPool.userPoolResource.mergedMetadata.id}-authorizer`;
@@ -400,6 +415,45 @@ export class ApiStack extends Stack {
       }
       return authorizer;
     };
+
+    // Connect dynamo tables to lambdas with event streams
+    const eventSourceMappings = new Construct(this, 'event-source-mappings');
+    for (const dynamoTable of dynamoTables) {
+      const dynamoResource = dynamoTable.nestResource;
+      for (const streamConfig of dynamoResource.mergedMetadata.streams ?? []) {
+        const triggerLambdaMetadata = streamConfig.lambda
+          .resourceMetadata as ResourceMetadata<ResourceType.LAMBDA_FUNCTION>;
+        const triggerLambdaResource = lambdaResources.find(
+          (lambdaResource) =>
+            lambdaResource.mergedMetadata.id === triggerLambdaMetadata.id
+        );
+        debug(
+          `   -- STREAM ${streamConfig.lambda.name} -> ${triggerLambdaResource?.mergedMetadata.handlerFilePath}`
+        );
+        if (!triggerLambdaResource) {
+          throw new Error(
+            `Could not resolve dynamo table ${dynamoResource.mergedMetadata.id} stream lambda ${streamConfig.lambda.name}`
+          );
+        }
+        const streamFn = triggerLambdaResource.getNodeJsFunction();
+        new CfnEventSourceMapping(
+          eventSourceMappings,
+          `${dynamoTable.nestResource.mergedMetadata.id}-${triggerLambdaResource.mergedMetadata.name}`,
+          {
+            functionName: streamFn.functionName,
+            eventSourceArn: dynamoTable.tableStreamArn,
+            batchSize: streamConfig.batchSize,
+            filterCriteria: streamConfig.filterCriteria ?? {
+              filters: streamConfig.filterPatterns?.map((pattern) => ({
+                pattern: JSON.stringify(pattern),
+              })),
+            },
+            startingPosition: streamConfig.startingPosition,
+          }
+        );
+        dynamoTable.grantStreamRead(streamFn);
+      }
+    }
 
     // Create lambdas for all the lambda modules found in the app tree
     const apiLambdas = lambdaResources.flatMap((lambdaResourceGroup) => {

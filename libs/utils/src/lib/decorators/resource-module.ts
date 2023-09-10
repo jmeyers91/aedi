@@ -9,7 +9,8 @@ import {
 } from '@sep6/constants';
 import { reflector } from '../reflector';
 import { NestModule, mergeResourceMetadata } from '../reflect-utils';
-import { Callback, Context } from 'aws-lambda';
+import type { CfnEventSourceMapping } from 'aws-cdk-lib/aws-lambda';
+import { Context } from 'aws-lambda';
 
 export const RESOURCE_METADATA = Symbol('RESOURCE_METADATA');
 
@@ -56,6 +57,13 @@ export interface ResourceValueMap extends Record<ResourceType, object> {
     partitionKey: { name: string; type: AttributeType };
     sortKey?: { name: string; type: AttributeType };
     permissions?: { read?: boolean; write?: boolean };
+    streams?: {
+      lambda: any;
+      batchSize?: number;
+      filterPatterns?: { eventName?: string[]; [key: string]: any }[];
+      filterCriteria?: CfnEventSourceMapping.FilterCriteriaProperty;
+      startingPosition: 'TRIM_HORIZON' | 'LATEST';
+    }[];
   };
 
   [ResourceType.WEB_APP]: {
