@@ -45,6 +45,7 @@ import * as targets from 'aws-cdk-lib/aws-route53-targets';
 import { debug } from '../utils/debug';
 import { AppUserPool } from '../constructs/app-user-pool';
 import { UserPoolClient, UserPoolTriggers } from 'aws-cdk-lib/aws-cognito';
+import { Bucket } from 'aws-cdk-lib/aws-s3';
 
 export interface ApiStackProps {
   env: Environment;
@@ -138,7 +139,7 @@ export class ApiStack extends Stack {
               },
             });
 
-            // Gather dynamo table and grant access
+            // Gather dependency dynamo tables and grant access
             const lambdaResource = lambdaResourceGroup.resourceNodes[0];
             const childDynamoDbTableResources = collectMergedModuleResources(
               lambdaResource.module,
@@ -178,12 +179,53 @@ export class ApiStack extends Stack {
                 dynamoDbTable.grantWriteData(nodeJsFunction);
               }
             }
+
+            // Gather dependency S3 buckets and grant access
+            const childBucketResources = collectMergedModuleResources(
+              lambdaResource.module,
+              ResourceType.S3_BUCKET
+            );
+
+            for (const { resourceId, mergedMetadata } of childBucketResources) {
+              debug(`   -- Bucket - ${resourceId}`);
+              const bucket = buckets.find(
+                (bucket) =>
+                  bucket.bucketResource.mergedMetadata.id === mergedMetadata.id
+              );
+              if (!bucket) {
+                throw new Error(
+                  `Unable to resolve S3 bucket dependency of ${lambdaResource.name}: bucket ${mergedMetadata.id} could not be found.`
+                );
+              }
+              const permissions = mergedMetadata.permissions ?? {};
+              if (permissions.read) {
+                debug(`       -- GRANT: READ`);
+                bucket.grantRead(nodeJsFunction);
+              }
+              if (permissions.write) {
+                debug(`       -- GRANT: WRITE`);
+                bucket.grantWrite(nodeJsFunction);
+              }
+              if (permissions.put) {
+                debug(`       -- GRANT: PUT`);
+                bucket.grantPut(nodeJsFunction);
+              }
+              if (permissions.delete) {
+                debug(`       -- GRANT: DELETE`);
+                bucket.grantDelete(nodeJsFunction);
+              }
+            }
           }
 
           return nodeJsFunction;
         },
       };
     });
+
+    const bucketResources = collectMergedModuleResources(
+      AppModule,
+      ResourceType.S3_BUCKET
+    );
     const dynamoResources = collectMergedModuleResources(
       AppModule,
       ResourceType.DYNAMO_TABLE
@@ -225,6 +267,13 @@ export class ApiStack extends Stack {
       }
 
       return { ...webAppResource, dns };
+    });
+
+    // Create S3 buckets for all the bucket modules found in the app tree
+    const buckets = bucketResources.map((bucketResource) => {
+      const metadata = bucketResource.mergedMetadata;
+
+      return Object.assign(new Bucket(this, metadata.id), { bucketResource });
     });
 
     // Create dynamo tables for all the dynamo modules found in the app tree

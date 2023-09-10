@@ -51,6 +51,12 @@ export interface ResourceValueMap extends Record<ResourceType, object> {
 
   [ResourceType.S3_BUCKET]: {
     id: BucketId;
+    permissions?: {
+      read?: boolean;
+      write?: boolean;
+      delete?: boolean;
+      put?: boolean;
+    };
   };
 
   [ResourceType.DYNAMO_TABLE]: {

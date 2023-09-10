@@ -1,5 +1,5 @@
 export enum BucketId {
-  CONTACT_PHOTO_BUCKET = 'contact-photo-bucket',
+  CONTACT_IMAGE_BUCKET = 'contact-image-bucket',
 }
 
 export enum TableId {

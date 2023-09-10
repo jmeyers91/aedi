@@ -1,22 +1,54 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Module, ModuleMetadata, Type, applyDecorators } from '@nestjs/common';
 import {
+  Inject,
+  Module,
+  ModuleMetadata,
+  Type,
+  applyDecorators,
+} from '@nestjs/common';
+import {
+  DynamicResourceModule,
   BucketMetadata,
+  RESOURCE_METADATA,
   Resource,
   ResourceType,
   getResourceMetadata,
 } from './resource-module';
 
-export function BucketModule({
-  imports,
-  exports,
-  controllers,
-  providers,
-  ...rest
-}: ModuleMetadata & Omit<BucketMetadata, 'type'>) {
+const BUCKET_METADATA = Symbol('BUCKET_METADATA');
+
+const DEFAULT_BUCKET_PERMISSIONS: BucketMetadata['permissions'] = {
+  read: true,
+  write: false,
+};
+
+export function BucketModule(
+  bucketProvider: {
+    metadata: Omit<BucketMetadata, 'type'>;
+    new (...args: any[]): BucketService;
+  },
+  moduleMetadata: ModuleMetadata = {}
+) {
+  const metadata: BucketMetadata = {
+    ...bucketProvider.metadata,
+    permissions: {
+      ...DEFAULT_BUCKET_PERMISSIONS,
+      ...bucketProvider.metadata.permissions,
+    },
+    type: ResourceType.S3_BUCKET,
+  };
   return applyDecorators(
-    Resource({ ...rest, type: ResourceType.S3_BUCKET }),
-    Module({ imports, exports, controllers, providers })
+    Resource(metadata),
+    Module({
+      imports: moduleMetadata.imports,
+      controllers: moduleMetadata.controllers,
+      providers: [
+        { provide: BUCKET_METADATA, useValue: metadata },
+        bucketProvider,
+        ...(moduleMetadata.providers ?? []),
+      ],
+      exports: [bucketProvider, ...(moduleMetadata.exports ?? [])],
+    })
   );
 }
 
@@ -26,19 +58,38 @@ export function getBucketMetadata(
   return getResourceMetadata(module, ResourceType.S3_BUCKET);
 }
 
-export class Bucket {
-  constructor(public readonly metadata: BucketMetadata) {}
-  async listObjects(): Promise<{ Key: string }[]> {
-    return [];
-  }
+export function mergeBucketMetadata<A extends BucketMetadata>(
+  a: A,
+  b: BucketMetadata
+): A {
+  return {
+    ...a,
+    ...b,
+    permissions: {
+      read: (a.permissions?.read ?? false) || (b.permissions?.read ?? false),
+      write: (a.permissions?.write ?? false) || (b.permissions?.write ?? false),
+      put: (a.permissions?.put ?? false) || (b.permissions?.put ?? false),
+      delete:
+        (a.permissions?.delete ?? false) || (b.permissions?.delete ?? false),
+    },
+  };
+}
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  async putFile(key: string, _: string) {
-    console.log(`Saving file ${key} to bucket ${this.metadata.id}`);
+export class BaseBucketModule {
+  static grant(
+    permissions: BucketMetadata['permissions']
+  ): DynamicResourceModule<ResourceType.S3_BUCKET> {
+    return {
+      module: this,
+      [RESOURCE_METADATA]: {
+        permissions: { ...DEFAULT_BUCKET_PERMISSIONS, ...permissions },
+      },
+    };
   }
+}
 
-  async getFile(key: string): Promise<string | null> {
-    console.log(`Retrieving file ${key} from bucket ${this.metadata.id}`);
-    return null;
-  }
+export abstract class BucketService {
+  static metadata: Omit<BucketMetadata, 'type'>;
+
+  @Inject(BUCKET_METADATA) public readonly metadata!: BucketMetadata;
 }

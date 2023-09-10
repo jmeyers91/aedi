@@ -19,6 +19,7 @@ import {
   CognitoAuthorizerRouteMetadata,
   DISABLE_COGNITO_AUTHORIZER,
 } from './decorators/cognito-authorizer-guard';
+import { mergeBucketMetadata } from './decorators/bucket-module';
 
 export type NestModule = (() => any) | Type<any> | DynamicModule;
 export type NestController = (() => any) | Type<any>;
@@ -208,6 +209,12 @@ export function mergeResourceMetadata<
     isResourceMetadataType(b, ResourceType.DYNAMO_TABLE)
   ) {
     return mergeDynamoMetadata(a as any, b as any) as any;
+  }
+  if (
+    isResourceMetadataType(a, ResourceType.S3_BUCKET) ||
+    isResourceMetadataType(b, ResourceType.S3_BUCKET)
+  ) {
+    return mergeBucketMetadata(a as any, b as any) as any;
   }
 
   return { ...a, ...b };

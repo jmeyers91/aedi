@@ -21,7 +21,6 @@ import { NestResourceNode } from '../reflect-utils';
 import { ResourceType } from './resource-module';
 
 export const COGNITO_AUTHORIZER = Symbol('COGNITO_AUTHORIZER');
-// export const GLOBAL_COGNITO_AUTHORIZER = Symbol('GLOBAL_COGNITO_AUTHORIZER');
 export const DISABLE_COGNITO_AUTHORIZER = Symbol('DISABLE_COGNITO_AUTHORIZER');
 
 export interface CognitoClaim {
@@ -58,9 +57,6 @@ class CognitoAuthorizerGuard implements CanActivate {
       const invoke = getCurrentInvoke();
       const event: APIGatewayProxyEventBase<APIGatewayProxyCognitoAuthorizer> =
         invoke.event;
-      console.log('LAMBDA EVENT', { event });
-      console.log('LAMBDA CONTEXT', { context: invoke.context });
-      console.log('NEST_LAMBDA_RESOURCE', process.env['NEST_LAMBDA_RESOURCE']);
       const claims = event?.requestContext?.authorizer?.claims;
 
       if (!claims) {
