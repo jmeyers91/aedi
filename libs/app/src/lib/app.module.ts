@@ -7,6 +7,7 @@ import { Sep6WebAdminApp } from './web-apps/sep6-admin.web-app';
 import { AdminModule } from './modules/admin/admin.module';
 import { UserModule } from './modules/user/user.module';
 import { AppUserPoolModule } from './user-pools/app.user-pool';
+import { CountEventModule } from './modules/count-event/count-event.module';
 
 export * from './modules/healthcheck/healthcheck.controller';
 
@@ -19,11 +20,14 @@ export * from './modules/healthcheck/healthcheck.controller';
     Sep6WebApp,
     Sep6WebAdminApp,
 
-    // Lambdas
+    // API Lambdas
     AdminModule,
     HealthcheckModule,
     ContactModule,
     UserModule,
+
+    // Free floating lambdas
+    CountEventModule,
   ]),
 })
 export class AppModule {}

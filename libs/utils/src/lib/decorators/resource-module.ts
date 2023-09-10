@@ -9,6 +9,7 @@ import {
 } from '@sep6/constants';
 import { reflector } from '../reflector';
 import { NestModule, mergeResourceMetadata } from '../reflect-utils';
+import { Callback, Context } from 'aws-lambda';
 
 export const RESOURCE_METADATA = Symbol('RESOURCE_METADATA');
 
@@ -26,10 +27,21 @@ export enum AttributeType {
   STRING = 'STRING',
 }
 
+export enum LambdaType {
+  API = 'API',
+  STANDARD = 'STANDARD',
+}
+
+export interface ILambdaEventHandler {
+  handleLambdaEvent(event: unknown, context: Context, callback: Callback): any;
+}
+
 export interface ResourceValueMap extends Record<ResourceType, object> {
   [ResourceType.LAMBDA_FUNCTION]: {
     id: string;
+    lambdaType: LambdaType;
     handlerFilePath: string;
+    handlerService?: { new (): ILambdaEventHandler };
     domain?: DomainId;
     allowCorsDomains?: DomainId[];
   };

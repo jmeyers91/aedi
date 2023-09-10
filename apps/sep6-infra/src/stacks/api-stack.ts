@@ -12,6 +12,7 @@ import {
 import { Construct } from 'constructs';
 import {
   DomainPair,
+  LambdaType,
   ResourceType,
   collectMergedModuleResources,
   collectModuleRoutes,
@@ -112,7 +113,31 @@ export class ApiStack extends Stack {
     const lambdaResources = collectMergedModuleResources(
       AppModule,
       ResourceType.LAMBDA_FUNCTION
-    );
+    ).map((lambdaResourceGroup) => {
+      let nodeJsFunction: NodejsFunction;
+      return {
+        ...lambdaResourceGroup,
+        getNodeJsFunction: (): NodejsFunction => {
+          if (!nodeJsFunction) {
+            const name = lambdaResourceGroup.resourceNodes[0].name;
+            nodeJsFunction = new NodejsFunction(this, name, {
+              runtime: Runtime.NODEJS_18_X,
+              entry: lambdaResourceGroup.mergedMetadata.handlerFilePath,
+              handler: `index.${name}.lambdaHandler`,
+              timeout: Duration.seconds(15),
+              bundling: {
+                externalModules: [
+                  '@nestjs/microservices',
+                  '@nestjs/websockets/socket-module',
+                ],
+              },
+            });
+          }
+
+          return nodeJsFunction;
+        },
+      };
+    });
     const dynamoResources = collectMergedModuleResources(
       AppModule,
       ResourceType.DYNAMO_TABLE
@@ -292,17 +317,29 @@ export class ApiStack extends Stack {
     };
 
     // Create lambdas for all the lambda modules found in the app tree
-    const lambdas = lambdaResources.flatMap((lambdaResourceGroup) => {
+    const apiLambdas = lambdaResources.flatMap((lambdaResourceGroup) => {
+      // Only process API lambdas here
+      if (lambdaResourceGroup.mergedMetadata.lambdaType !== LambdaType.API) {
+        return [];
+      }
+
       const lambdaResourcesWithControllers =
         lambdaResourceGroup.resourceNodes.filter(
           (node) => node.controllers.length > 0
         );
 
-      if (lambdaResourcesWithControllers.length !== 1) {
+      if (lambdaResourcesWithControllers.length > 1) {
         throw new Error(
-          `Ambiguous lambda module - a lambda module can only be registered with controllers once in the Nest module tree.`
+          `Ambiguous lambda module: ${lambdaResourceGroup.mergedMetadata.handlerFilePath} - a lambda module can only be registered with controllers once in the Nest module tree.`
         );
       }
+
+      if (lambdaResourcesWithControllers.length === 0) {
+        throw new Error(
+          `Unable to find any controllers for the API lambda ${lambdaResourceGroup.mergedMetadata.handlerFilePath}`
+        );
+      }
+
       const [lambdaResource] = lambdaResourcesWithControllers;
 
       if (!lambdaResource) {
@@ -357,32 +394,21 @@ export class ApiStack extends Stack {
         : null;
 
       debug(`  -- CORS origins: ${corsOrigins?.join(', ') ?? '*'}`);
-
-      const fn = new NodejsFunction(this, lambdaResource.name, {
-        runtime: Runtime.NODEJS_18_X,
-        entry: lambdaResource.resourceMetadata.handlerFilePath,
-        handler: `index.${lambdaResource.name}.lambdaHandler`,
-        timeout: Duration.seconds(15),
-        bundling: {
-          externalModules: [
-            '@nestjs/microservices',
-            '@nestjs/websockets/socket-module',
-          ],
-        },
-        environment: corsOrigins
-          ? {
-              NEST_LAMBDA_RESOURCE: JSON.stringify(
-                {
-                  controllers: lambdaResource.controllers,
-                  resourceMetadata: lambdaResource.resourceMetadata,
-                },
-                null,
-                2
-              ),
-              CORS_ORIGINS: JSON.stringify(corsOrigins),
-            }
-          : {},
-      });
+      const fn = lambdaResourceGroup.getNodeJsFunction();
+      if (corsOrigins) {
+        fn.addEnvironment('CORS_ORIGINS', JSON.stringify(corsOrigins));
+      }
+      fn.addEnvironment(
+        'NEST_LAMBDA_RESOURCE',
+        JSON.stringify(
+          {
+            controllers: lambdaResource.controllers,
+            resourceMetadata: lambdaResource.resourceMetadata,
+          },
+          null,
+          2
+        )
+      );
 
       const restApi = getRestApi(lambdaResource.resourceMetadata.domain);
       debug(`    -- Rest API: ${restApi.node.id}`);
@@ -519,7 +545,7 @@ export class ApiStack extends Stack {
               }
             : undefined,
 
-          api: lambdas.reduce(
+          api: apiLambdas.reduce(
             (apiConfig, lambda) => ({ ...apiConfig, ...lambda.clientConfig }),
             {}
           ),

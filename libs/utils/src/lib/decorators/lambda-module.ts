@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {
+  DynamicModule,
+  INestApplicationContext,
   Module,
   ModuleMetadata,
   NestModule,
@@ -8,7 +10,9 @@ import {
 } from '@nestjs/common';
 import { callsites } from '../callsites';
 import {
+  ILambdaEventHandler,
   LambdaMetadata,
+  LambdaType,
   Resource,
   ResourceType,
   getResourceMetadata,
@@ -19,9 +23,16 @@ import { APIGatewayEvent, Callback, Context, Handler } from 'aws-lambda';
 import { relative } from 'path';
 import type { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
 
+const HANDLER_SERVICE = Symbol('HANDLER_SERVICE');
+
 export function LambdaModule(
   metadata: ModuleMetadata,
-  { handlerFilePath, ...rest }: Partial<LambdaMetadata> = {}
+  {
+    handlerFilePath,
+    lambdaType = LambdaType.API,
+    handlerService,
+    ...rest
+  }: Partial<LambdaMetadata> = {}
 ) {
   const absoluteHandlerFilePath =
     handlerFilePath ?? callsites()[1]?.getFileName();
@@ -33,15 +44,26 @@ export function LambdaModule(
   const relativeHandlerFilePath = relative('.', absoluteHandlerFilePath);
 
   const addHandlerFunctionDecorator: ClassDecorator = (target: any) => {
-    target.lambdaHandler = createNestLambdaHandler(
-      target?.withControllers?.() ?? target
-    );
+    if (lambdaType === LambdaType.API) {
+      target.lambdaHandler = createNestApiLambdaHandler(
+        target?.withControllers?.() ?? target
+      );
+    } else {
+      if (!handlerService) {
+        throw new Error(`Standard lambdas must include a handlerService`);
+      }
+      target.lambdaHandler = createNestLambdaHandler({
+        module: target,
+        providers: [{ provide: HANDLER_SERVICE, useClass: handlerService }],
+      });
+    }
   };
 
   return applyDecorators(
     Resource({
       ...rest,
       type: ResourceType.LAMBDA_FUNCTION,
+      lambdaType,
       id: relativeHandlerFilePath,
       handlerFilePath: relativeHandlerFilePath,
     }),
@@ -57,7 +79,7 @@ export function getLambdaMetadata(module: Type<any> | (() => void)) {
 /**
  * Takes a Nestjs app module class and returns a API Gateway Lambda handler function for it.
  */
-export function createNestLambdaHandler(appModule: NestModule): Handler {
+export function createNestApiLambdaHandler(appModule: NestModule): Handler {
   let server: Handler;
 
   const bootstrap = async (): Promise<Handler> => {
@@ -80,6 +102,31 @@ export function createNestLambdaHandler(appModule: NestModule): Handler {
   ) => {
     server = server ?? (await bootstrap());
     return server(event, context, callback);
+  };
+
+  return handler;
+}
+
+/**
+ * Takes a Nestjs app module class and returns a Lambda handler function for it.
+ */
+export function createNestLambdaHandler(
+  appModule: NestModule | DynamicModule
+): Handler {
+  let lambdaEventHandler: ILambdaEventHandler;
+
+  const bootstrap = async (): Promise<ILambdaEventHandler> => {
+    const app = await NestFactory.createApplicationContext(appModule);
+    return app.get(HANDLER_SERVICE) as ILambdaEventHandler;
+  };
+
+  const handler: Handler = async (
+    event: unknown,
+    context: Context,
+    callback: Callback
+  ) => {
+    lambdaEventHandler = lambdaEventHandler ?? (await bootstrap());
+    return lambdaEventHandler.handleLambdaEvent(event, context, callback);
   };
 
   return handler;
