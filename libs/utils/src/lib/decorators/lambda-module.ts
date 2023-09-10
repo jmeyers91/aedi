@@ -31,7 +31,7 @@ export function LambdaModule(
     handlerFilePath,
     lambdaType = LambdaType.API,
     handlerService,
-    moduleName,
+    lambdaName,
     ...rest
   }: Partial<LambdaMetadata> = {}
 ) {
@@ -47,7 +47,7 @@ export function LambdaModule(
   const resourceMetadata: ResourceMetadata<ResourceType.LAMBDA_FUNCTION> = {
     ...rest,
     id: ``, // Set in `initLambdaModule`
-    moduleName: '', // Set in `initLambdaModule`
+    lambdaName: '', // Set in `initLambdaModule`
     type: ResourceType.LAMBDA_FUNCTION,
     lambdaType,
     handlerFilePath: relativeHandlerFilePath,
@@ -56,8 +56,8 @@ export function LambdaModule(
   const initLambdaModule: ClassDecorator = (target: any) => {
     // The module class name will be used to identitify the lambda's CDK resource.
     // This could be an issue if we end up with duplicate lambda module class names.
-    // Set the lambda's `moduleName` input to use an alternative name in case of collisions.
-    resourceMetadata.moduleName = moduleName ?? target.name; // Add the target class name to the lambda metadata
+    // Set the lambda's `lambdaName` input to use an alternative name in case of collisions.
+    resourceMetadata.lambdaName = lambdaName ?? target.name; // Add the target class name to the lambda metadata
 
     // Combine the relative file path and the module name to get an id that should be unique
     resourceMetadata.id = `${relativeHandlerFilePath}-${target.name}`;

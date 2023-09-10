@@ -120,16 +120,16 @@ export class ApiStack extends Stack {
       AppModule,
       ResourceType.LAMBDA_FUNCTION
     ).map((lambdaResourceGroup) => {
-      const lambdaModuleName = lambdaResourceGroup.mergedMetadata.moduleName;
+      const lambdaName = lambdaResourceGroup.mergedMetadata.lambdaName;
       let nodeJsFunction: NodejsFunction;
       return {
         ...lambdaResourceGroup,
         getNodeJsFunction: (): NodejsFunction => {
           if (!nodeJsFunction) {
-            nodeJsFunction = new NodejsFunction(this, lambdaModuleName, {
+            nodeJsFunction = new NodejsFunction(this, lambdaName, {
               runtime: Runtime.NODEJS_18_X,
               entry: lambdaResourceGroup.mergedMetadata.handlerFilePath,
-              handler: `index.${lambdaModuleName}.lambdaHandler`,
+              handler: `index.${lambdaName}.lambdaHandler`,
               timeout: Duration.seconds(15),
               bundling: {
                 externalModules: [

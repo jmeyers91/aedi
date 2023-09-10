@@ -41,7 +41,7 @@ export interface ILambdaEventHandler {
 export interface ResourceValueMap extends Record<ResourceType, object> {
   [ResourceType.LAMBDA_FUNCTION]: {
     id: string;
-    moduleName: string;
+    lambdaName: string;
     lambdaType: LambdaType;
     handlerFilePath: string;
     handlerService?: { new (...args: any[]): ILambdaEventHandler };
