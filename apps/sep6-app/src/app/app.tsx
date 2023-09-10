@@ -1,106 +1,85 @@
+import { Authenticator, useAuthenticator } from '@aws-amplify/ui-react';
 import { getModuleClient } from '../module-client';
 
-import { Route, Routes, Link } from 'react-router-dom';
-
 export function App() {
+  const { route } = useAuthenticator((context) => [context.route]);
+  const { user, signOut } = useAuthenticator((context) => [context.user]);
+  const isAuthenticated = route === 'authenticated';
+
   return (
     <div>
-      <button
-        onClick={async () => {
-          const response = await getModuleClient('HealthcheckModule').get(
-            '/healthcheck'
-          );
-          console.log('Healthcheck success', response.data);
-        }}
-      >
-        Healthcheck
-      </button>
-      <button
-        onClick={async () => {
-          const response = await getModuleClient('ContactModule').get(
-            '/contacts',
-            {
+      <div>
+        <button
+          onClick={async () => {
+            const response = await getModuleClient('HealthcheckModule').get(
+              '/healthcheck'
+            );
+            console.log('Healthcheck success', response.data);
+          }}
+        >
+          Healthcheck
+        </button>
+        <button
+          onClick={async () => {
+            const response = await getModuleClient('ContactModule').get(
+              '/contacts'
+            );
+            console.log('Contact list', response.data);
+          }}
+        >
+          List contacts
+        </button>
+        <button
+          onClick={async () => {
+            const response = await getModuleClient('UserModule').get('/user', {
               headers: {
                 Authorization: 'jim',
               },
-            }
-          );
-          console.log('Contact list', response.data);
-        }}
-      >
-        List contacts
-      </button>
-      <button
-        onClick={async () => {
-          const response = await getModuleClient('UserModule').get('/user', {
-            headers: {
-              Authorization: 'jim',
-            },
-          });
-          console.log('User', response.data);
-        }}
-      >
-        Get current user
-      </button>
-      <button
-        onClick={async () => {
-          const response = await getModuleClient('HealthcheckModule').get(
-            '/cors-domains',
-            {
-              headers: {
-                Authorization: 'jim',
-              },
-            }
-          );
-          console.log('CORS domains', response.data);
-        }}
-      >
-        Get CORS urls
-      </button>
-      <button
-        onClick={async () => {
-          const response = await getModuleClient('AdminModule').post(
-            '/admin/secret',
-            {
-              headers: {
-                Authorization: 'jim',
-              },
-            }
-          );
-          console.log('Admin secret', response.data);
-        }}
-      >
-        Call admin API
-      </button>
-      <div role="navigation">
-        <ul>
-          <li>
-            <Link to="/">Home</Link>
-          </li>
-          <li>
-            <Link to="/page-2">Page 2</Link>
-          </li>
-        </ul>
+            });
+            console.log('User', response.data);
+          }}
+        >
+          Get current user
+        </button>
+        <button
+          onClick={async () => {
+            const response = await getModuleClient('HealthcheckModule').get(
+              '/cors-domains'
+            );
+            console.log('CORS domains', response.data);
+          }}
+        >
+          Get CORS urls
+        </button>
+        <button
+          onClick={async () => {
+            const response = await getModuleClient('AdminModule').post(
+              '/admin/secret'
+            );
+            console.log('Admin secret', response.data);
+          }}
+        >
+          Call admin API
+        </button>
+        <button
+          onClick={async () => {
+            const response = await getModuleClient('HealthcheckModule').post(
+              '/count/coolbeans'
+            );
+            console.log('Count', response.data);
+          }}
+        >
+          Count
+        </button>
       </div>
-      <Routes>
-        <Route
-          path="/"
-          element={
-            <div>
-              This is the generated root route.{' '}
-              <Link to="/page-2">Click here for page 2.</Link>
-            </div>
-          }
-        />
-        <Route
-          path="/page-2"
-          element={
-            <div>
-              <Link to="/">Click here to go back to root page.</Link>
-            </div>
-          }
-        />
-      </Routes>
+      {isAuthenticated ? (
+        <>
+          <h1>Welcome {user.attributes?.email}</h1>
+          <button onClick={() => signOut()}>Sign-out</button>
+        </>
+      ) : (
+        <Authenticator />
+      )}
     </div>
   );
 }

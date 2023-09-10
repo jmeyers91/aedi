@@ -62,7 +62,7 @@ export function createNestLambdaHandler(appModule: NestModule): Handler {
 
   const bootstrap = async (): Promise<Handler> => {
     const cors = getCorsConfig();
-    console.log(`----- CORS -----`, cors);
+
     const app = await NestFactory.create(appModule, {
       cors,
     });

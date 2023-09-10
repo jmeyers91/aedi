@@ -12,11 +12,11 @@ import {
 import { ContactService } from './contact.service';
 import { DevExceptionFilter } from '../../utils/dev-exception-filter';
 import { UserPoolId } from '@sep6/constants';
-import { CognitoUserId, UseCognitoGuard } from '@sep6/utils';
+import { CognitoUserId, CognitoGuard } from '@sep6/utils';
 
 @Controller('contacts')
 @UseFilters(DevExceptionFilter)
-@UseCognitoGuard(UserPoolId.APP_USER_POOL)
+@CognitoGuard(UserPoolId.APP_USER_POOL)
 export class ContactController {
   constructor(
     @Inject(ContactService) private readonly contactService: ContactService

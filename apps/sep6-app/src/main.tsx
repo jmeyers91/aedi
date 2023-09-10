@@ -16,10 +16,13 @@ const root = ReactDOM.createRoot(
 );
 root.render(
   <StrictMode>
-    <Authenticator>
+    <div hidden>
+      <Authenticator />
+    </div>
+    <Authenticator.Provider>
       <BrowserRouter>
         <App />
       </BrowserRouter>
-    </Authenticator>
+    </Authenticator.Provider>
   </StrictMode>
 );

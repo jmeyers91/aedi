@@ -1,10 +1,11 @@
 import { Controller, Get, Inject, Param, Post } from '@nestjs/common';
 import { CountTable } from '../../tables/count.table';
 
-import { CognitoUserId, UseCognitoGuard } from '@sep6/utils';
+import { CognitoUserId, CognitoGuard, DisableCognitoGuard } from '@sep6/utils';
 import { UserPoolId } from '@sep6/constants';
 
 @Controller()
+@CognitoGuard(UserPoolId.APP_USER_POOL)
 export class HealthcheckController {
   constructor(@Inject(CountTable) private readonly countTable: CountTable) {}
 
@@ -14,17 +15,18 @@ export class HealthcheckController {
   }
 
   @Get('/healthcheck')
+  @DisableCognitoGuard()
   healthcheck() {
     return 'Success!';
   }
 
   @Get('/healthcheck/user')
-  @UseCognitoGuard(UserPoolId.APP_USER_POOL)
   currentUser(@CognitoUserId() userId: string) {
     return `The current user is: ${userId}`;
   }
 
   @Post('/count/:counterId')
+  @DisableCognitoGuard()
   async count(@Param('counterId') counterId: string) {
     try {
       const counter = await this.countTable.get({ counterId });
@@ -42,6 +44,7 @@ export class HealthcheckController {
   }
 
   @Get('/cors-domains')
+  @DisableCognitoGuard()
   async getCorsDomains() {
     return { CORS_ORIGINS: (process.env as any).CORS_ORIGINS };
   }

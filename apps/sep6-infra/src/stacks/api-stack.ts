@@ -371,6 +371,14 @@ export class ApiStack extends Stack {
         },
         environment: corsOrigins
           ? {
+              NEST_LAMBDA_RESOURCE: JSON.stringify(
+                {
+                  controllers: lambdaResource.controllers,
+                  resourceMetadata: lambdaResource.resourceMetadata,
+                },
+                null,
+                2
+              ),
               CORS_ORIGINS: JSON.stringify(corsOrigins),
             }
           : {},
@@ -426,6 +434,7 @@ export class ApiStack extends Stack {
             route.name
           )} ${route.method} ${route.path}`
         );
+        debug(`     -- Api gateway path: ${route.apiGatewayPath}`);
 
         if (route.cognitoAuthorizer) {
           debug(`     -- AUTHORIZER: ${route.cognitoAuthorizer.userPool}`);
@@ -437,26 +446,24 @@ export class ApiStack extends Stack {
           ? getCognitoAuthorizer(routeUserPool)
           : null;
 
-        const routeParts = route.path
+        const routeParts = route.apiGatewayPath
           .split('/')
-          .filter((part) => part.length > 0)
-          .map((part) => (part[0] === ':' ? `{${part.slice(1)}}` : part));
+          .filter((part) => part.length > 0);
 
         const routeResource = routeParts.reduce(
           (resource, routePart) =>
             resource.getResource(routePart) ?? resource.addResource(routePart),
           restApi.root
         );
-        routeResource.addMethod(
-          route.method,
-          new LambdaIntegration(fn),
-          routeCognitoAuthorizer
+        routeResource.addMethod(route.method, new LambdaIntegration(fn), {
+          operationName: route.name as string,
+          ...(routeCognitoAuthorizer
             ? {
                 authorizer: routeCognitoAuthorizer,
                 authorizationType: AuthorizationType.COGNITO,
               }
-            : {}
-        );
+            : {}),
+        });
       }
 
       const clientConfig = {
@@ -473,12 +480,6 @@ export class ApiStack extends Stack {
     // Create cloudfront distributions for all the web-apps
     const webApps = webAppResourcesWithDns.map((webAppResource) => {
       const metadata = webAppResource.mergedMetadata;
-      const userPool = metadata.userPool
-        ? userPools.find(
-            (pool) =>
-              pool.userPoolResource.mergedMetadata.id === metadata.userPool
-          )
-        : null;
 
       let userPoolPair: {
         userPool: AppUserPool;

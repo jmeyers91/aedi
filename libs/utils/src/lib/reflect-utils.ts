@@ -14,10 +14,10 @@ import {
   getResourceMetadata,
 } from './decorators/resource-module';
 import { mergeDynamoMetadata } from './decorators/dynamo-module';
-import { UserPoolId } from '@sep6/constants';
 import {
   COGNITO_AUTHORIZER,
   CognitoAuthorizerRouteMetadata,
+  DISABLE_COGNITO_AUTHORIZER,
 } from './decorators/cognito-authorizer-guard';
 
 export type NestModule = (() => any) | Type<any> | DynamicModule;
@@ -50,6 +50,7 @@ export interface NestRouteInfo {
   controller: NestController;
   method: RequestMethodString;
   path: string;
+  apiGatewayPath: string;
   cognitoAuthorizer?: CognitoAuthorizerRouteMetadata;
 }
 
@@ -254,6 +255,10 @@ export function getNestControllerInfo(
   const controllerPathParts = (
     reflector.get<string | undefined>(PATH_METADATA, controller) ?? ''
   ).split('/');
+  const disableControllerCognitoAuthorizer = reflector.get<boolean | undefined>(
+    DISABLE_COGNITO_AUTHORIZER,
+    controller
+  );
   const controllerCognitoAuthorizer = reflector.get<
     CognitoAuthorizerRouteMetadata | undefined
   >(COGNITO_AUTHORIZER, controller);
@@ -277,29 +282,42 @@ export function getNestControllerInfo(
       continue;
     }
 
-    const cognitoAuthorizer =
-      reflector.get<CognitoAuthorizerRouteMetadata | undefined>(
-        COGNITO_AUTHORIZER,
-        value
-      ) ?? controllerCognitoAuthorizer;
+    const disableMethodCognitoAuthorizer =
+      disableControllerCognitoAuthorizer ??
+      reflector.get<boolean | undefined>(DISABLE_COGNITO_AUTHORIZER, value);
 
-    const pathParts = (
+    const cognitoAuthorizer = disableMethodCognitoAuthorizer
+      ? undefined
+      : reflector.get<CognitoAuthorizerRouteMetadata | undefined>(
+          COGNITO_AUTHORIZER,
+          value
+        ) ?? controllerCognitoAuthorizer;
+
+    const relativePathParts = (
       reflector.get<string | undefined>(PATH_METADATA, value) ?? ''
     ).split('/');
 
-    let path = [...controllerPathParts, ...pathParts]
-      .filter((it) => it.length > 0)
+    const allPathParts = [...controllerPathParts, ...relativePathParts].filter(
+      (it) => it.length > 0
+    );
+
+    let path = allPathParts.join('/');
+    let apiGatewayPath = allPathParts
+      .map((part) => (part[0] === ':' ? `{${part.slice(1)}}` : part))
       .join('/');
 
     if (path.length === 0) {
       path = '/';
     }
 
+    apiGatewayPath = '/' + apiGatewayPath;
+
     routes.push({
       controller,
       name: key,
       method: getRequestMethodString(method),
       path,
+      apiGatewayPath,
       cognitoAuthorizer,
     });
   }
