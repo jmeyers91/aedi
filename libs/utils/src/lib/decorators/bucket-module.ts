@@ -13,6 +13,7 @@ import {
   Resource,
   ResourceType,
   getResourceMetadata,
+  ArnResolver,
 } from './resource-module';
 
 const BUCKET_METADATA = Symbol('BUCKET_METADATA');
@@ -85,6 +86,10 @@ export class BaseBucketModule {
         permissions: { ...DEFAULT_BUCKET_PERMISSIONS, ...permissions },
       },
     };
+  }
+
+  static arn(arnFn: (arn: string) => string): ArnResolver {
+    return { resourceModule: this, arnFn };
   }
 }
 

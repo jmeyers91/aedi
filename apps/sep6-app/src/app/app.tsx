@@ -1,6 +1,9 @@
 import { Authenticator, useAuthenticator } from '@aws-amplify/ui-react';
 import { getModuleClient } from '../module-client';
 import { useQuery } from '@tanstack/react-query';
+import { getS3Client } from './buckets-alt';
+import { GetObjectCommand, ListObjectsCommand } from '@aws-sdk/client-s3';
+import { getClientConfig } from '@sep6/client-config';
 
 export function App() {
   const { route } = useAuthenticator((context) => [context.route]);
@@ -93,6 +96,50 @@ export function App() {
         >
           Count
         </button>
+        {!!user && (
+          <button
+            onClick={async () => {
+              const bucketConfig =
+                getClientConfig().buckets['contact-image-bucket'];
+              if (!bucketConfig) {
+                throw new Error(`No bucket name: ${bucketConfig}`);
+              }
+              const { bucketName, region } = bucketConfig;
+
+              try {
+                const { s3Client, identityId } = await getS3Client(region);
+                const prefix = `private/${identityId}`;
+                console.log(`Listing ${prefix} in ${bucketName}`);
+                const listResponse = await s3Client.send(
+                  new ListObjectsCommand({
+                    Bucket: bucketName,
+                    Prefix: prefix,
+                  })
+                );
+                console.log('List success', listResponse);
+              } catch (error) {
+                console.log(`Failed to list`, error);
+              }
+
+              try {
+                const { s3Client, identityId } = await getS3Client(region);
+                const key = `private/${identityId}/foo`;
+                console.log(`Getting ${key} in ${bucketName}`);
+                const listResponse = await s3Client.send(
+                  new GetObjectCommand({
+                    Bucket: bucketName,
+                    Key: key,
+                  })
+                );
+                console.log('Get success', listResponse);
+              } catch (error) {
+                console.log(`Failed to get`, error);
+              }
+            }}
+          >
+            List bucket objects
+          </button>
+        )}
       </div>
       {isAuthenticated ? (
         <>

@@ -1,6 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { Duration, Environment, Stack, StackProps } from 'aws-cdk-lib';
 import c from 'ansi-colors';
+import { ClientConfig } from '@sep6/client-config';
 import {
   AuthorizationType,
   CognitoUserPoolsAuthorizer,
@@ -11,6 +13,7 @@ import {
 } from 'aws-cdk-lib/aws-apigateway';
 import { Construct } from 'constructs';
 import {
+  ArnResolver,
   DomainPair,
   LambdaType,
   ResourceMetadata,
@@ -28,7 +31,7 @@ import {
   StreamViewType,
   TableV2,
 } from 'aws-cdk-lib/aws-dynamodb';
-import { WebApp, WebAppDns } from '../constructs/web-app';
+import { WebAppConstruct, WebAppDns } from '../constructs/web-app-construct';
 import { resolve } from 'path';
 import { DomainId, UserPoolId } from '@sep6/constants';
 import {
@@ -43,9 +46,13 @@ import {
 } from 'aws-cdk-lib/aws-route53';
 import * as targets from 'aws-cdk-lib/aws-route53-targets';
 import { debug } from '../utils/debug';
-import { AppUserPool } from '../constructs/app-user-pool';
+import {
+  UserPoolConstruct,
+  IdentityPoolInfo,
+} from '../constructs/user-pool-construct';
 import { UserPoolClient, UserPoolTriggers } from 'aws-cdk-lib/aws-cognito';
-import { Bucket } from 'aws-cdk-lib/aws-s3';
+import { Bucket, HttpMethods } from 'aws-cdk-lib/aws-s3';
+import { Effect, PolicyStatement } from 'aws-cdk-lib/aws-iam';
 
 export interface ApiStackProps {
   env: Environment;
@@ -225,6 +232,7 @@ export class ApiStack extends Stack {
       };
     });
 
+    // Collect metadata about resources from the nest app module tree
     const bucketResources = collectMergedModuleResources(
       AppModule,
       ResourceType.S3_BUCKET
@@ -276,7 +284,44 @@ export class ApiStack extends Stack {
     const buckets = bucketResources.map((bucketResource) => {
       const metadata = bucketResource.mergedMetadata;
 
-      return Object.assign(new Bucket(this, metadata.id), { bucketResource });
+      const bucket = Object.assign(new Bucket(this, metadata.id), {
+        bucketResource,
+      });
+
+      // TODO: Check if the bucket has any deployment resources
+
+      return Object.assign(bucket, {
+        nestResource: bucketResource,
+        nestConstructArn: bucket.bucketArn,
+        addWebAppPermissions({
+          webAppClientConfig,
+        }: {
+          webAppClientConfig: ClientConfig;
+        }) {
+          webAppClientConfig.buckets[bucketResource.mergedMetadata.id] = {
+            region: Stack.of(bucket).region,
+            bucketName: bucket.bucketName,
+          };
+          bucket.addCorsRule({
+            allowedOrigins: ['*'], // TODO: Only allow access to the web apps that depend on this bucket
+            allowedHeaders: ['*'],
+            allowedMethods: [
+              HttpMethods.GET,
+              HttpMethods.HEAD,
+              HttpMethods.PUT,
+              HttpMethods.POST,
+              HttpMethods.DELETE,
+            ],
+            exposedHeaders: [
+              'x-amz-server-side-encryption',
+              'x-amz-request-id',
+              'x-amz-id-2',
+              'ETag',
+            ],
+            maxAge: 3000,
+          });
+        },
+      });
     });
 
     // Create dynamo tables for all the dynamo modules found in the app tree
@@ -290,27 +335,27 @@ export class ApiStack extends Stack {
         streamViewType = StreamViewType.NEW_AND_OLD_IMAGES;
       }
 
-      const table = Object.assign(
-        new TableV2(new Construct(this, metadata.id), metadata.id, {
-          tableName: metadata.id,
-          partitionKey: {
-            name: metadata.partitionKey.name,
-            type: AttributeType[metadata.partitionKey.type],
-          },
-          dynamoStream: streamViewType,
-          ...(metadata.sortKey
-            ? {
-                sortKey: {
-                  name: metadata.sortKey.name,
-                  type: AttributeType[metadata.sortKey.type],
-                },
-              }
-            : {}),
-        }),
-        { nestResource: dynamoResource }
-      );
+      const table = new TableV2(new Construct(this, metadata.id), metadata.id, {
+        tableName: metadata.id,
+        partitionKey: {
+          name: metadata.partitionKey.name,
+          type: AttributeType[metadata.partitionKey.type],
+        },
+        dynamoStream: streamViewType,
+        ...(metadata.sortKey
+          ? {
+              sortKey: {
+                name: metadata.sortKey.name,
+                type: AttributeType[metadata.sortKey.type],
+              },
+            }
+          : {}),
+      });
 
-      return table;
+      return Object.assign(table, {
+        nestResource: dynamoResource,
+        nestConstructArn: table.tableArn,
+      });
     });
 
     // Create user pools for all the user pool modules found in the app tree
@@ -359,7 +404,7 @@ export class ApiStack extends Stack {
         );
       }
 
-      return new AppUserPool(
+      const userPoolConstruct = new UserPoolConstruct(
         this,
         `user-pool-${userPoolResource.mergedMetadata.id}`,
         {
@@ -369,8 +414,13 @@ export class ApiStack extends Stack {
           lambdaTriggers: userPoolTriggers,
         }
       );
+
+      return Object.assign(userPoolConstruct, {
+        nestResource: userPoolResource,
+        nestConstructArn: userPoolConstruct.userPoolArn,
+      });
     });
-    const getUserPool = (userPoolId: UserPoolId): AppUserPool => {
+    const getUserPool = (userPoolId: UserPoolId): UserPoolConstruct => {
       const pool = userPools.find(
         (pool) => userPoolId === pool.userPoolResource.mergedMetadata.id
       );
@@ -456,7 +506,7 @@ export class ApiStack extends Stack {
 
     // Mapping from user pools to cognito authorizers
     const cognitoAuthorizers = new Map<string, CognitoUserPoolsAuthorizer>();
-    const getCognitoAuthorizer = (userPool: AppUserPool) => {
+    const getCognitoAuthorizer = (userPool: UserPoolConstruct) => {
       const authorizerId = `${userPool.userPoolResource.mergedMetadata.id}-authorizer`;
       let authorizer = cognitoAuthorizers.get(authorizerId);
       if (!authorizer) {
@@ -658,13 +708,52 @@ export class ApiStack extends Stack {
       return [{ ...lambdaResource, fn, clientConfig }];
     });
 
+    // Resolve resource constructs by type and id
+    const getResourceConstruct = <T extends ResourceType>(
+      resourceType: T,
+      resourceId: string
+    ):
+      | (typeof dynamoTables)[number]
+      | (typeof buckets)[number]
+      | (typeof userPools)[number]
+      | undefined => {
+      const constructsWithType: any =
+        {
+          [ResourceType.DYNAMO_TABLE]: dynamoTables,
+          [ResourceType.S3_BUCKET]: buckets,
+          [ResourceType.USER_POOL]: userPools,
+          [ResourceType.LAMBDA_FUNCTION]: undefined,
+          [ResourceType.WEB_APP]: undefined,
+        }[resourceType] ?? [];
+      const constructsWithId = constructsWithType.filter(
+        (construct: any) => construct.nestResource.resourceId === resourceId
+      );
+
+      if (constructsWithId.length > 1) {
+        throw new Error(
+          `Found multiple constructs for Nest resource type ${resourceType} with id ${resourceId}`
+        );
+      }
+      return constructsWithId[0] as any;
+    };
+
     // Create cloudfront distributions for all the web-apps
     const webApps = webAppResourcesWithDns.map((webAppResource) => {
       const metadata = webAppResource.mergedMetadata;
+      const webAppId = metadata.id;
 
-      let userPoolPair: {
-        userPool: AppUserPool;
+      const webAppClientConfig: ClientConfig = {
+        api: apiLambdas.reduce(
+          (apiConfig, lambda) => ({ ...apiConfig, ...lambda.clientConfig }),
+          {} as ClientConfig['api']
+        ),
+        buckets: {},
+      };
+
+      let userPoolConfig: {
+        userPool: UserPoolConstruct;
         userPoolClient: UserPoolClient;
+        identityPool: IdentityPoolInfo;
       } | null;
 
       if (metadata.userPool) {
@@ -672,39 +761,109 @@ export class ApiStack extends Stack {
           (pool) =>
             pool.userPoolResource.mergedMetadata.id === metadata.userPool
         );
+
         if (!userPool) {
           throw new Error(
             `Unable to resolve user pool ${metadata.userPool} for web app ${webAppResource.mergedMetadata.id}`
           );
         }
 
-        userPoolPair = {
+        const userPoolClient = userPool.addClient(
+          `${webAppResource.mergedMetadata.id}-user-pool-client`
+        );
+        const identityPool = userPool.addClientIdentityPool(
+          `${webAppResource.mergedMetadata.id}-identity-pool`,
+          userPoolClient
+        );
+
+        // Enable cognito identity permissions
+        const userPoolPermissions =
+          userPool.userPoolResource.mergedMetadata.permissions ?? [];
+
+        // Generate policy statements for the web app's cognito identity
+        const policyStatements = userPoolPermissions.map(
+          (permission) =>
+            new PolicyStatement({
+              effect: permission.effect === 'DENY' ? Effect.DENY : Effect.ALLOW,
+              actions: permission.actions,
+              conditions: permission.condition,
+              resources: permission.resources?.map((dependentResource) => {
+                let dependentResourceModule: ArnResolver['resourceModule'];
+                let arnFn: ArnResolver['arnFn'] | undefined;
+
+                if ('arnFn' in dependentResource) {
+                  dependentResourceModule = dependentResource.resourceModule;
+                  arnFn = dependentResource.arnFn;
+                } else {
+                  dependentResourceModule = dependentResource;
+                }
+
+                const dependentResourceMetadata = getResourceMetadata(
+                  dependentResourceModule
+                );
+                if (!dependentResourceMetadata) {
+                  throw new Error(
+                    `Unable to resolve metadata for cognito permission resource: ${dependentResourceModule.name} in web app ${webAppId}`
+                  );
+                }
+                const dependentResourceConstruct = getResourceConstruct(
+                  dependentResourceMetadata.type,
+                  dependentResourceMetadata.id
+                );
+
+                if (!dependentResourceConstruct) {
+                  throw new Error(
+                    `Unable to resolve construct for cognito permission resource: ${dependentResourceModule.name} in web app ${webAppId}`
+                  );
+                }
+
+                // Add resource-specific permissions and config
+                if ('addWebAppPermissions' in dependentResourceConstruct) {
+                  dependentResourceConstruct.addWebAppPermissions({
+                    webAppClientConfig,
+                  });
+                }
+
+                debug(
+                  ` -- COGNITO PERMISSION: ${
+                    permission.effect ?? 'ALLOW'
+                  } ${permission.actions.join('/')} on ${
+                    dependentResourceMetadata.type
+                  } ${
+                    dependentResourceMetadata.id
+                  } for users signed into ${webAppId}`
+                );
+
+                return arnFn
+                  ? arnFn(dependentResourceConstruct.nestConstructArn)
+                  : dependentResourceConstruct.nestConstructArn;
+              }),
+            })
+        );
+
+        for (const policyStatement of policyStatements) {
+          identityPool.authedRole.addToPolicy(policyStatement);
+        }
+
+        userPoolConfig = {
           userPool,
-          userPoolClient: userPool.addClient(
-            `${webAppResource.mergedMetadata.id}-user-pool-client`
-          ),
+          userPoolClient,
+          identityPool,
+        };
+
+        webAppClientConfig.auth = {
+          userPoolId: userPoolConfig.userPool.userPoolId,
+          userPoolWebClientId: userPoolConfig.userPoolClient.userPoolClientId,
+          identityPoolId: userPoolConfig.identityPool.identityPoolId,
+          region: Stack.of(userPoolConfig.userPool).region,
         };
       } else {
-        userPoolPair = null;
+        userPoolConfig = null;
       }
 
-      return new WebApp(this, metadata.id, {
+      return new WebAppConstruct(this, metadata.id, {
         distPath: metadata.distPath,
-        clientConfig: {
-          auth: userPoolPair
-            ? {
-                userPoolId: userPoolPair.userPool.userPoolId,
-                userPoolWebClientId:
-                  userPoolPair.userPoolClient.userPoolClientId,
-                region: Stack.of(userPoolPair.userPool).region,
-              }
-            : undefined,
-
-          api: apiLambdas.reduce(
-            (apiConfig, lambda) => ({ ...apiConfig, ...lambda.clientConfig }),
-            {}
-          ),
-        },
+        clientConfig: webAppClientConfig,
         dns: webAppResource.dns,
       });
     });

@@ -11,6 +11,7 @@ import {
 } from 'aws-lambda';
 import { CountTable, CountTableModule } from '../tables/count.table';
 import { Inject, Injectable } from '@nestjs/common';
+import { ContactImageBucketModule } from '../buckets/contact-image/contact-image-bucket.module';
 
 @Injectable()
 class EventHandler implements ILambdaEventHandler {
@@ -19,7 +20,6 @@ class EventHandler implements ILambdaEventHandler {
   async handleLambdaEvent(
     event: PreAuthenticationTriggerEvent | PreSignUpTriggerEvent
   ) {
-    console.log(`GOT EVENT!`, event);
     const counterId = event.triggerSource;
     const counter = await this.countTable.get({ counterId });
     const count = (counter?.count ?? 0) + 1;
@@ -48,5 +48,24 @@ export class AppUserPoolEventLambdaModule {}
     preAuthentication: AppUserPoolEventLambdaModule,
     preSignUp: AppUserPoolEventLambdaModule,
   },
+  permissions: [
+    {
+      actions: ['s3:ListBucket'],
+      resources: [ContactImageBucketModule],
+      condition: {
+        StringLike: {
+          's3:prefix': ['private/${cognito-identity.amazonaws.com:sub}'],
+        },
+      },
+    },
+    {
+      actions: ['s3:PutObject', 's3:GetObject', 's3:DeleteObject'],
+      resources: [
+        ContactImageBucketModule.arn(
+          (arn) => arn + '/*/${cognito-identity.amazonaws.com:sub}/*'
+        ),
+      ],
+    },
+  ],
 })
 export class AppUserPoolModule {}

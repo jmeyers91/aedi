@@ -12,6 +12,7 @@ import { NestModule, mergeResourceMetadata } from '../reflect-utils';
 import type { CfnEventSourceMapping } from 'aws-cdk-lib/aws-lambda';
 import { Context } from 'aws-lambda';
 import type { StreamViewType } from 'aws-cdk-lib/aws-dynamodb';
+import { BaseBucketModule } from './bucket-module';
 
 export const RESOURCE_METADATA = Symbol('RESOURCE_METADATA');
 
@@ -36,6 +37,15 @@ export enum LambdaType {
 
 export interface ILambdaEventHandler {
   handleLambdaEvent(event: unknown, context: Context): any;
+}
+
+export interface UserPoolIdentityConfig {
+  id: string;
+}
+
+export interface ArnResolver {
+  resourceModule: any;
+  arnFn: (arn: string) => string;
 }
 
 export interface ResourceValueMap extends Record<ResourceType, object> {
@@ -97,6 +107,12 @@ export interface ResourceValueMap extends Record<ResourceType, object> {
       userMigration?: any; // A user-migration AWS Lambda trigger.
       verifyAuthChallengeResponse?: any; // Verifies the authentication challenge response.
     };
+    permissions?: {
+      actions: string[];
+      effect?: 'ALLOW' | 'DENY';
+      resources?: ({ new (...args: any[]): any } | ArnResolver)[];
+      condition?: Record<string, unknown>;
+    }[];
   };
 }
 

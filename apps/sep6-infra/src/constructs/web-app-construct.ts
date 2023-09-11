@@ -14,6 +14,7 @@ import { CloudFrontTarget } from 'aws-cdk-lib/aws-route53-targets';
 import { DomainPair } from '@sep6/utils';
 import { DomainId } from '@sep6/constants';
 import { debug } from '../utils/debug';
+import { ClientConfig } from '@sep6/client-config';
 
 export interface WebAppDns {
   domainId: DomainId;
@@ -22,7 +23,7 @@ export interface WebAppDns {
   hostedZone: IHostedZone;
 }
 
-export class WebApp extends Construct {
+export class WebAppConstruct extends Construct {
   public readonly distribution;
 
   constructor(
@@ -34,7 +35,7 @@ export class WebApp extends Construct {
       dns,
     }: {
       distPath: string;
-      clientConfig?: Record<string, unknown>;
+      clientConfig?: ClientConfig;
       dns?: WebAppDns;
     }
   ) {
