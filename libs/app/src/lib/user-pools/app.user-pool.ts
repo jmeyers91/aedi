@@ -12,6 +12,7 @@ import {
 import { CountTable, CountTableModule } from '../tables/count.table';
 import { Inject, Injectable } from '@nestjs/common';
 import { ContactImageBucketModule } from '../buckets/contact-image/contact-image-bucket.module';
+import { ContactTableModule } from '../tables/contact.table';
 
 @Injectable()
 class EventHandler implements ILambdaEventHandler {
@@ -65,6 +66,21 @@ export class AppUserPoolEventLambdaModule {}
           (arn) => arn + '/*/${cognito-identity.amazonaws.com:sub}/*'
         ),
       ],
+    },
+    {
+      actions: [
+        'dynamodb:DeleteItem',
+        'dynamodb:GetItem',
+        'dynamodb:PutItem',
+        'dynamodb:Query',
+        'dynamodb:UpdateItem',
+      ],
+      resources: [ContactTableModule],
+      condition: {
+        'ForAllValues:StringEquals': {
+          'dynamodb:LeadingKeys': ['${cognito-identity.amazonaws.com:sub}'],
+        },
+      },
     },
   ],
 })

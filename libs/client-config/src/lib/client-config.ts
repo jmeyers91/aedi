@@ -1,4 +1,4 @@
-import { BucketId } from '@sep6/constants';
+import { BucketId, TableId } from '@sep6/constants';
 
 export interface ClientConfig {
   auth?: {
@@ -6,12 +6,6 @@ export interface ClientConfig {
     userPoolId: string;
     userPoolWebClientId: string;
     identityPoolId: string;
-  };
-  buckets: {
-    [K in BucketId]?: {
-      bucketName: string;
-      region: string;
-    };
   };
   api: {
     ContactModule: {
@@ -25,6 +19,18 @@ export interface ClientConfig {
     };
     AdminModule: {
       baseURL: string;
+    };
+  };
+  buckets: {
+    [K in BucketId]?: {
+      bucketName: string;
+      region: string;
+    };
+  };
+  tables: {
+    [K in TableId]?: {
+      tableName: string;
+      region: string;
     };
   };
 }

@@ -1,9 +1,11 @@
 import { Authenticator, useAuthenticator } from '@aws-amplify/ui-react';
 import { getModuleClient } from '../module-client';
 import { useQuery } from '@tanstack/react-query';
-import { getS3Client } from './aws-utils';
+import { Dynamo, getS3Client } from './aws-utils';
 import { GetObjectCommand, ListObjectsCommand } from '@aws-sdk/client-s3';
 import { getClientConfig } from '@sep6/client-config';
+import { TableId } from '@sep6/constants';
+import { PutCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
 
 export function App() {
   const { route } = useAuthenticator((context) => [context.route]);
@@ -53,6 +55,65 @@ export function App() {
           }}
         >
           Create contact
+        </button>
+        <button
+          onClick={async () => {
+            const { dynamo, identityId } = await Dynamo.getTableClient(
+              TableId.CONTACT
+            );
+            const response = await dynamo.send(
+              new PutCommand({
+                TableName: dynamo.tableName,
+                ReturnValues: 'ALL_OLD',
+                Item: {
+                  userId: identityId,
+                  contactId: crypto.randomUUID(),
+                  firstName: 'joe',
+                  lastName: 'schmoe',
+                  email: 'joe.schmoe@example.com',
+                  phone: '+15551231234',
+                },
+              })
+            );
+            console.log('success - created contact', response);
+            // TODO: Attempt to query contacts
+            // const contacts = await dynamo.send(new QueryCommand({
+
+            // }))
+          }}
+        >
+          Create contact (direct)
+        </button>
+        <button
+          onClick={async () => {
+            const { dynamo } = await Dynamo.getTableClient(TableId.CONTACT);
+            const response = await dynamo
+              .send(
+                new PutCommand({
+                  TableName: dynamo.tableName,
+                  ReturnValues: 'ALL_OLD',
+                  Item: {
+                    userId: 'cool beans',
+                    contactId: crypto.randomUUID(),
+                    firstName: 'joe',
+                    lastName: 'schmoe',
+                    email: 'joe.schmoe@example.com',
+                    phone: '+15551231234',
+                  },
+                })
+              )
+              .catch((error) => {
+                console.log(`Success - expected error`, error);
+                return null;
+              });
+
+            if (response) {
+              console.log('oh no we got around the security policy', response);
+              throw new Error(`This request should have failed`);
+            }
+          }}
+        >
+          Create contact (incorrect user id)
         </button>
         <button
           onClick={async () => {

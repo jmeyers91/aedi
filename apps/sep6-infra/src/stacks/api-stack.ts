@@ -293,11 +293,11 @@ export class ApiStack extends Stack {
       return Object.assign(bucket, {
         nestResource: bucketResource,
         nestConstructArn: bucket.bucketArn,
-        addWebAppPermissions({
+        addWebAppPermissions: ({
           webAppClientConfig,
         }: {
           webAppClientConfig: ClientConfig;
-        }) {
+        }) => {
           webAppClientConfig.buckets[bucketResource.mergedMetadata.id] = {
             region: Stack.of(bucket).region,
             bucketName: bucket.bucketName,
@@ -355,6 +355,17 @@ export class ApiStack extends Stack {
       return Object.assign(table, {
         nestResource: dynamoResource,
         nestConstructArn: table.tableArn,
+        addWebAppPermissions: ({
+          webAppClientConfig,
+        }: {
+          webAppClientConfig: ClientConfig;
+        }) => {
+          // Add table info to the web app client config
+          webAppClientConfig.tables[dynamoResource.mergedMetadata.id] = {
+            tableName: table.tableName,
+            region: Stack.of(table).region,
+          };
+        },
       });
     });
 
@@ -748,6 +759,7 @@ export class ApiStack extends Stack {
           {} as ClientConfig['api']
         ),
         buckets: {},
+        tables: {},
       };
 
       let userPoolConfig: {
@@ -756,6 +768,7 @@ export class ApiStack extends Stack {
         identityPool: IdentityPoolInfo;
       } | null;
 
+      // Add user pool client, config, and permission bindings to the web app
       if (metadata.userPool) {
         const userPool = userPools.find(
           (pool) =>
