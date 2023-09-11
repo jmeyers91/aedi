@@ -1,7 +1,7 @@
 import { Authenticator, useAuthenticator } from '@aws-amplify/ui-react';
 import { getModuleClient } from '../module-client';
 import { useQuery } from '@tanstack/react-query';
-import { getS3Client } from './buckets-alt';
+import { getS3Client } from './aws-utils';
 import { GetObjectCommand, ListObjectsCommand } from '@aws-sdk/client-s3';
 import { getClientConfig } from '@sep6/client-config';
 
