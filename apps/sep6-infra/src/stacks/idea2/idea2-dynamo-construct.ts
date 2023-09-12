@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Construct } from 'constructs';
 import { DynamoRef, RefType } from './idea2-types';
 import { createConstructName, getIdea2StackContext } from './idea2-infra-utils';

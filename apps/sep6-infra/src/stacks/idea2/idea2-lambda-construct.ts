@@ -63,9 +63,7 @@ export class Idea2LambdaFunction extends Construct {
       buckets: [],
     };
 
-    for (const [_contextKey, contextValue] of Object.entries(
-      lambdaRef.context
-    )) {
+    for (const contextValue of Object.values(lambdaRef.context)) {
       const dependencyRefType = (contextValue as any)?.type as
         | RefType
         | undefined;

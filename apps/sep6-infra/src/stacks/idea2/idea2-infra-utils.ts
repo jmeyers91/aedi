@@ -1,8 +1,8 @@
 import { Stack } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-import { RefType } from './idea2-types';
 
 export function getIdea2StackContext(construct: Construct): Idea2StackContext {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return Stack.of(construct) as any;
 }
 
