@@ -46,3 +46,16 @@ export function addRoute<
 
   return lambdaRef;
 }
+
+export function reply<T>(body?: T): RouteResponse {
+  return {
+    statusCode: 200,
+    body: body ? JSON.stringify(body) : undefined,
+    headers: {
+      'Access-Control-Allow-Headers':
+        'Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token',
+      'Access-Control-Allow-Methods': '*',
+      'Access-Control-Allow-Origin': `*`,
+    },
+  };
+}
