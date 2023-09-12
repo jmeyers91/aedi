@@ -30,10 +30,10 @@ export const lambda2 = lambda(
   idea,
   'lambda2',
   { counters: counterTable, bucket: webAppBucket },
-  async ({ counters, bucket }, name: string) => {
+  async ({ counters, bucket }, { counterId }: { counterId: string }) => {
     try {
       const table = getDynamoTableClient(counters);
-      const counter = await table.get({ counterId: name });
+      const counter = await table.get({ counterId });
       const count = (counter?.count ?? 0) + 1;
       const { bucketName, s3Client } = getBucketClient(bucket);
 
@@ -45,12 +45,12 @@ export const lambda2 = lambda(
 
       await table.put({
         Item: {
-          counterId: name,
+          counterId,
           count,
         },
       });
 
-      return { success: true, name, count, files };
+      return { success: true, counterId, count, files };
     } catch (error) {
       return {
         success: false,
@@ -71,7 +71,7 @@ export const lambda1 = lambda(
     try {
       const event = 'hello from lambda1';
       console.log(`Calling lambda2 with event`, event);
-      const result = await getCallableLambdaRef(fn2)(event);
+      const result = await getCallableLambdaRef(fn2)({ counterId: event });
       console.log(`Received result`, result);
 
       return { success: true, result };

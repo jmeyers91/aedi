@@ -3,10 +3,6 @@ import { InvokeCommand, LambdaClient } from '@aws-sdk/client-lambda';
 import { ClientRef } from './idea2-types';
 import { resolveLambdaRuntimeEnv } from './idea2-env';
 
-type OmitFirstArg<F> = F extends (x: any, ...args: infer P) => infer R
-  ? (...args: P) => R
-  : never;
-
 export function getCallableLambdaRef<
   T extends Extract<ClientRef, { lambda: any }>
 >(lambdaClientRef: T) {
@@ -18,7 +14,7 @@ export function getCallableLambdaRef<
   const lambdaClient = new LambdaClient({ region });
 
   return async (
-    ...args: Parameters<OmitFirstArg<T['lambda']['fn']>>
+    event: Parameters<T['lambda']['fn']>[1]
   ): Promise<Awaited<ReturnType<T['lambda']['fn']>>> => {
     if (!fnConstructRef) {
       console.log('runtimeEnv', runtimeEnv);
@@ -30,7 +26,7 @@ export function getCallableLambdaRef<
     const result = await lambdaClient.send(
       new InvokeCommand({
         FunctionName: functionName,
-        Payload: JSON.stringify({ __spreadArgs: args }),
+        Payload: JSON.stringify(event),
         InvocationType: 'RequestResponse',
       })
     );
