@@ -19,12 +19,12 @@ import {
   DynamoDBClient,
   DynamoDBClientConfig,
 } from '@aws-sdk/client-dynamodb';
-import { ClientRef, DynamoRef } from './idea2-types';
+import { DynamoClientRef, DynamoRef } from './idea2-types';
 import { resolveLambdaRuntimeEnv } from './idea2-env';
 
-export function getDynamoTableClient<
-  T extends Extract<ClientRef, { dynamo: any }>
->(dynamoClientRef: T) {
+export function getDynamoTableClient<T extends DynamoClientRef<any, any>>(
+  dynamoClientRef: T
+) {
   const dynamoRef = dynamoClientRef.dynamo.id;
   const tableConstructRef =
     resolveLambdaRuntimeEnv().IDEA_CONSTRUCT_REF_MAP.tables[dynamoRef];
@@ -32,10 +32,20 @@ export function getDynamoTableClient<
   return new DynamoTable(
     tableConstructRef.tableName,
     tableConstructRef.region
-  ) as T['dynamo'] extends DynamoRef<infer R, infer Q>
-    ? DynamoTable<R, Q>
-    : DynamoTable<any, any>;
+  ) as MaybeReadonly<
+    T['dynamo'] extends DynamoRef<infer R, infer Q>
+      ? DynamoTable<R, Q>
+      : DynamoTable<any, any>,
+    T['options']
+  >;
 }
+
+type MaybeReadonly<
+  T extends DynamoTable<any, any>,
+  O extends { readonly: boolean }
+> = O extends { readonly: true }
+  ? Omit<T, 'put' | 'update' | 'patch' | 'delete'>
+  : T;
 
 export class DynamoDb extends DynamoDBDocumentClient {
   constructor(config: DynamoDBClientConfig) {

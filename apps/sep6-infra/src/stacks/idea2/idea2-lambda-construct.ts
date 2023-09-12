@@ -1,20 +1,22 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Construct } from 'constructs';
 import {
-  BucketRef,
+  ClientRef,
   ConstructRefMap,
-  DynamoRef,
+  DynamoClientRef,
+  DynamoRefClientOptions,
   IdeaAppHandlerEnv,
   LambdaRef,
   RefType,
+  ResourceRef,
 } from './idea2-types';
 import { createConstructName, getIdea2StackContext } from './idea2-infra-utils';
 import { Stack, Duration } from 'aws-cdk-lib';
 import { Runtime } from 'aws-cdk-lib/aws-lambda';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
-import { idea } from './idea2';
 import { Idea2Bucket } from './idea2-bucket-construct';
 import { Idea2DynamoTable } from './idea2-dynamo-construct';
+import { getClientRefFromRef } from './idea2-client-utils';
 
 export class Idea2LambdaFunction extends Construct {
   static cachedFactory(
@@ -55,7 +57,10 @@ export class Idea2LambdaFunction extends Construct {
     };
     const dependencyConstructs: {
       functions: Idea2LambdaFunction[];
-      tables: Idea2DynamoTable[];
+      tables: {
+        construct: Idea2DynamoTable;
+        clientOptions: DynamoRefClientOptions;
+      }[];
       buckets: Idea2Bucket[];
     } = {
       functions: [],
@@ -64,19 +69,12 @@ export class Idea2LambdaFunction extends Construct {
     };
 
     for (const contextValue of Object.values(lambdaRef.context)) {
-      const dependencyRefType = (contextValue as any)?.type as
-        | RefType
-        | undefined;
+      const dependencyClientRef = getClientRefFromRef(
+        contextValue as ClientRef | ResourceRef
+      );
 
-      if (dependencyRefType === RefType.LAMBDA) {
-        const depLambdaRefId = (contextValue as LambdaRef<any, any>)
-          ?.id as string;
-        const depLambdaRef = idea.lambdas.get(depLambdaRefId);
-        if (!depLambdaRef) {
-          throw new Error(
-            `Unable to resolve lambda ref ${depLambdaRefId} from lambda ${lambdaRef.id}`
-          );
-        }
+      if ('lambda' in dependencyClientRef) {
+        const depLambdaRef = dependencyClientRef.lambda;
         const depLambdaConstruct = Idea2LambdaFunction.cachedFactory(
           this,
           depLambdaRef
@@ -90,14 +88,10 @@ export class Idea2LambdaFunction extends Construct {
         dependencyConstructs.functions.push(depLambdaConstruct);
       }
 
-      if (dependencyRefType === RefType.DYNAMO) {
-        const dynamoRefId = (contextValue as DynamoRef<any, any>)?.id as string;
-        const depDynamoRef = idea.tables.get(dynamoRefId);
-        if (!depDynamoRef) {
-          throw new Error(
-            `Unable to resolve dynamo ref ${dynamoRefId} from lambda ${lambdaRef.id}`
-          );
-        }
+      if ('dynamo' in dependencyClientRef) {
+        const { dynamo: depDynamoRef, options: depDynamoClientOptions = {} } =
+          dependencyClientRef as DynamoClientRef<any, DynamoRefClientOptions>;
+
         const depDynamoConstruct = Idea2DynamoTable.cachedFactory(
           this,
           depDynamoRef
@@ -108,17 +102,14 @@ export class Idea2LambdaFunction extends Construct {
           region: Stack.of(depDynamoConstruct).region,
         };
 
-        dependencyConstructs.tables.push(depDynamoConstruct);
+        dependencyConstructs.tables.push({
+          construct: depDynamoConstruct,
+          clientOptions: depDynamoClientOptions,
+        });
       }
 
-      if (dependencyRefType === RefType.BUCKET) {
-        const bucketRefId = (contextValue as BucketRef)?.id as string;
-        const depBucketRef = idea.buckets.get(bucketRefId);
-        if (!depBucketRef) {
-          throw new Error(
-            `Unable to resolve bucket ref ${bucketRefId} from lambda ${lambdaRef.id}`
-          );
-        }
+      if ('bucket' in dependencyClientRef) {
+        const depBucketRef = dependencyClientRef.bucket;
         const depBucketConstruct = Idea2Bucket.cachedFactory(
           this,
           depBucketRef
@@ -161,8 +152,12 @@ export class Idea2LambdaFunction extends Construct {
     }
 
     // Grant the function permission to access its dependency dynamo tables
-    for (const dependencyDynamoTable of dependencyConstructs.tables) {
-      dependencyDynamoTable.table.grantReadWriteData(nodeJsFunction);
+    for (const { construct, clientOptions } of dependencyConstructs.tables) {
+      if (clientOptions.readonly) {
+        construct.table.grantReadData(nodeJsFunction);
+      } else {
+        construct.table.grantReadWriteData(nodeJsFunction);
+      }
     }
 
     // Grant the function permission to access its dependency S3 buckets

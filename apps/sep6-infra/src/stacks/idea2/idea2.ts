@@ -1,7 +1,7 @@
 import { lambda } from './idea2-lambda';
 import { IdeaApp } from './idea2-app';
 import { getCallableLambdaRef } from './idea2-lambda-client';
-import { table } from './idea2-dynamo';
+import { readonly, table } from './idea2-dynamo';
 import { getDynamoTableClient } from './idea2-dynamo-client';
 import { bucket } from './idea2-bucket';
 import { getBucketClient } from './idea2-bucket-client';
@@ -43,7 +43,7 @@ export const lambda2 = lambda(
         })
       );
 
-      await table.put({
+      await (table as any).put({
         Item: {
           counterId,
           count,

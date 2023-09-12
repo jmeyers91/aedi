@@ -6,7 +6,9 @@ export const GENERATED = Symbol('GENERATED');
 export type AnyFn = (...args: any[]) => any;
 export type LambdaRefFn<C> = (context: WrapContext<C>, ...args: any[]) => any;
 export type WrapContext<C> = {
-  [K in keyof C]: C[K] extends LambdaRef<any, any>
+  [K in keyof C]: C[K] extends ClientRef
+    ? C[K]
+    : C[K] extends LambdaRef<any, any>
     ? { lambda: C[K] }
     : C[K] extends DynamoRef<any, any>
     ? { dynamo: C[K] }
@@ -30,6 +32,10 @@ export type LambdaRef<C, Fn extends LambdaRefFn<C>> = {
   context: C;
 };
 
+export interface LambdaClientRef {
+  lambda: LambdaRef<any, any>;
+}
+
 export type DynamoKey = 'BINARY' | 'NUMBER' | 'STRING';
 
 export type DynamoRef<T, PK extends keyof T> = {
@@ -45,6 +51,18 @@ export type DynamoRef<T, PK extends keyof T> = {
   };
 };
 
+export interface DynamoClientRef<
+  T extends DynamoRef<any, any>,
+  O extends DynamoRefClientOptions
+> {
+  dynamo: T;
+  options?: O;
+}
+
+export interface DynamoRefClientOptions {
+  readonly?: boolean;
+}
+
 export type BucketRef = {
   type: RefType.BUCKET;
   id: string;
@@ -52,12 +70,16 @@ export type BucketRef = {
   domain?: { domainName: string; domainZone: string } | typeof GENERATED;
 };
 
+export interface BucketClientRef {
+  bucket: BucketRef;
+}
+
+export type ResourceRef = LambdaRef<any, any> | DynamoRef<any, any> | BucketRef;
+
 export type ClientRef =
-  | {
-      lambda: LambdaRef<any, any>;
-    }
-  | { dynamo: DynamoRef<any, any> }
-  | { bucket: BucketRef };
+  | LambdaClientRef
+  | DynamoClientRef<any, any>
+  | BucketClientRef;
 
 export interface ConstructRefMap {
   functions: Record<

@@ -1,4 +1,5 @@
-import { DynamoRef, RefType } from './idea2-types';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { DynamoClientRef, DynamoRef, RefType } from './idea2-types';
 import { IdeaApp } from './idea2-app';
 
 export function table<T, PK extends keyof T>(
@@ -19,4 +20,10 @@ export function table<T, PK extends keyof T>(
   app.tables.set(id, dynamoRef);
 
   return dynamoRef;
+}
+
+export function readonly<T extends DynamoRef<any, any>>(
+  dynamo: T
+): DynamoClientRef<T, { readonly: true }> {
+  return { dynamo, options: { readonly: true } };
 }
