@@ -1,6 +1,6 @@
 import { Stack } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-import { Idea2App } from './idea2-app';
+import { Idea2App } from '@sep6/idea2';
 
 export function getIdea2StackContext(construct: Construct): Idea2StackContext {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

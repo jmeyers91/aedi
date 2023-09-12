@@ -8,8 +8,8 @@ import { S3Origin } from 'aws-cdk-lib/aws-cloudfront-origins';
 import { Bucket } from 'aws-cdk-lib/aws-s3';
 import { BucketDeployment, Source } from 'aws-cdk-lib/aws-s3-deployment';
 import { Construct } from 'constructs';
-import { BucketRef, RefType } from './idea2-types';
 import { createConstructName, getIdea2StackContext } from './idea2-infra-utils';
+import { BucketRef, RefType } from '@sep6/idea2';
 
 export class Idea2Bucket extends Construct {
   static cachedFactory(scope: Construct, bucketRef: BucketRef): Idea2Bucket {

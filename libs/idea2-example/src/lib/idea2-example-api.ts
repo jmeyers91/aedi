@@ -1,7 +1,11 @@
 import { ListObjectsCommand } from '@aws-sdk/client-s3';
-import { getBucketClient } from '../idea2-bucket-client';
-import { lambda } from '../idea2-lambda';
-import { RouteEvent, RouteResponse, addRoute } from '../idea2-rest-api';
+import {
+  getBucketClient,
+  lambda,
+  RouteEvent,
+  RouteResponse,
+  addRoute,
+} from '@sep6/idea2';
 import { idea } from './idea2-example-app';
 import { webAppBucket, api } from './idea2-example-resources';
 

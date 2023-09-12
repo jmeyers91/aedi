@@ -7,6 +7,7 @@ tmp
 /cdk.out
 /debug.md
 /lambda-result
+/idea2-report.json
 
 # dependencies
 node_modules

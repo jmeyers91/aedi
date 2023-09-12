@@ -1,6 +1,6 @@
 import { Stack } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-import { RestApiRef, RefType } from './idea2-types';
+import { RestApiRef, RefType } from '@sep6/idea2';
 import { getIdea2StackContext } from './idea2-infra-utils';
 import { Cors, LambdaIntegration, RestApi } from 'aws-cdk-lib/aws-apigateway';
 import { Idea2LambdaFunction } from './idea2-lambda-construct';

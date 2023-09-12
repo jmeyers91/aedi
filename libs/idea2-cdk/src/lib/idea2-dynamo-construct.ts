@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Construct } from 'constructs';
-import { DynamoRef, RefType } from './idea2-types';
+import { DynamoRef, RefType } from '@sep6/idea2';
 import { createConstructName, getIdea2StackContext } from './idea2-infra-utils';
 import { AttributeType, TableV2 } from 'aws-cdk-lib/aws-dynamodb';
-import { Stack } from 'aws-cdk-lib';
+import { RemovalPolicy, Stack } from 'aws-cdk-lib';
 
 export class Idea2DynamoTable extends Construct {
   static cachedFactory(
@@ -38,6 +38,7 @@ export class Idea2DynamoTable extends Construct {
     super(scope, id);
 
     this.table = new TableV2(this, dynamoRef.id, {
+      removalPolicy: RemovalPolicy.DESTROY, // TODO: Make this configurable
       tableName: createConstructName(this, dynamoRef.id),
       partitionKey: {
         name: dynamoRef.partitionKey.name,

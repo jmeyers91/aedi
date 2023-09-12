@@ -1,5 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Construct } from 'constructs';
+import { createConstructName, getIdea2StackContext } from './idea2-infra-utils';
+import { Stack, Duration } from 'aws-cdk-lib';
+import { Runtime } from 'aws-cdk-lib/aws-lambda';
+import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
+import { Idea2Bucket } from './idea2-bucket-construct';
+import { Idea2DynamoTable } from './idea2-dynamo-construct';
 import {
   ClientRef,
   ConstructRefMap,
@@ -9,14 +15,8 @@ import {
   LambdaRef,
   RefType,
   ResourceRef,
-} from './idea2-types';
-import { createConstructName, getIdea2StackContext } from './idea2-infra-utils';
-import { Stack, Duration } from 'aws-cdk-lib';
-import { Runtime } from 'aws-cdk-lib/aws-lambda';
-import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
-import { Idea2Bucket } from './idea2-bucket-construct';
-import { Idea2DynamoTable } from './idea2-dynamo-construct';
-import { getClientRefFromRef } from './idea2-client-utils';
+  getClientRefFromRef,
+} from '@sep6/idea2';
 
 export class Idea2LambdaFunction extends Construct {
   static cachedFactory(

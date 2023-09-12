@@ -1,8 +1,10 @@
 import { ListObjectsCommand } from '@aws-sdk/client-s3';
-import { getBucketClient } from '../idea2-bucket-client';
-import { getDynamoTableClient } from '../idea2-dynamo-client';
-import { lambda } from '../idea2-lambda';
-import { getCallableLambdaRef } from '../idea2-lambda-client';
+import {
+  getBucketClient,
+  getDynamoTableClient,
+  lambda,
+  getCallableLambdaRef,
+} from '@sep6/idea2';
 import { idea } from './idea2-example-app';
 import { counterTable, webAppBucket } from './idea2-example-resources';
 

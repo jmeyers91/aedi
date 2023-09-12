@@ -1,7 +1,4 @@
-import { bucket } from '../idea2-bucket';
-import { table } from '../idea2-dynamo';
-import { restApi } from '../idea2-rest-api';
-import { GENERATED } from '../idea2-types';
+import { bucket, table, restApi, GENERATED } from '@sep6/idea2';
 import { idea } from './idea2-example-app';
 
 export const api = restApi(idea, 'rest-api', {});

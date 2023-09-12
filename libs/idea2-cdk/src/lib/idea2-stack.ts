@@ -6,7 +6,8 @@ import { Idea2StackContext } from './idea2-infra-utils';
 import { Idea2DynamoTable } from './idea2-dynamo-construct';
 import { Idea2LambdaFunction } from './idea2-lambda-construct';
 import { Idea2RestApi } from './idea2-rest-api-construct';
-import { Idea2App } from './idea2-app';
+import { Idea2App } from '@sep6/idea2';
+import { writeFileSync } from 'fs';
 
 export class Idea2Stack extends Stack implements Idea2StackContext {
   idea2App: Idea2App;
@@ -52,5 +53,19 @@ export class Idea2Stack extends Stack implements Idea2StackContext {
     for (const bucketRef of idea2App.buckets.values()) {
       Idea2Bucket.cachedFactory(this, bucketRef);
     }
+
+    writeFileSync(
+      './idea2-report.json',
+      JSON.stringify(
+        {
+          lambdas: Object.fromEntries(idea2App.lambdas.entries()),
+          tables: Object.fromEntries(idea2App.tables.entries()),
+          buckets: Object.fromEntries(idea2App.buckets.entries()),
+          restApis: Object.fromEntries(idea2App.restApis.entries()),
+        },
+        null,
+        2
+      )
+    );
   }
 }
