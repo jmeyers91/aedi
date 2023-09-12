@@ -17,6 +17,7 @@ import {
   ResourceRef,
   getClientRefFromRef,
 } from '@sep6/idea2';
+import { Idea2UserPool } from './idea2-user-pool-construct';
 
 export class Idea2LambdaFunction extends Construct {
   static cachedFactory(
@@ -54,6 +55,7 @@ export class Idea2LambdaFunction extends Construct {
       functions: {},
       tables: {},
       buckets: {},
+      userPools: {},
     };
     const dependencyConstructs: {
       functions: Idea2LambdaFunction[];
@@ -62,10 +64,12 @@ export class Idea2LambdaFunction extends Construct {
         clientOptions: DynamoRefClientOptions;
       }[];
       buckets: Idea2Bucket[];
+      userPools: Idea2UserPool[];
     } = {
       functions: [],
       tables: [],
       buckets: [],
+      userPools: [],
     };
 
     for (const contextValue of Object.values(lambdaRef.context)) {
@@ -122,6 +126,21 @@ export class Idea2LambdaFunction extends Construct {
 
         dependencyConstructs.buckets.push(depBucketConstruct);
       }
+
+      if ('userPool' in dependencyClientRef) {
+        const depUserPoolRef = dependencyClientRef.userPool;
+        const depUserPoolConstruct = Idea2UserPool.cachedFactory(
+          this,
+          depUserPoolRef
+        );
+
+        contextConstructRefs.userPools[depUserPoolRef.id] = {
+          userPoolId: depUserPoolConstruct.userPool.userPoolId,
+          region: Stack.of(depUserPoolConstruct).region,
+        };
+
+        dependencyConstructs.userPools.push(depUserPoolConstruct);
+      }
     }
 
     const environment: Idea2AppHandlerEnv = {
@@ -163,6 +182,11 @@ export class Idea2LambdaFunction extends Construct {
     // Grant the function permission to access its dependency S3 buckets
     for (const dependencyS3Bucket of dependencyConstructs.buckets) {
       dependencyS3Bucket.bucket.grantReadWrite(nodeJsFunction);
+    }
+
+    // Grant the function permission to access its dependency cognito user pools
+    for (const dependencyUserPool of dependencyConstructs.userPools) {
+      dependencyUserPool.userPool.grant(nodeJsFunction, 'cognito-idp:*'); // TODO: Refine these permissions
     }
   }
 }

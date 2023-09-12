@@ -28,6 +28,8 @@ export function getClientRefFromRef(ref: ResourceRef | ClientRef): ClientRef {
         return { lambda: ref };
       case RefType.REST_API:
         return { restApi: ref };
+      case RefType.USER_POOL:
+        return { userPool: ref };
     }
   }
   return ref;

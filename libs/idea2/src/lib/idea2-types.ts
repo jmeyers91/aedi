@@ -15,6 +15,10 @@ import type {
   RestApiClientRef,
   RestApiRef,
 } from './idea2-rest-api/idea2-rest-api-types';
+import {
+  UserPoolClientRef,
+  UserPoolRef,
+} from './idea2-user-pool/idea2-user-pool-types';
 
 export type WrapContext<C> = {
   [K in keyof C]: C[K] extends ClientRef
@@ -27,6 +31,8 @@ export type WrapContext<C> = {
     ? { bucket: C[K] }
     : C[K] extends RestApiRef
     ? { restApi: C[K] }
+    : C[K] extends UserPoolRef
+    ? { userPool: C[K] }
     : never;
 };
 
@@ -35,19 +41,22 @@ export enum RefType {
   DYNAMO = 'dynamo',
   BUCKET = 'bucket',
   REST_API = 'rest-api',
+  USER_POOL = 'user-pool',
 }
 
 export type ResourceRef =
   | LambdaRef<any, any, any>
   | DynamoRef<any, any>
   | BucketRef
-  | RestApiRef;
+  | RestApiRef
+  | UserPoolRef;
 
 export type ClientRef =
   | LambdaClientRef
   | DynamoClientRef<any, any>
   | BucketClientRef
-  | RestApiClientRef;
+  | RestApiClientRef
+  | UserPoolClientRef;
 
 export interface ConstructRefMap {
   functions: Record<
@@ -65,6 +74,13 @@ export interface ConstructRefMap {
     }
   >;
   buckets: Record<string, { bucketName: string; region: string }>;
+  userPools: Record<
+    string,
+    {
+      userPoolId: string;
+      region: string;
+    }
+  >;
 }
 
 export interface Idea2AppHandlerEnv {

@@ -7,11 +7,17 @@ import {
   addRoute,
   reply,
   getDynamoTableClient,
-  RouteResponse,
+  getUserPoolClient,
 } from '@sep6/idea2';
 import { idea } from './idea2-example-app';
-import { webAppBucket, api, contactsTable } from './idea2-example-resources';
+import {
+  webAppBucket,
+  api,
+  contactsTable,
+  appUserPool,
+} from './idea2-example-resources';
 import { randomUUID } from 'crypto';
+import { ListUsersCommand } from '@aws-sdk/client-cognito-identity-provider';
 
 export const healthcheck = addRoute(
   api,
@@ -20,18 +26,35 @@ export const healthcheck = addRoute(
   lambda(
     idea,
     'healthcheck',
-    { bucket: webAppBucket },
+    { bucket: webAppBucket, appUserPool },
 
-    async ({ bucket }, _: RouteEvent) => {
-      const { bucketName, s3Client } = getBucketClient(bucket);
+    async (ctx, _: RouteEvent) => {
+      try {
+        const { bucketName, s3Client } = getBucketClient(ctx.bucket);
+        const { userPoolClient, userPoolId } = getUserPoolClient(
+          ctx.appUserPool
+        );
 
-      const files = await s3Client.send(
-        new ListObjectsCommand({
-          Bucket: bucketName,
-        })
-      );
+        const files = await s3Client.send(
+          new ListObjectsCommand({
+            Bucket: bucketName,
+          })
+        );
 
-      return reply({ healthy: true, files });
+        const users = await userPoolClient.send(
+          new ListUsersCommand({
+            UserPoolId: userPoolId,
+            Limit: 10,
+          })
+        );
+
+        return reply({ healthy: true, files, users });
+      } catch (error) {
+        return reply({
+          healthy: false,
+          error: (error as Error).stack ?? (error as Error).message,
+        });
+      }
     }
   )
 );

@@ -8,6 +8,7 @@ import { Idea2LambdaFunction } from './idea2-lambda-construct';
 import { Idea2RestApi } from './idea2-rest-api-construct';
 import { Idea2App } from '@sep6/idea2';
 import { writeFileSync } from 'fs';
+import { Idea2UserPool } from './idea2-user-pool-construct';
 
 export class Idea2Stack extends Stack implements Idea2StackContext {
   idea2App: Idea2App;
@@ -31,7 +32,6 @@ export class Idea2Stack extends Stack implements Idea2StackContext {
     super(scope, id, props);
 
     this.idea2App = idea2App;
-
     this.namePrefix = `${id}-`;
 
     for (const restApi of idea2App.restApis.values()) {
@@ -54,6 +54,10 @@ export class Idea2Stack extends Stack implements Idea2StackContext {
       Idea2Bucket.cachedFactory(this, bucketRef);
     }
 
+    for (const userPoolRef of idea2App.userPools.values()) {
+      Idea2UserPool.cachedFactory(this, userPoolRef);
+    }
+
     writeFileSync(
       './idea2-report.json',
       JSON.stringify(
@@ -62,6 +66,7 @@ export class Idea2Stack extends Stack implements Idea2StackContext {
           tables: Object.fromEntries(idea2App.tables.entries()),
           buckets: Object.fromEntries(idea2App.buckets.entries()),
           restApis: Object.fromEntries(idea2App.restApis.entries()),
+          userPools: Object.fromEntries(idea2App.userPools.entries()),
         },
         null,
         2

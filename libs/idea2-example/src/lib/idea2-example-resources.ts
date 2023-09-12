@@ -1,4 +1,4 @@
-import { bucket, table, restApi, GENERATED } from '@sep6/idea2';
+import { bucket, table, restApi, GENERATED, userPool } from '@sep6/idea2';
 import { idea } from './idea2-example-app';
 
 export const api = restApi(idea, 'rest-api', {});
@@ -36,4 +36,9 @@ export const contactsTable = table<Contact, 'userId'>(idea, 'contact-table', {
     name: 'contactId',
     type: 'STRING',
   },
+});
+
+export const appUserPool = userPool(idea, 'user-pool', {
+  selfSignUpEnabled: true,
+  domainPrefix: 'idea2-dev',
 });
