@@ -135,7 +135,7 @@ export interface ConstructRefMap {
   buckets: Record<string, { bucketName: string; region: string }>;
 }
 
-export interface IdeaAppHandlerEnv {
+export interface Idea2AppHandlerEnv {
   IDEA_FUNCTION_ID: string;
   IDEA_CONSTRUCT_REF_MAP: ConstructRefMap;
 }

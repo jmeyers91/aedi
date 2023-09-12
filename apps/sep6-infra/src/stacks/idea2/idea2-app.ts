@@ -2,7 +2,7 @@
 
 import { LambdaRef, DynamoRef, BucketRef, RestApiRef } from './idea2-types';
 
-export class IdeaApp {
+export class Idea2App {
   public readonly lambdas = new Map<string, LambdaRef<any, any, any>>();
   public readonly tables = new Map<string, DynamoRef<any, any>>();
   public readonly buckets = new Map<string, BucketRef>();

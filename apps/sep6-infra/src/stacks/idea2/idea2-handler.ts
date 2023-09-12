@@ -2,7 +2,7 @@
 import { Handler } from 'aws-lambda';
 import {
   LambdaRef,
-  IdeaAppHandlerEnv,
+  Idea2AppHandlerEnv,
   ClientRef,
   ResourceRef,
 } from './idea2-types';
@@ -19,7 +19,7 @@ export const getLambdaRefHandler = (
 
   return async (event, context, callback) => {
     try {
-      const { IDEA_FUNCTION_ID: functionId }: IdeaAppHandlerEnv =
+      const { IDEA_FUNCTION_ID: functionId }: Idea2AppHandlerEnv =
         resolveLambdaRuntimeEnv();
 
       if (!lambdaRef) {

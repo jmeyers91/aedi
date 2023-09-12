@@ -6,9 +6,8 @@
     "build": "npx nx run-many -t build",
     "dev": "npx nx serve sep6",
     "cdk": "paws admin && rm -rf cdk.out && npm run build && npx cdk --profile admin --region us-west-2",
-    "api:deploy": "npm run cdk deploy sep6-api-stack",
-    "api:diff": "./scripts/diff-api",
-    "play": "npx ts-node ./scripts/play.ts"
+    "api:deploy": "npm run cdk deploy idea2-stack",
+    "api:diff": "npm run cdk diff idea2-stack"
   },
   "private": true,
   "dependencies": {

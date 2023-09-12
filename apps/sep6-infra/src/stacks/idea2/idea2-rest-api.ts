@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { RestApiRef, RefType, LambdaRef, RestApiRefRoute } from './idea2-types';
-import { IdeaApp } from './idea2-app';
+import { Idea2App } from './idea2-app';
 import { APIGatewayEvent } from 'aws-lambda';
 
 export type RouteEvent = APIGatewayEvent;
@@ -11,7 +11,7 @@ export type RouteResponse = {
 };
 
 export function restApi(
-  app: IdeaApp,
+  app: Idea2App,
   id: string,
   options: Omit<RestApiRef, 'id' | 'type' | 'routes'>
 ): RestApiRef {

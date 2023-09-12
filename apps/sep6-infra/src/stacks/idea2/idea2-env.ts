@@ -1,8 +1,8 @@
-import { IdeaAppHandlerEnv } from './idea2-types';
+import { Idea2AppHandlerEnv } from './idea2-types';
 
-let cachedEnv: IdeaAppHandlerEnv | undefined = undefined;
+let cachedEnv: Idea2AppHandlerEnv | undefined = undefined;
 
-export function resolveLambdaRuntimeEnv(): IdeaAppHandlerEnv {
+export function resolveLambdaRuntimeEnv(): Idea2AppHandlerEnv {
   if (!cachedEnv) {
     cachedEnv = {
       IDEA_FUNCTION_ID: env('IDEA_FUNCTION_ID'),

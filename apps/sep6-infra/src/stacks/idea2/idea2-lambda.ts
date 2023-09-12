@@ -7,10 +7,10 @@ import {
   LambdaRefFnWithEvent,
   BrandedLambdaRefFnWithEvent,
 } from './idea2-types';
-import { IdeaApp } from './idea2-app';
+import { Idea2App } from './idea2-app';
 
 export function lambda<C, E, R>(
-  app: IdeaApp,
+  app: Idea2App,
   id: string,
   context: C,
   fn: LambdaRefFnWithEvent<C, E, R>

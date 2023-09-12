@@ -5,7 +5,7 @@ import {
   ConstructRefMap,
   DynamoClientRef,
   DynamoRefClientOptions,
-  IdeaAppHandlerEnv,
+  Idea2AppHandlerEnv,
   LambdaRef,
   RefType,
   ResourceRef,
@@ -124,7 +124,7 @@ export class Idea2LambdaFunction extends Construct {
       }
     }
 
-    const environment: IdeaAppHandlerEnv = {
+    const environment: Idea2AppHandlerEnv = {
       IDEA_FUNCTION_ID: lambdaRef.id,
       IDEA_CONSTRUCT_REF_MAP: contextConstructRefs,
     };

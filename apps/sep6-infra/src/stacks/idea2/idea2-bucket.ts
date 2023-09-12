@@ -1,8 +1,8 @@
 import { BucketRef, RefType } from './idea2-types';
-import { IdeaApp } from './idea2-app';
+import { Idea2App } from './idea2-app';
 
 export function bucket(
-  app: IdeaApp,
+  app: Idea2App,
   id: string,
   options: Omit<BucketRef, 'id' | 'type'>
 ): BucketRef {
