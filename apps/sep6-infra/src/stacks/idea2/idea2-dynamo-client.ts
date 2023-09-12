@@ -19,7 +19,7 @@ import {
   DynamoDBClient,
   DynamoDBClientConfig,
 } from '@aws-sdk/client-dynamodb';
-import { ClientRef } from './idea2-types';
+import { ClientRef, DynamoRef } from './idea2-types';
 import { resolveLambdaRuntimeEnv } from './idea2-env';
 
 export function getDynamoTableClient<
@@ -29,7 +29,11 @@ export function getDynamoTableClient<
   const tableConstructRef =
     resolveLambdaRuntimeEnv().IDEA_CONSTRUCT_REF_MAP.tables[dynamoRef];
 
-  return new DynamoTable(tableConstructRef.tableName);
+  return new DynamoTable(
+    tableConstructRef.tableName
+  ) as T['dynamo'] extends DynamoRef<infer R, infer Q>
+    ? DynamoTable<R, Q>
+    : DynamoTable<any, any>;
 }
 
 export class DynamoDb extends DynamoDBDocumentClient {
@@ -81,7 +85,7 @@ export class DynamoDb extends DynamoDBDocumentClient {
   }
 }
 
-export class DynamoTable<T, K extends Partial<T>> {
+export class DynamoTable<T, K extends keyof T> {
   private readonly dynamoDb: DynamoDb;
 
   constructor(private readonly tableName: string) {
@@ -90,7 +94,7 @@ export class DynamoTable<T, K extends Partial<T>> {
     });
   }
 
-  async get(key: K): Promise<T | undefined> {
+  async get(key: { [Key in K]: T[Key] }): Promise<T | undefined> {
     return this.dynamoDb.get<T>({
       TableName: this.tableName,
       Key: key,
@@ -106,7 +110,9 @@ export class DynamoTable<T, K extends Partial<T>> {
   }
 
   async update(
-    input: Omit<UpdateCommandInput, 'TableName' | 'Key'> & { Key: K }
+    input: Omit<UpdateCommandInput, 'TableName' | 'Key'> & {
+      Key: { [Key in K]: T[Key] };
+    }
   ) {
     return this.dynamoDb.update<T>({
       ...input,
@@ -114,7 +120,7 @@ export class DynamoTable<T, K extends Partial<T>> {
     });
   }
 
-  async patch(key: K, patch: Partial<T>): Promise<T> {
+  async patch(key: { [Key in K]: T[Key] }, patch: Partial<T>): Promise<T> {
     const patchEntries = Object.entries(patch);
 
     if (patchEntries.length === 0) {

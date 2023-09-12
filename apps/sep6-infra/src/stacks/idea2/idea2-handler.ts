@@ -18,7 +18,7 @@ export const getLambdaRefHandler = (
     if (refType === RefType.LAMBDA) {
       wrappedContext[key] = { lambda: value as LambdaRef<any, any> };
     } else if (refType === RefType.DYNAMO) {
-      wrappedContext[key] = { dynamo: value as DynamoRef };
+      wrappedContext[key] = { dynamo: value as DynamoRef<any, any> };
     }
   }
 

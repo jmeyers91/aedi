@@ -6,6 +6,7 @@ tmp
 /out-tsc
 /cdk.out
 /debug.md
+/lambda-result
 
 # dependencies
 node_modules

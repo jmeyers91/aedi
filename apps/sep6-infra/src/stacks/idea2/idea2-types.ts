@@ -6,7 +6,7 @@ export type LambdaRefFn<C> = (context: WrapContext<C>, ...args: any[]) => any;
 export type WrapContext<C> = {
   [K in keyof C]: C[K] extends LambdaRef<any, any>
     ? { lambda: C[K] }
-    : C[K] extends DynamoRef
+    : C[K] extends DynamoRef<any, any>
     ? { dynamo: C[K] }
     : never;
 };
@@ -27,15 +27,15 @@ export type LambdaRef<C, Fn extends LambdaRefFn<C>> = {
 
 export type DynamoKey = 'BINARY' | 'NUMBER' | 'STRING';
 
-export type DynamoRef = {
+export type DynamoRef<T, PK extends keyof T> = {
   type: RefType.DYNAMO;
   id: string;
   partitionKey: {
-    name: string;
+    name: PK;
     type: DynamoKey;
   };
   sortKey?: {
-    name: string;
+    name: keyof T;
     type: DynamoKey;
   };
 };
@@ -44,7 +44,7 @@ export type ClientRef =
   | {
       lambda: LambdaRef<any, any>;
     }
-  | { dynamo: DynamoRef };
+  | { dynamo: DynamoRef<any, any> };
 
 export interface ConstructRefMap {
   functions: Record<

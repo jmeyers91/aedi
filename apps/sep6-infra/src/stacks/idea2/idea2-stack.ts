@@ -21,7 +21,7 @@ export class Idea2Stack extends Stack {
     const nodeJsFunctionCache = new Map<string, NodejsFunction>();
     const dynamoTableCache = new Map<string, TableV2>();
 
-    const createTableConstruct = (dynamoRef: DynamoRef) => {
+    const createTableConstruct = (dynamoRef: DynamoRef<any, any>) => {
       return new TableV2(this, dynamoRef.id, {
         tableName: `idea2-${dynamoRef.id}`,
         partitionKey: {
@@ -30,7 +30,7 @@ export class Idea2Stack extends Stack {
         },
         sortKey: dynamoRef.sortKey
           ? {
-              name: dynamoRef.sortKey.name,
+              name: dynamoRef.sortKey.name as string,
               type: AttributeType[dynamoRef.sortKey.type],
             }
           : undefined,
@@ -76,7 +76,8 @@ export class Idea2Stack extends Stack {
         }
 
         if (dependencyRefType === RefType.DYNAMO) {
-          const dynamoRefId = (contextValue as DynamoRef)?.id as string;
+          const dynamoRefId = (contextValue as DynamoRef<any, any>)
+            ?.id as string;
           const depDynamoRef = idea.tables.get(dynamoRefId);
           if (!depDynamoRef) {
             throw new Error(
@@ -139,7 +140,9 @@ export class Idea2Stack extends Stack {
       return fn;
     };
 
-    const getOrCreateDynamoConstruct = (dynamoRef: DynamoRef): TableV2 => {
+    const getOrCreateDynamoConstruct = (
+      dynamoRef: DynamoRef<any, any>
+    ): TableV2 => {
       const cached = dynamoTableCache.get(dynamoRef.id);
       if (cached) {
         return cached;

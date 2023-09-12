@@ -6,12 +6,16 @@ import { getDynamoTableClient } from './idea2-dynamo-client';
 
 export const idea = new IdeaApp();
 
-const counterTable = table(idea, 'counter-table', {
-  partitionKey: {
-    name: 'counterId',
-    type: 'STRING',
-  },
-});
+const counterTable = table<{ counterId: string; count: number }, 'counterId'>(
+  idea,
+  'counter-table',
+  {
+    partitionKey: {
+      name: 'counterId',
+      type: 'STRING',
+    },
+  }
+);
 
 export const lambda2 = lambda(
   idea,
@@ -21,7 +25,8 @@ export const lambda2 = lambda(
     try {
       const table = getDynamoTableClient(counters);
       const counter = await table.get({ counterId: name });
-      const count = ((counter as any)?.count ?? 0) + 1;
+      const count = (counter?.count ?? 0) + 1;
+
       await table.put({
         Item: {
           counterId: name,
