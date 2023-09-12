@@ -1,12 +1,13 @@
 import { lambda } from './idea2-lambda';
 import { IdeaApp } from './idea2-app';
 import { getCallableLambdaRef } from './idea2-lambda-client';
-import { readonly, table } from './idea2-dynamo';
+import { table } from './idea2-dynamo';
 import { getDynamoTableClient } from './idea2-dynamo-client';
 import { bucket } from './idea2-bucket';
 import { getBucketClient } from './idea2-bucket-client';
 import { ListObjectsCommand } from '@aws-sdk/client-s3';
 import { GENERATED } from './idea2-types';
+import { addRoute, restApi } from './idea2-rest-api';
 
 export const idea = new IdeaApp();
 
@@ -14,6 +15,23 @@ const webAppBucket = bucket(idea, 'web-app-bucket', {
   assetPath: './dist/apps/sep6-app',
   domain: GENERATED,
 });
+
+export const healthcheck = lambda(idea, 'healthcheck', {}, (_, event) => {
+  return {
+    statusCode: 200,
+    body: JSON.stringify({ healthy: true, event }),
+    headers: {
+      'Access-Control-Allow-Headers':
+        'Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token',
+      'Access-Control-Allow-Methods': '*',
+      'Access-Control-Allow-Origin': `*`,
+    },
+  };
+});
+
+const api = restApi(idea, 'rest-api', {});
+
+addRoute(api, 'GET', '/healthcheck', healthcheck);
 
 const counterTable = table<{ counterId: string; count: number }, 'counterId'>(
   idea,
@@ -43,7 +61,7 @@ export const lambda2 = lambda(
         })
       );
 
-      await (table as any).put({
+      await table.put({
         Item: {
           counterId,
           count,

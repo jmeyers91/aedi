@@ -9,6 +9,8 @@ export function getClientRefFromRef(ref: ResourceRef | ClientRef): ClientRef {
         return { dynamo: ref };
       case RefType.LAMBDA:
         return { lambda: ref };
+      case RefType.REST_API:
+        return { restApi: ref };
     }
   }
   return ref;

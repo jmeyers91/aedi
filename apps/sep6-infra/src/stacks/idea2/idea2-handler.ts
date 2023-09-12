@@ -26,10 +26,7 @@ export const getLambdaRefHandler = (
         throw new Error(`Unable to resolve function: ${functionId}`);
       }
 
-      const fnArgs =
-        '__spreadArgs' in event ? (event.__spreadArgs as any[]) : [event];
-
-      const result = await lambdaRef.fn(wrappedContext, ...fnArgs);
+      const result = await lambdaRef.fn(wrappedContext, event, context);
       callback(null, result);
     } catch (error) {
       callback(error as Error);

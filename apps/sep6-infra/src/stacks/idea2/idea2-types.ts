@@ -14,6 +14,8 @@ export type WrapContext<C> = {
     ? { dynamo: C[K] }
     : C[K] extends BucketRef
     ? { bucket: C[K] }
+    : C[K] extends RestApiRef
+    ? { restApi: C[K] }
     : never;
 };
 
@@ -21,6 +23,7 @@ export enum RefType {
   LAMBDA = 'lambda',
   DYNAMO = 'dynamo',
   BUCKET = 'bucket',
+  REST_API = 'rest-api',
 }
 
 export type LambdaRef<C, Fn extends LambdaRefFn<C>> = {
@@ -74,12 +77,33 @@ export interface BucketClientRef {
   bucket: BucketRef;
 }
 
-export type ResourceRef = LambdaRef<any, any> | DynamoRef<any, any> | BucketRef;
+export interface RestApiRefRoute {
+  method: string;
+  path: string;
+  lambdaRef: LambdaRef<any, any>;
+}
+
+export interface RestApiRef {
+  type: RefType.REST_API;
+  id: string;
+  routes: RestApiRefRoute[];
+}
+
+export interface RestApiClientRef {
+  restApi: RestApiRef;
+}
+
+export type ResourceRef =
+  | LambdaRef<any, any>
+  | DynamoRef<any, any>
+  | BucketRef
+  | RestApiRef;
 
 export type ClientRef =
   | LambdaClientRef
   | DynamoClientRef<any, any>
-  | BucketClientRef;
+  | BucketClientRef
+  | RestApiClientRef;
 
 export interface ConstructRefMap {
   functions: Record<

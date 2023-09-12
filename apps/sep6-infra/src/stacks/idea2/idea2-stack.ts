@@ -6,6 +6,7 @@ import { Idea2Bucket } from './idea2-bucket-construct';
 import { Idea2StackContext } from './idea2-infra-utils';
 import { Idea2DynamoTable } from './idea2-dynamo-construct';
 import { Idea2LambdaFunction } from './idea2-lambda-construct';
+import { Idea2RestApi } from './idea2-rest-api-construct';
 
 export class Idea2Stack extends Stack implements Idea2StackContext {
   namePrefix: string | undefined;
@@ -24,6 +25,10 @@ export class Idea2Stack extends Stack implements Idea2StackContext {
     super(scope, id, props);
 
     this.namePrefix = `${id}-`;
+
+    for (const restApi of idea.restApis.values()) {
+      Idea2RestApi.cachedFactory(this, restApi);
+    }
 
     for (const bucketRef of idea.buckets.values()) {
       Idea2Bucket.cachedFactory(this, bucketRef);
