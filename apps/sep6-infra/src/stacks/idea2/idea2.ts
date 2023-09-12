@@ -3,8 +3,15 @@ import { IdeaApp } from './idea2-app';
 import { getCallableLambdaRef } from './idea2-lambda-client';
 import { table } from './idea2-dynamo';
 import { getDynamoTableClient } from './idea2-dynamo-client';
+import { bucket } from './idea2-bucket';
+import { getBucketClient } from './idea2-bucket-client';
+import { ListObjectsCommand } from '@aws-sdk/client-s3';
 
 export const idea = new IdeaApp();
+
+const webAppBucket = bucket(idea, 'web-app-bucket', {
+  assetPath: './dist/apps/sep6-app',
+});
 
 const counterTable = table<{ counterId: string; count: number }, 'counterId'>(
   idea,
@@ -20,12 +27,19 @@ const counterTable = table<{ counterId: string; count: number }, 'counterId'>(
 export const lambda2 = lambda(
   idea,
   'lambda2',
-  { counters: counterTable },
-  async ({ counters }, name: string) => {
+  { counters: counterTable, bucket: webAppBucket },
+  async ({ counters, bucket }, name: string) => {
     try {
       const table = getDynamoTableClient(counters);
       const counter = await table.get({ counterId: name });
       const count = (counter?.count ?? 0) + 1;
+      const { bucketName, s3Client } = getBucketClient(bucket);
+
+      const files = await s3Client.send(
+        new ListObjectsCommand({
+          Bucket: bucketName,
+        })
+      );
 
       await table.put({
         Item: {
@@ -34,7 +48,7 @@ export const lambda2 = lambda(
         },
       });
 
-      return { success: true, name, count };
+      return { success: true, name, count, files };
     } catch (error) {
       return {
         success: false,

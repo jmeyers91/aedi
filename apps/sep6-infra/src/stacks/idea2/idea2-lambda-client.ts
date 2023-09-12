@@ -10,16 +10,16 @@ type OmitFirstArg<F> = F extends (x: any, ...args: infer P) => infer R
 export function getCallableLambdaRef<
   T extends Extract<ClientRef, { lambda: any }>
 >(lambdaClientRef: T) {
-  const lambdaClient = new LambdaClient();
-  const lambdaRef = lambdaClientRef.lambda;
   const runtimeEnv = resolveLambdaRuntimeEnv();
+  const lambdaRef = lambdaClientRef.lambda;
+  const fnConstructRef =
+    runtimeEnv.IDEA_CONSTRUCT_REF_MAP.functions[lambdaRef.id];
+  const { region, functionName } = fnConstructRef;
+  const lambdaClient = new LambdaClient({ region });
 
   return async (
     ...args: Parameters<OmitFirstArg<T['lambda']['fn']>>
   ): Promise<Awaited<ReturnType<T['lambda']['fn']>>> => {
-    const fnConstructRef =
-      runtimeEnv.IDEA_CONSTRUCT_REF_MAP.functions[lambdaRef.id];
-
     if (!fnConstructRef) {
       console.log('runtimeEnv', runtimeEnv);
       throw new Error(
@@ -29,7 +29,7 @@ export function getCallableLambdaRef<
 
     const result = await lambdaClient.send(
       new InvokeCommand({
-        FunctionName: fnConstructRef.functionName,
+        FunctionName: functionName,
         Payload: JSON.stringify({ __spreadArgs: args }),
         InvocationType: 'RequestResponse',
       })

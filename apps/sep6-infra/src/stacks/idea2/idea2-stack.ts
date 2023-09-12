@@ -11,8 +11,11 @@ import {
   IdeaAppHandlerEnv,
   DynamoRef,
   RefType,
+  BucketRef,
 } from './idea2-types';
-import { AttributeType, Table, TableV2 } from 'aws-cdk-lib/aws-dynamodb';
+import { AttributeType, TableV2 } from 'aws-cdk-lib/aws-dynamodb';
+import { Bucket } from 'aws-cdk-lib/aws-s3';
+import { BucketDeployment, Source } from 'aws-cdk-lib/aws-s3-deployment';
 
 export class Idea2Stack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
@@ -20,6 +23,20 @@ export class Idea2Stack extends Stack {
 
     const nodeJsFunctionCache = new Map<string, NodejsFunction>();
     const dynamoTableCache = new Map<string, TableV2>();
+    const bucketCache = new Map<string, Bucket>();
+
+    const createBucketConstruct = (bucketRef: BucketRef) => {
+      const bucket = new Bucket(this, bucketRef.id, {});
+
+      if (bucketRef.assetPath) {
+        new BucketDeployment(this, 'deployment', {
+          sources: [Source.asset(bucketRef.assetPath)],
+          destinationBucket: bucket,
+        });
+      }
+
+      return bucket;
+    };
 
     const createTableConstruct = (dynamoRef: DynamoRef<any, any>) => {
       return new TableV2(this, dynamoRef.id, {
@@ -41,13 +58,16 @@ export class Idea2Stack extends Stack {
       const contextConstructRefs: ConstructRefMap = {
         functions: {},
         tables: {},
+        buckets: {},
       };
       const dependencyConstructs: {
         functions: NodejsFunction[];
         tables: TableV2[];
+        buckets: Bucket[];
       } = {
         functions: [],
         tables: [],
+        buckets: [],
       };
 
       for (const [_contextKey, contextValue] of Object.entries(
@@ -70,6 +90,7 @@ export class Idea2Stack extends Stack {
 
           contextConstructRefs.functions[depLambdaRef.id] = {
             functionName: depLambdaConstruct.functionName,
+            region: Stack.of(depLambdaConstruct).region,
           };
 
           dependencyConstructs.functions.push(depLambdaConstruct);
@@ -88,9 +109,28 @@ export class Idea2Stack extends Stack {
 
           contextConstructRefs.tables[depDynamoRef.id] = {
             tableName: depDynamoConstruct.tableName,
+            region: Stack.of(depDynamoConstruct).region,
           };
 
           dependencyConstructs.tables.push(depDynamoConstruct);
+        }
+
+        if (dependencyRefType === RefType.BUCKET) {
+          const bucketRefId = (contextValue as BucketRef)?.id as string;
+          const depBucketRef = idea.buckets.get(bucketRefId);
+          if (!depBucketRef) {
+            throw new Error(
+              `Unable to resolve bucket ref ${bucketRefId} from lambda ${lambdaRef.id}`
+            );
+          }
+          const depBucketConstruct = getOrCreateBucketConstruct(depBucketRef);
+
+          contextConstructRefs.buckets[depBucketRef.id] = {
+            bucketName: depBucketConstruct.bucketName,
+            region: Stack.of(depBucketConstruct).region,
+          };
+
+          dependencyConstructs.buckets.push(depBucketConstruct);
         }
       }
 
@@ -125,6 +165,11 @@ export class Idea2Stack extends Stack {
         dependencyDynamoTable.grantReadWriteData(nodeJsFunction);
       }
 
+      // Grant the function permission to access its dependency S3 buckets
+      for (const dependencyS3Bucket of dependencyConstructs.buckets) {
+        dependencyS3Bucket.grantReadWrite(nodeJsFunction);
+      }
+
       return nodeJsFunction;
     };
 
@@ -152,8 +197,26 @@ export class Idea2Stack extends Stack {
       return table;
     };
 
+    const getOrCreateBucketConstruct = (bucketRef: BucketRef): Bucket => {
+      const cached = bucketCache.get(bucketRef.id);
+      if (cached) {
+        return cached;
+      }
+      const bucket = createBucketConstruct(bucketRef);
+      bucketCache.set(bucketRef.id, bucket);
+      return bucket;
+    };
+
     for (const lambdaRef of idea.lambdas.values()) {
       getOrCreateFnConstruct(lambdaRef);
+    }
+
+    for (const dynamoRef of idea.tables.values()) {
+      getOrCreateDynamoConstruct(dynamoRef);
+    }
+
+    for (const bucketRef of idea.buckets.values()) {
+      getOrCreateBucketConstruct(bucketRef);
     }
   }
 }

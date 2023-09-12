@@ -8,12 +8,15 @@ export type WrapContext<C> = {
     ? { lambda: C[K] }
     : C[K] extends DynamoRef<any, any>
     ? { dynamo: C[K] }
+    : C[K] extends BucketRef
+    ? { bucket: C[K] }
     : never;
 };
 
 export enum RefType {
   LAMBDA = 'lambda',
   DYNAMO = 'dynamo',
+  BUCKET = 'bucket',
 }
 
 export type LambdaRef<C, Fn extends LambdaRefFn<C>> = {
@@ -40,25 +43,35 @@ export type DynamoRef<T, PK extends keyof T> = {
   };
 };
 
+export type BucketRef = {
+  type: RefType.BUCKET;
+  id: string;
+  assetPath?: string;
+};
+
 export type ClientRef =
   | {
       lambda: LambdaRef<any, any>;
     }
-  | { dynamo: DynamoRef<any, any> };
+  | { dynamo: DynamoRef<any, any> }
+  | { bucket: BucketRef };
 
 export interface ConstructRefMap {
   functions: Record<
     string,
     {
       functionName: string;
+      region: string;
     }
   >;
   tables: Record<
     string,
     {
       tableName: string;
+      region: string;
     }
   >;
+  buckets: Record<string, { bucketName: string; region: string }>;
 }
 
 export interface IdeaAppHandlerEnv {

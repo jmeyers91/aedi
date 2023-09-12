@@ -30,7 +30,8 @@ export function getDynamoTableClient<
     resolveLambdaRuntimeEnv().IDEA_CONSTRUCT_REF_MAP.tables[dynamoRef];
 
   return new DynamoTable(
-    tableConstructRef.tableName
+    tableConstructRef.tableName,
+    tableConstructRef.region
   ) as T['dynamo'] extends DynamoRef<infer R, infer Q>
     ? DynamoTable<R, Q>
     : DynamoTable<any, any>;
@@ -88,9 +89,12 @@ export class DynamoDb extends DynamoDBDocumentClient {
 export class DynamoTable<T, K extends keyof T> {
   private readonly dynamoDb: DynamoDb;
 
-  constructor(private readonly tableName: string) {
+  constructor(
+    private readonly tableName: string,
+    private readonly region: string
+  ) {
     this.dynamoDb = new DynamoDb({
-      // region: TODO
+      region,
     });
   }
 

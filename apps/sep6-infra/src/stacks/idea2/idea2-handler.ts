@@ -6,6 +6,7 @@ import {
   ClientRef,
   RefType,
   DynamoRef,
+  BucketRef,
 } from './idea2-types';
 import { resolveLambdaRuntimeEnv } from './idea2-env';
 
@@ -19,6 +20,8 @@ export const getLambdaRefHandler = (
       wrappedContext[key] = { lambda: value as LambdaRef<any, any> };
     } else if (refType === RefType.DYNAMO) {
       wrappedContext[key] = { dynamo: value as DynamoRef<any, any> };
+    } else if (refType === RefType.BUCKET) {
+      wrappedContext[key] = { bucket: value as BucketRef };
     }
   }
 
