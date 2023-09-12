@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Handler } from 'aws-lambda';
 
+export const GENERATED = Symbol('GENERATED');
+
 export type AnyFn = (...args: any[]) => any;
 export type LambdaRefFn<C> = (context: WrapContext<C>, ...args: any[]) => any;
 export type WrapContext<C> = {
@@ -47,6 +49,7 @@ export type BucketRef = {
   type: RefType.BUCKET;
   id: string;
   assetPath?: string;
+  domain?: { domainName: string; domainZone: string } | typeof GENERATED;
 };
 
 export type ClientRef =

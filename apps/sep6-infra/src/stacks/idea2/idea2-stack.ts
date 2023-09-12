@@ -16,6 +16,12 @@ import {
 import { AttributeType, TableV2 } from 'aws-cdk-lib/aws-dynamodb';
 import { Bucket } from 'aws-cdk-lib/aws-s3';
 import { BucketDeployment, Source } from 'aws-cdk-lib/aws-s3-deployment';
+import {
+  Distribution,
+  OriginAccessIdentity,
+  ViewerProtocolPolicy,
+} from 'aws-cdk-lib/aws-cloudfront';
+import { S3Origin } from 'aws-cdk-lib/aws-cloudfront-origins';
 
 export class Idea2Stack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
@@ -29,9 +35,37 @@ export class Idea2Stack extends Stack {
       const bucket = new Bucket(this, bucketRef.id, {});
 
       if (bucketRef.assetPath) {
+        let distribution: Distribution | undefined = undefined;
+
+        if (bucketRef.domain) {
+          const originAccessIdentity = new OriginAccessIdentity(
+            this,
+            'access-identity'
+          );
+
+          bucket.grantRead(originAccessIdentity);
+
+          // TODO: Add DNS support
+          distribution = new Distribution(this, 'distribution', {
+            defaultBehavior: {
+              origin: new S3Origin(bucket, { originAccessIdentity }),
+              viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+            },
+            defaultRootObject: 'index.html',
+            errorResponses: [
+              {
+                httpStatus: 404,
+                responseHttpStatus: 200,
+                responsePagePath: '/index.html',
+              },
+            ],
+          });
+        }
+
         new BucketDeployment(this, 'deployment', {
           sources: [Source.asset(bucketRef.assetPath)],
           destinationBucket: bucket,
+          distribution,
         });
       }
 

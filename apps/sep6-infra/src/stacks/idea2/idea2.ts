@@ -6,11 +6,13 @@ import { getDynamoTableClient } from './idea2-dynamo-client';
 import { bucket } from './idea2-bucket';
 import { getBucketClient } from './idea2-bucket-client';
 import { ListObjectsCommand } from '@aws-sdk/client-s3';
+import { GENERATED } from './idea2-types';
 
 export const idea = new IdeaApp();
 
 const webAppBucket = bucket(idea, 'web-app-bucket', {
   assetPath: './dist/apps/sep6-app',
+  domain: GENERATED,
 });
 
 const counterTable = table<{ counterId: string; count: number }, 'counterId'>(
