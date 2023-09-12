@@ -31,14 +31,11 @@ export function restApi(
   return restApiRef;
 }
 
-export function addRoute(
-  restApiRef: RestApiRef,
-  method: string,
-  path: string,
-  lambdaRef:
+export function addRoute<
+  L extends
     | LambdaRef<any, APIGatewayEvent, RouteResponse>
     | LambdaRef<any, APIGatewayEvent, Promise<RouteResponse>>
-): RestApiRefRoute {
+>(restApiRef: RestApiRef, method: string, path: string, lambdaRef: L): L {
   const route: RestApiRefRoute = {
     method,
     path,
@@ -47,5 +44,5 @@ export function addRoute(
 
   restApiRef.routes.push(route);
 
-  return route;
+  return lambdaRef;
 }

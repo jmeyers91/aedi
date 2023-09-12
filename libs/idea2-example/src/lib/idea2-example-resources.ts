@@ -17,3 +17,24 @@ export const counterTable = table<
     type: 'STRING',
   },
 });
+
+export const constactTable = table<
+  {
+    userId: string;
+    contactId: number;
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+  },
+  'userId'
+>(idea, 'contact-table', {
+  partitionKey: {
+    name: 'userId',
+    type: 'STRING',
+  },
+  sortKey: {
+    name: 'contactId',
+    type: 'STRING',
+  },
+});
