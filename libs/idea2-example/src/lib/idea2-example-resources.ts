@@ -18,17 +18,16 @@ export const counterTable = table<
   },
 });
 
-export const constactTable = table<
-  {
-    userId: string;
-    contactId: number;
-    firstName: string;
-    lastName: string;
-    email: string;
-    phone: string;
-  },
-  'userId'
->(idea, 'contact-table', {
+export interface Contact {
+  userId: string;
+  contactId: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+}
+
+export const contactsTable = table<Contact, 'userId'>(idea, 'contact-table', {
   partitionKey: {
     name: 'userId',
     type: 'STRING',

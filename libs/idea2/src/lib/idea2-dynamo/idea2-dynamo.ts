@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { DynamoClientRef, DynamoRef, RefType } from './idea2-types';
-import { Idea2App } from './idea2-app';
+import type { Idea2App } from '../idea2-app';
+import type { DynamoRef, DynamoClientRef } from './idea2-dynamo-types';
+import { RefType } from '../idea2-types';
 
 export function table<T, PK extends keyof T>(
   app: Idea2App,

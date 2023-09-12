@@ -1,12 +1,11 @@
-export * from './lib/idea2-app';
-export * from './lib/idea2-bucket-client';
+// Resources
 export * from './lib/idea2-bucket';
-export * from './lib/idea2-client-utils';
-export * from './lib/idea2-dynamo-client';
 export * from './lib/idea2-dynamo';
-export * from './lib/idea2-env';
-export * from './lib/idea2-handler';
-export * from './lib/idea2-lambda-client';
 export * from './lib/idea2-lambda';
 export * from './lib/idea2-rest-api';
+
+// Utilities
+export * from './lib/idea2-app';
+export * from './lib/idea2-constants';
+export * from './lib/idea2-client-utils';
 export * from './lib/idea2-types';

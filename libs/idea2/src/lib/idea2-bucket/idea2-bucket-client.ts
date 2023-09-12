@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { S3Client } from '@aws-sdk/client-s3';
-import { resolveLambdaRuntimeEnv } from './idea2-env';
-import { ClientRef } from './idea2-types';
+import { resolveLambdaRuntimeEnv } from '../idea2-client-utils';
+import type { ClientRef } from '../idea2-types';
 
 export function getBucketClient<T extends Extract<ClientRef, { bucket: any }>>(
   bucketClientRef: T

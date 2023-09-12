@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { InvokeCommand, LambdaClient } from '@aws-sdk/client-lambda';
-import { ClientRef } from './idea2-types';
-import { resolveLambdaRuntimeEnv } from './idea2-env';
+import type { ClientRef } from '../idea2-types';
+import { resolveLambdaRuntimeEnv } from '../idea2-client-utils';
 
 export function getCallableLambdaRef<
   T extends Extract<ClientRef, { lambda: any }>

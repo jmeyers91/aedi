@@ -19,8 +19,8 @@ import {
   DynamoDBClient,
   DynamoDBClientConfig,
 } from '@aws-sdk/client-dynamodb';
-import { DynamoClientRef, DynamoRef } from './idea2-types';
-import { resolveLambdaRuntimeEnv } from './idea2-env';
+import { resolveLambdaRuntimeEnv } from '../idea2-client-utils';
+import type { DynamoClientRef, DynamoRef } from './idea2-dynamo-types';
 
 export function getDynamoTableClient<T extends DynamoClientRef<any, any>>(
   dynamoClientRef: T

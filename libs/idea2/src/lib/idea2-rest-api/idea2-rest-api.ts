@@ -1,13 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { RestApiRef, RefType, LambdaRef, RestApiRefRoute } from './idea2-types';
-import { Idea2App } from './idea2-app';
-import { APIGatewayEvent } from 'aws-lambda';
+import type { Idea2App } from '../idea2-app';
+import type { APIGatewayEvent } from 'aws-lambda';
+import type { LambdaRef } from '../idea2-lambda/idea2-lambda-types';
+import type { RestApiRef, RestApiRefRoute } from './idea2-rest-api-types';
+import { RefType } from '../idea2-types';
 
 export type RouteEvent = APIGatewayEvent;
-export type RouteResponse = {
+export type RouteResponse<_T> = {
   statusCode: number;
   body?: string;
   headers?: Record<string, string>;
+  __body?: _T;
 };
 
 export function restApi(
@@ -33,8 +36,8 @@ export function restApi(
 
 export function addRoute<
   L extends
-    | LambdaRef<any, APIGatewayEvent, RouteResponse>
-    | LambdaRef<any, APIGatewayEvent, Promise<RouteResponse>>
+    | LambdaRef<any, APIGatewayEvent, RouteResponse<any>>
+    | LambdaRef<any, APIGatewayEvent, Promise<RouteResponse<any>>>
 >(restApiRef: RestApiRef, method: string, path: string, lambdaRef: L): L {
   const route: RestApiRefRoute = {
     method,
@@ -47,7 +50,7 @@ export function addRoute<
   return lambdaRef;
 }
 
-export function reply<T>(body?: T): RouteResponse {
+export function reply<T>(body?: T): RouteResponse<T> {
   return {
     statusCode: 200,
     body: body ? JSON.stringify(body) : undefined,

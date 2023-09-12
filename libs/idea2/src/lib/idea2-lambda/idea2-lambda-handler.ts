@@ -1,13 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { type ClientRef, type ResourceRef } from '../idea2-types';
+import type { LambdaRef } from './idea2-lambda-types';
 import { Handler } from 'aws-lambda';
-import {
-  LambdaRef,
-  Idea2AppHandlerEnv,
-  ClientRef,
-  ResourceRef,
-} from './idea2-types';
-import { resolveLambdaRuntimeEnv } from './idea2-env';
-import { getClientRefFromRef } from './idea2-client-utils';
+import { getClientRefFromRef } from '../idea2-client-utils';
 
 export const getLambdaRefHandler = (
   lambdaRef: Omit<LambdaRef<any, any, any>, 'lambdaHandler'>
@@ -19,15 +14,7 @@ export const getLambdaRefHandler = (
 
   return async (event, context, callback) => {
     try {
-      const { IDEA_FUNCTION_ID: functionId }: Idea2AppHandlerEnv =
-        resolveLambdaRuntimeEnv();
-
-      if (!lambdaRef) {
-        throw new Error(`Unable to resolve function: ${functionId}`);
-      }
-
-      const result = await lambdaRef.fn(wrappedContext, event, context);
-      callback(null, result);
+      callback(null, await lambdaRef.fn(wrappedContext, event, context));
     } catch (error) {
       callback(error as Error);
     }

@@ -1,13 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { relative } from 'path';
-import { getLambdaRefHandler } from './idea2-handler';
-import {
-  LambdaRef,
-  RefType,
+import type { Idea2App } from '../idea2-app';
+import type {
   LambdaRefFnWithEvent,
+  LambdaRef,
   BrandedLambdaRefFnWithEvent,
-} from './idea2-types';
-import { Idea2App } from './idea2-app';
+} from './idea2-lambda-types';
+import { relative } from 'path';
+import { getLambdaRefHandler } from './idea2-lambda-handler';
+import { RefType } from '../idea2-types';
 
 export function lambda<C, E, R>(
   app: Idea2App,

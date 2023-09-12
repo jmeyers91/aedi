@@ -1,22 +1,21 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { Context, Handler } from 'aws-lambda';
+import type {
+  BucketClientRef,
+  BucketRef,
+} from './idea2-bucket/idea2-bucket-types';
+import type {
+  DynamoRef,
+  DynamoClientRef,
+} from './idea2-dynamo/idea2-dynamo-types';
+import type {
+  LambdaClientRef,
+  LambdaRef,
+} from './idea2-lambda/idea2-lambda-types';
+import type {
+  RestApiClientRef,
+  RestApiRef,
+} from './idea2-rest-api/idea2-rest-api-types';
 
-export const GENERATED = Symbol('GENERATED');
-
-export type AnyFn = (...args: any[]) => any;
-export type LambdaRefFnWithEvent<C, E, R> = (
-  context: WrapContext<C>,
-  event: E,
-  lambdaContext: Context
-) => R;
-export type BrandedLambdaRefFnWithEvent<C, E, R> = LambdaRefFnWithEvent<
-  C,
-  E,
-  R
-> & {
-  __eventType: E;
-};
-export type LambdaRefFn<C> = LambdaRefFnWithEvent<C, any, any>;
 export type WrapContext<C> = {
   [K in keyof C]: C[K] extends ClientRef
     ? C[K]
@@ -36,73 +35,6 @@ export enum RefType {
   DYNAMO = 'dynamo',
   BUCKET = 'bucket',
   REST_API = 'rest-api',
-}
-
-export type LambdaRef<C, E, R> = {
-  type: RefType.LAMBDA;
-  id: string;
-  filepath: string;
-  fn: BrandedLambdaRefFnWithEvent<C, E, R>;
-  lambdaHandler: Handler;
-  context: C;
-};
-
-export interface LambdaClientRef {
-  lambda: LambdaRef<any, any, any>;
-}
-
-export type DynamoKey = 'BINARY' | 'NUMBER' | 'STRING';
-
-export type DynamoRef<T, PK extends keyof T> = {
-  type: RefType.DYNAMO;
-  id: string;
-  partitionKey: {
-    name: PK;
-    type: DynamoKey;
-  };
-  sortKey?: {
-    name: keyof T;
-    type: DynamoKey;
-  };
-};
-
-export interface DynamoClientRef<
-  T extends DynamoRef<any, any>,
-  O extends DynamoRefClientOptions
-> {
-  dynamo: T;
-  options?: O;
-}
-
-export interface DynamoRefClientOptions {
-  readonly?: boolean;
-}
-
-export type BucketRef = {
-  type: RefType.BUCKET;
-  id: string;
-  assetPath?: string;
-  domain?: { domainName: string; domainZone: string } | typeof GENERATED;
-};
-
-export interface BucketClientRef {
-  bucket: BucketRef;
-}
-
-export interface RestApiRefRoute {
-  method: string;
-  path: string;
-  lambdaRef: LambdaRef<any, any, any>;
-}
-
-export interface RestApiRef {
-  type: RefType.REST_API;
-  id: string;
-  routes: RestApiRefRoute[];
-}
-
-export interface RestApiClientRef {
-  restApi: RestApiRef;
 }
 
 export type ResourceRef =

@@ -1,5 +1,6 @@
-import { BucketRef, RefType } from './idea2-types';
-import { Idea2App } from './idea2-app';
+import type { Idea2App } from '../idea2-app';
+import type { BucketRef } from './idea2-bucket-types';
+import { RefType } from '../idea2-types';
 
 export function bucket(
   app: Idea2App,

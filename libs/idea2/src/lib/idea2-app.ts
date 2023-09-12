@@ -1,6 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { LambdaRef, DynamoRef, BucketRef, RestApiRef } from './idea2-types';
+import type { BucketRef } from './idea2-bucket/idea2-bucket-types';
+import type { DynamoRef } from './idea2-dynamo/idea2-dynamo-types';
+import type { LambdaRef } from './idea2-lambda/idea2-lambda-types';
+import type { RestApiRef } from './idea2-rest-api/idea2-rest-api-types';
 
 export class Idea2App {
   public readonly lambdas = new Map<string, LambdaRef<any, any, any>>();
