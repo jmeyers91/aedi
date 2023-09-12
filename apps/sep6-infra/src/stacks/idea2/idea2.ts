@@ -1,18 +1,35 @@
 import { lambda } from './idea2-lambda';
 import { IdeaApp } from './idea2-app';
 import { getCallableLambdaRef } from './idea2-lambda-client';
+import { table } from './idea2-dynamo';
+import { getDynamoTableClient } from './idea2-dynamo-client';
 
 export const idea = new IdeaApp();
+
+const counterTable = table(idea, 'counter-table', {
+  partitionKey: {
+    name: 'counterId',
+    type: 'STRING',
+  },
+});
 
 export const lambda2 = lambda(
   idea,
   'lambda2',
-  {},
-  async (context, name: string) => {
+  { counters: counterTable },
+  async ({ counters }, name: string) => {
     try {
-      console.log(`Received event`, name);
+      const table = getDynamoTableClient(counters);
+      const counter = await table.get({ counterId: name });
+      const count = ((counter as any)?.count ?? 0) + 1;
+      await table.put({
+        Item: {
+          counterId: name,
+          count,
+        },
+      });
 
-      return { success: true, name, cool: 'beans' };
+      return { success: true, name, count };
     } catch (error) {
       return {
         success: false,

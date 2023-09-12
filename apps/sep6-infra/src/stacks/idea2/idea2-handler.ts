@@ -1,5 +1,12 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Handler } from 'aws-lambda';
-import { LambdaRef, IdeaAppHandlerEnv, ClientRef } from './idea2-types';
+import {
+  LambdaRef,
+  IdeaAppHandlerEnv,
+  ClientRef,
+  RefType,
+  DynamoRef,
+} from './idea2-types';
 import { resolveLambdaRuntimeEnv } from './idea2-env';
 
 export const getLambdaRefHandler = (
@@ -7,15 +14,18 @@ export const getLambdaRefHandler = (
 ): Handler => {
   const wrappedContext: Record<string, ClientRef> = {};
   for (const [key, value] of Object.entries(lambdaRef.context)) {
-    wrappedContext[key] = { lambda: value as LambdaRef<any, any> };
+    const refType = (value as any)?.type as RefType | undefined;
+    if (refType === RefType.LAMBDA) {
+      wrappedContext[key] = { lambda: value as LambdaRef<any, any> };
+    } else if (refType === RefType.DYNAMO) {
+      wrappedContext[key] = { dynamo: value as DynamoRef };
+    }
   }
 
   return async (event, context, callback) => {
     try {
-      const {
-        IDEA_FUNCTION_ID: functionId,
-        IDEA_CONSTRUCT_REF_MAP: constructRefMap,
-      }: IdeaAppHandlerEnv = resolveLambdaRuntimeEnv();
+      const { IDEA_FUNCTION_ID: functionId }: IdeaAppHandlerEnv =
+        resolveLambdaRuntimeEnv();
 
       if (!lambdaRef) {
         throw new Error(`Unable to resolve function: ${functionId}`);

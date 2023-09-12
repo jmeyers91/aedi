@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { relative } from 'path';
 import { getLambdaRefHandler } from './idea2-handler';
-import { LambdaRefFn, LambdaRef } from './idea2-types';
+import { LambdaRefFn, LambdaRef, RefType } from './idea2-types';
 import { IdeaApp } from './idea2-app';
 
 export function lambda<C, Fn extends LambdaRefFn<C>>(
@@ -20,6 +20,7 @@ export function lambda<C, Fn extends LambdaRefFn<C>>(
   }
   const filepath = relative('.', absoluteFilepath);
   const lambdaRefWithoutHandler: Omit<LambdaRef<C, Fn>, 'lambdaHandler'> = {
+    type: RefType.LAMBDA,
     id,
     context,
     filepath,
