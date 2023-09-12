@@ -21,7 +21,7 @@ import { getClientRefFromRef } from './idea2-client-utils';
 export class Idea2LambdaFunction extends Construct {
   static cachedFactory(
     scope: Construct,
-    lambdaRef: LambdaRef<any, any>
+    lambdaRef: LambdaRef<any, any, any>
   ): Idea2LambdaFunction {
     const cache = getIdea2StackContext(scope).getCache<Idea2LambdaFunction>(
       RefType.LAMBDA
@@ -46,7 +46,7 @@ export class Idea2LambdaFunction extends Construct {
   constructor(
     scope: Construct,
     id: string,
-    { lambdaRef }: { lambdaRef: LambdaRef<any, any> }
+    { lambdaRef }: { lambdaRef: LambdaRef<any, any, any> }
   ) {
     super(scope, id);
 

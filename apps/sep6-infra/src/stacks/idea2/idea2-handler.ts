@@ -10,7 +10,7 @@ import { resolveLambdaRuntimeEnv } from './idea2-env';
 import { getClientRefFromRef } from './idea2-client-utils';
 
 export const getLambdaRefHandler = (
-  lambdaRef: Omit<LambdaRef<any, any>, 'lambdaHandler'>
+  lambdaRef: Omit<LambdaRef<any, any, any>, 'lambdaHandler'>
 ): Handler => {
   const wrappedContext: Record<string, ClientRef> = {};
   for (const [key, value] of Object.entries(lambdaRef.context)) {

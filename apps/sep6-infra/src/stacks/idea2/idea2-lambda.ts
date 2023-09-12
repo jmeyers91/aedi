@@ -1,15 +1,20 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { relative } from 'path';
 import { getLambdaRefHandler } from './idea2-handler';
-import { LambdaRefFn, LambdaRef, RefType } from './idea2-types';
+import {
+  LambdaRef,
+  RefType,
+  LambdaRefFnWithEvent,
+  BrandedLambdaRefFnWithEvent,
+} from './idea2-types';
 import { IdeaApp } from './idea2-app';
 
-export function lambda<C, Fn extends LambdaRefFn<C>>(
+export function lambda<C, E, R>(
   app: IdeaApp,
   id: string,
   context: C,
-  fn: Fn
-): LambdaRef<C, Fn> {
+  fn: LambdaRefFnWithEvent<C, E, R>
+): LambdaRef<C, E, R> {
   if (app.lambdas.has(id)) {
     throw new Error(`Duplicate lambda id: ${id}`);
   }
@@ -19,15 +24,15 @@ export function lambda<C, Fn extends LambdaRefFn<C>>(
     throw new Error(`Unable to resolve file path for lambda: ${id}`);
   }
   const filepath = relative('.', absoluteFilepath);
-  const lambdaRefWithoutHandler: Omit<LambdaRef<C, Fn>, 'lambdaHandler'> = {
+  const lambdaRefWithoutHandler: Omit<LambdaRef<C, E, R>, 'lambdaHandler'> = {
     type: RefType.LAMBDA,
     id,
     context,
     filepath,
-    fn,
+    fn: fn as BrandedLambdaRefFnWithEvent<C, E, R>,
   };
   const lambdaHandler = getLambdaRefHandler(lambdaRefWithoutHandler);
-  const lambdaRef: LambdaRef<C, Fn> = {
+  const lambdaRef: LambdaRef<C, E, R> = {
     ...lambdaRefWithoutHandler,
     lambdaHandler,
   };

@@ -1,14 +1,26 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { Handler } from 'aws-lambda';
+import type { Context, Handler } from 'aws-lambda';
 
 export const GENERATED = Symbol('GENERATED');
 
 export type AnyFn = (...args: any[]) => any;
-export type LambdaRefFn<C> = (context: WrapContext<C>, ...args: any[]) => any;
+export type LambdaRefFnWithEvent<C, E, R> = (
+  context: WrapContext<C>,
+  event: E,
+  lambdaContext: Context
+) => R;
+export type BrandedLambdaRefFnWithEvent<C, E, R> = LambdaRefFnWithEvent<
+  C,
+  E,
+  R
+> & {
+  __eventType: E;
+};
+export type LambdaRefFn<C> = LambdaRefFnWithEvent<C, any, any>;
 export type WrapContext<C> = {
   [K in keyof C]: C[K] extends ClientRef
     ? C[K]
-    : C[K] extends LambdaRef<any, any>
+    : C[K] extends LambdaRef<any, any, any>
     ? { lambda: C[K] }
     : C[K] extends DynamoRef<any, any>
     ? { dynamo: C[K] }
@@ -26,17 +38,17 @@ export enum RefType {
   REST_API = 'rest-api',
 }
 
-export type LambdaRef<C, Fn extends LambdaRefFn<C>> = {
+export type LambdaRef<C, E, R> = {
   type: RefType.LAMBDA;
   id: string;
   filepath: string;
-  fn: Fn;
+  fn: BrandedLambdaRefFnWithEvent<C, E, R>;
   lambdaHandler: Handler;
   context: C;
 };
 
 export interface LambdaClientRef {
-  lambda: LambdaRef<any, any>;
+  lambda: LambdaRef<any, any, any>;
 }
 
 export type DynamoKey = 'BINARY' | 'NUMBER' | 'STRING';
@@ -80,7 +92,7 @@ export interface BucketClientRef {
 export interface RestApiRefRoute {
   method: string;
   path: string;
-  lambdaRef: LambdaRef<any, any>;
+  lambdaRef: LambdaRef<any, any, any>;
 }
 
 export interface RestApiRef {
@@ -94,7 +106,7 @@ export interface RestApiClientRef {
 }
 
 export type ResourceRef =
-  | LambdaRef<any, any>
+  | LambdaRef<any, any, any>
   | DynamoRef<any, any>
   | BucketRef
   | RestApiRef;

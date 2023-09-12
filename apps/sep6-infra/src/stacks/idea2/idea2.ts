@@ -7,7 +7,7 @@ import { bucket } from './idea2-bucket';
 import { getBucketClient } from './idea2-bucket-client';
 import { ListObjectsCommand } from '@aws-sdk/client-s3';
 import { GENERATED } from './idea2-types';
-import { addRoute, restApi } from './idea2-rest-api';
+import { RouteEvent, RouteResponse, addRoute, restApi } from './idea2-rest-api';
 
 export const idea = new IdeaApp();
 
@@ -16,18 +16,31 @@ const webAppBucket = bucket(idea, 'web-app-bucket', {
   domain: GENERATED,
 });
 
-export const healthcheck = lambda(idea, 'healthcheck', {}, (_, event) => {
-  return {
-    statusCode: 200,
-    body: JSON.stringify({ healthy: true, event }),
-    headers: {
-      'Access-Control-Allow-Headers':
-        'Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token',
-      'Access-Control-Allow-Methods': '*',
-      'Access-Control-Allow-Origin': `*`,
-    },
-  };
-});
+export const healthcheck = lambda(
+  idea,
+  'healthcheck',
+  { bucket: webAppBucket },
+  async ({ bucket }, _event: RouteEvent): Promise<RouteResponse> => {
+    const { bucketName, s3Client } = getBucketClient(bucket);
+
+    const files = await s3Client.send(
+      new ListObjectsCommand({
+        Bucket: bucketName,
+      })
+    );
+
+    return {
+      statusCode: 200,
+      body: JSON.stringify({ healthy: true, files }),
+      headers: {
+        'Access-Control-Allow-Headers':
+          'Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token',
+        'Access-Control-Allow-Methods': '*',
+        'Access-Control-Allow-Origin': `*`,
+      },
+    };
+  }
+);
 
 const api = restApi(idea, 'rest-api', {});
 
@@ -89,7 +102,8 @@ export const lambda1 = lambda(
     try {
       const event = 'hello from lambda1';
       console.log(`Calling lambda2 with event`, event);
-      const result = await getCallableLambdaRef(fn2)({ counterId: event });
+      const callable = await getCallableLambdaRef(fn2);
+      const result = await callable({ counterId: event });
       console.log(`Received result`, result);
 
       return { success: true, result };

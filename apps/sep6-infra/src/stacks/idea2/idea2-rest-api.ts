@@ -1,6 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { RestApiRef, RefType, LambdaRef, RestApiRefRoute } from './idea2-types';
 import { IdeaApp } from './idea2-app';
+import { APIGatewayEvent } from 'aws-lambda';
+
+export type RouteEvent = APIGatewayEvent;
+export type RouteResponse = {
+  statusCode: number;
+  body?: string;
+  headers?: Record<string, string>;
+};
 
 export function restApi(
   app: IdeaApp,
@@ -27,7 +35,9 @@ export function addRoute(
   restApiRef: RestApiRef,
   method: string,
   path: string,
-  lambdaRef: LambdaRef<any, any>
+  lambdaRef:
+    | LambdaRef<any, APIGatewayEvent, RouteResponse>
+    | LambdaRef<any, APIGatewayEvent, Promise<RouteResponse>>
 ): RestApiRefRoute {
   const route: RestApiRefRoute = {
     method,
