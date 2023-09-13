@@ -9,8 +9,6 @@ import { Idea2DynamoTable } from './idea2-dynamo-construct';
 import {
   ClientRef,
   ConstructRefMap,
-  DynamoClientRef,
-  DynamoRefClientOptions,
   Idea2AppHandlerEnv,
   LambdaRef,
   RefType,
@@ -18,8 +16,12 @@ import {
   getClientRefFromRef,
 } from '@sep6/idea2';
 import { Idea2UserPool } from './idea2-user-pool-construct';
+import { ILambdaDependency } from './idea2-infra-types';
 
-export class Idea2LambdaFunction extends Construct {
+export class Idea2LambdaFunction
+  extends Construct
+  implements ILambdaDependency
+{
   static cachedFactory(
     scope: Construct,
     lambdaRef: LambdaRef<any, any, any>
@@ -43,6 +45,7 @@ export class Idea2LambdaFunction extends Construct {
   }
 
   public readonly lambdaFunction;
+  public readonly lambdaRef: LambdaRef<any, any, any>;
 
   constructor(
     scope: Construct,
@@ -51,95 +54,53 @@ export class Idea2LambdaFunction extends Construct {
   ) {
     super(scope, id);
 
+    this.lambdaRef = lambdaRef;
+
     const contextConstructRefs: ConstructRefMap = {
       functions: {},
       tables: {},
       buckets: {},
       userPools: {},
     };
-    const dependencyConstructs: {
-      functions: Idea2LambdaFunction[];
-      tables: {
-        construct: Idea2DynamoTable;
-        clientOptions: DynamoRefClientOptions;
-      }[];
-      buckets: Idea2Bucket[];
-      userPools: Idea2UserPool[];
-    } = {
-      functions: [],
-      tables: [],
-      buckets: [],
-      userPools: [],
-    };
+    const dependencies: {
+      clientRef: ClientRef;
+      construct: ILambdaDependency;
+    }[] = [];
 
     for (const contextValue of Object.values(lambdaRef.context)) {
-      const dependencyClientRef = getClientRefFromRef(
+      const clientRef = getClientRefFromRef(
         contextValue as ClientRef | ResourceRef
       );
+      let dependencyConstruct: ILambdaDependency | undefined = undefined;
 
-      if ('lambda' in dependencyClientRef) {
-        const depLambdaRef = dependencyClientRef.lambda;
-        const depLambdaConstruct = Idea2LambdaFunction.cachedFactory(
+      if ('lambda' in clientRef) {
+        dependencyConstruct = Idea2LambdaFunction.cachedFactory(
           this,
-          depLambdaRef
+          clientRef.lambda
         );
-
-        contextConstructRefs.functions[depLambdaRef.id] = {
-          functionName: depLambdaConstruct.lambdaFunction.functionName,
-          region: Stack.of(depLambdaConstruct).region,
-        };
-
-        dependencyConstructs.functions.push(depLambdaConstruct);
       }
 
-      if ('dynamo' in dependencyClientRef) {
-        const { dynamo: depDynamoRef, options: depDynamoClientOptions = {} } =
-          dependencyClientRef as DynamoClientRef<any, DynamoRefClientOptions>;
-
-        const depDynamoConstruct = Idea2DynamoTable.cachedFactory(
+      if ('dynamo' in clientRef) {
+        dependencyConstruct = Idea2DynamoTable.cachedFactory(
           this,
-          depDynamoRef
+          clientRef.dynamo
         );
-
-        contextConstructRefs.tables[depDynamoRef.id] = {
-          tableName: depDynamoConstruct.table.tableName,
-          region: Stack.of(depDynamoConstruct).region,
-        };
-
-        dependencyConstructs.tables.push({
-          construct: depDynamoConstruct,
-          clientOptions: depDynamoClientOptions,
-        });
       }
 
-      if ('bucket' in dependencyClientRef) {
-        const depBucketRef = dependencyClientRef.bucket;
-        const depBucketConstruct = Idea2Bucket.cachedFactory(
-          this,
-          depBucketRef
-        );
-
-        contextConstructRefs.buckets[depBucketRef.id] = {
-          bucketName: depBucketConstruct.bucket.bucketName,
-          region: Stack.of(depBucketConstruct).region,
-        };
-
-        dependencyConstructs.buckets.push(depBucketConstruct);
+      if ('bucket' in clientRef) {
+        dependencyConstruct = Idea2Bucket.cachedFactory(this, clientRef.bucket);
       }
 
-      if ('userPool' in dependencyClientRef) {
-        const depUserPoolRef = dependencyClientRef.userPool;
-        const depUserPoolConstruct = Idea2UserPool.cachedFactory(
+      if ('userPool' in clientRef) {
+        dependencyConstruct = Idea2UserPool.cachedFactory(
           this,
-          depUserPoolRef
+          clientRef.userPool
         );
+      }
 
-        contextConstructRefs.userPools[depUserPoolRef.id] = {
-          userPoolId: depUserPoolConstruct.userPool.userPoolId,
-          region: Stack.of(depUserPoolConstruct).region,
-        };
-
-        dependencyConstructs.userPools.push(depUserPoolConstruct);
+      if (dependencyConstruct) {
+        dependencyConstruct.provideConstructRef(contextConstructRefs);
+        dependencies.push({ construct: dependencyConstruct, clientRef });
       }
     }
 
@@ -165,28 +126,22 @@ export class Idea2LambdaFunction extends Construct {
 
     console.log(`- Lambda ${lambdaRef.id} -> ${lambdaRef.filepath}`);
 
-    // Grant the function permission to call its dependency lambda function
-    for (const dependencyNodejsFn of dependencyConstructs.functions) {
-      dependencyNodejsFn.lambdaFunction.grantInvoke(nodeJsFunction);
+    for (const { construct, clientRef } of dependencies) {
+      construct.grantLambdaAccess(
+        this,
+        'options' in clientRef ? clientRef.options : undefined
+      );
     }
+  }
 
-    // Grant the function permission to access its dependency dynamo tables
-    for (const { construct, clientOptions } of dependencyConstructs.tables) {
-      if (clientOptions.readonly) {
-        construct.table.grantReadData(nodeJsFunction);
-      } else {
-        construct.table.grantReadWriteData(nodeJsFunction);
-      }
-    }
+  provideConstructRef(contextRefMap: ConstructRefMap): void {
+    contextRefMap.functions[this.lambdaRef.id] = {
+      functionName: this.lambdaFunction.functionName,
+      region: Stack.of(this).region,
+    };
+  }
 
-    // Grant the function permission to access its dependency S3 buckets
-    for (const dependencyS3Bucket of dependencyConstructs.buckets) {
-      dependencyS3Bucket.bucket.grantReadWrite(nodeJsFunction);
-    }
-
-    // Grant the function permission to access its dependency cognito user pools
-    for (const dependencyUserPool of dependencyConstructs.userPools) {
-      dependencyUserPool.userPool.grant(nodeJsFunction, 'cognito-idp:*'); // TODO: Refine these permissions
-    }
+  grantLambdaAccess(lambda: Idea2LambdaFunction): void {
+    this.lambdaFunction.grantInvoke(lambda.lambdaFunction);
   }
 }

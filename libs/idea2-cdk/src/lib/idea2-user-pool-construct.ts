@@ -1,12 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Construct } from 'constructs';
-import { UserPoolRef, RefType } from '@sep6/idea2';
+import { UserPoolRef, RefType, ConstructRefMap } from '@sep6/idea2';
 import { getIdea2StackContext } from './idea2-infra-utils';
 import { RemovalPolicy, Stack } from 'aws-cdk-lib';
 import { UserPool, UserPoolTriggers } from 'aws-cdk-lib/aws-cognito';
 import { Idea2LambdaFunction } from './idea2-lambda-construct';
+import { ILambdaDependency } from './idea2-infra-types';
 
-export class Idea2UserPool extends Construct {
+export class Idea2UserPool extends Construct implements ILambdaDependency {
   static cachedFactory(
     scope: Construct,
     userPoolRef: UserPoolRef
@@ -30,6 +31,7 @@ export class Idea2UserPool extends Construct {
   }
 
   public readonly userPool: UserPool;
+  public readonly userPoolRef: UserPoolRef;
 
   constructor(
     scope: Construct,
@@ -37,6 +39,8 @@ export class Idea2UserPool extends Construct {
     { userPoolRef }: { userPoolRef: UserPoolRef }
   ) {
     super(scope, id);
+
+    this.userPoolRef = userPoolRef;
 
     const lambdaTriggers: UserPoolTriggers = {};
 
@@ -61,5 +65,16 @@ export class Idea2UserPool extends Construct {
         domainPrefix: userPoolRef.domainPrefix,
       },
     });
+  }
+
+  provideConstructRef(contextRefMap: ConstructRefMap): void {
+    contextRefMap.userPools[this.userPoolRef.id] = {
+      userPoolId: this.userPool.userPoolId,
+      region: Stack.of(this).region,
+    };
+  }
+
+  grantLambdaAccess(lambda: Idea2LambdaFunction): void {
+    this.userPool.grant(lambda.lambdaFunction, 'cognito-idp:*');
   }
 }

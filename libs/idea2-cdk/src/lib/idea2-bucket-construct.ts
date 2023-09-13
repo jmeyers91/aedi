@@ -9,9 +9,11 @@ import { Bucket } from 'aws-cdk-lib/aws-s3';
 import { BucketDeployment, Source } from 'aws-cdk-lib/aws-s3-deployment';
 import { Construct } from 'constructs';
 import { createConstructName, getIdea2StackContext } from './idea2-infra-utils';
-import { BucketRef, RefType } from '@sep6/idea2';
+import { BucketRef, ConstructRefMap, RefType } from '@sep6/idea2';
+import { ILambdaDependency } from './idea2-infra-types';
+import { Idea2LambdaFunction } from './idea2-lambda-construct';
 
-export class Idea2Bucket extends Construct {
+export class Idea2Bucket extends Construct implements ILambdaDependency {
   static cachedFactory(scope: Construct, bucketRef: BucketRef): Idea2Bucket {
     const cache = getIdea2StackContext(scope).getCache<Idea2Bucket>(
       RefType.BUCKET
@@ -28,6 +30,7 @@ export class Idea2Bucket extends Construct {
   }
 
   public readonly bucket: Bucket;
+  public readonly bucketRef: BucketRef;
 
   constructor(
     scope: Construct,
@@ -35,6 +38,8 @@ export class Idea2Bucket extends Construct {
     { bucketRef }: { bucketRef: BucketRef }
   ) {
     super(scope, id);
+
+    this.bucketRef = bucketRef;
 
     const bucket = new Bucket(this, bucketRef.id, {
       bucketName: createConstructName(this, bucketRef.id),
@@ -83,5 +88,16 @@ export class Idea2Bucket extends Construct {
         distribution,
       });
     }
+  }
+
+  provideConstructRef(contextRefMap: ConstructRefMap): void {
+    contextRefMap.buckets[this.bucketRef.id] = {
+      bucketName: this.bucket.bucketName,
+      region: Stack.of(this).region,
+    };
+  }
+
+  grantLambdaAccess(lambda: Idea2LambdaFunction): void {
+    this.bucket.grantReadWrite(lambda.lambdaFunction);
   }
 }

@@ -1,11 +1,18 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Construct } from 'constructs';
-import { DynamoRef, RefType } from '@sep6/idea2';
+import {
+  ConstructRefMap,
+  DynamoRef,
+  DynamoRefClientOptions,
+  RefType,
+} from '@sep6/idea2';
 import { createConstructName, getIdea2StackContext } from './idea2-infra-utils';
 import { AttributeType, TableV2 } from 'aws-cdk-lib/aws-dynamodb';
 import { RemovalPolicy, Stack } from 'aws-cdk-lib';
+import { ILambdaDependency } from './idea2-infra-types';
+import { Idea2LambdaFunction } from './idea2-lambda-construct';
 
-export class Idea2DynamoTable extends Construct {
+export class Idea2DynamoTable extends Construct implements ILambdaDependency {
   static cachedFactory(
     scope: Construct,
     dynamoRef: DynamoRef<any, any>
@@ -29,6 +36,7 @@ export class Idea2DynamoTable extends Construct {
   }
 
   public readonly table: TableV2;
+  public readonly dynamoRef: DynamoRef<any, any>;
 
   constructor(
     scope: Construct,
@@ -36,6 +44,8 @@ export class Idea2DynamoTable extends Construct {
     { dynamoRef }: { dynamoRef: DynamoRef<any, any> }
   ) {
     super(scope, id);
+
+    this.dynamoRef = dynamoRef;
 
     this.table = new TableV2(this, dynamoRef.id, {
       removalPolicy: RemovalPolicy.DESTROY, // TODO: Make this configurable
@@ -51,5 +61,23 @@ export class Idea2DynamoTable extends Construct {
           }
         : undefined,
     });
+  }
+
+  provideConstructRef(contextRefMap: ConstructRefMap): void {
+    contextRefMap.tables[this.dynamoRef.id] = {
+      tableName: this.table.tableName,
+      region: Stack.of(this).region,
+    };
+  }
+
+  grantLambdaAccess(
+    lambda: Idea2LambdaFunction,
+    options?: DynamoRefClientOptions
+  ): void {
+    if (options?.readonly) {
+      this.table.grantReadData(lambda.lambdaFunction);
+    } else {
+      this.table.grantReadWriteData(lambda.lambdaFunction);
+    }
   }
 }
