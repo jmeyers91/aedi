@@ -27,6 +27,11 @@ export interface DynamoClientRef<
   options?: O;
 }
 
+export interface DynamoConstructRef {
+  tableName: string;
+  region: string;
+}
+
 export interface DynamoRefClientOptions {
   readonly?: boolean;
 }

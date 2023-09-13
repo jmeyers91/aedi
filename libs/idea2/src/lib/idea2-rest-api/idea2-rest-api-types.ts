@@ -19,3 +19,8 @@ export interface RestApiClientRef<T extends RestApiRef, O extends object> {
   ref: T;
   options?: O;
 }
+
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+export interface RestApiConstructRef {
+  // idk? can I get the domain?
+}

@@ -1,71 +1,40 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Construct } from 'constructs';
-import { createConstructName, getIdea2StackContext } from './idea2-infra-utils';
+import { resolveConstruct, createConstructName } from './idea2-infra-utils';
 import { Stack, Duration } from 'aws-cdk-lib';
 import { Runtime } from 'aws-cdk-lib/aws-lambda';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
-import { Idea2Bucket } from './idea2-bucket-construct';
-import { Idea2DynamoTable } from './idea2-dynamo-construct';
 import {
   ClientRef,
   ConstructRefMap,
   Idea2AppHandlerEnv,
+  LambdaConstructRef,
   LambdaRef,
-  RefType,
   ResourceRef,
   getClientRefFromRef,
 } from '@sep6/idea2';
-import { Idea2UserPool } from './idea2-user-pool-construct';
 import { ILambdaDependency } from './idea2-infra-types';
-import { getIdea2ConstructClass } from './idea2-construct-registry';
 
 export class Idea2LambdaFunction
   extends Construct
-  implements ILambdaDependency
+  implements ILambdaDependency<LambdaConstructRef>
 {
-  static cachedFactory(
-    scope: Construct,
-    lambdaRef: LambdaRef<any, any, any>
-  ): Idea2LambdaFunction {
-    const cache = getIdea2StackContext(scope).getCache<Idea2LambdaFunction>(
-      RefType.LAMBDA
-    );
-    const cached = cache.get(lambdaRef.id);
-    if (cached) {
-      return cached;
-    }
-    const lambda = new Idea2LambdaFunction(
-      Stack.of(scope),
-      `lambda-${lambdaRef.id}`,
-      {
-        lambdaRef,
-      }
-    );
-    cache.set(lambdaRef.id, lambda);
-    return lambda;
-  }
-
   public readonly lambdaFunction;
   public readonly lambdaRef: LambdaRef<any, any, any>;
 
   constructor(
     scope: Construct,
     id: string,
-    { lambdaRef }: { lambdaRef: LambdaRef<any, any, any> }
+    { resourceRef: lambdaRef }: { resourceRef: LambdaRef<any, any, any> }
   ) {
     super(scope, id);
 
     this.lambdaRef = lambdaRef;
 
-    const contextConstructRefs: ConstructRefMap = {
-      functions: {},
-      tables: {},
-      buckets: {},
-      userPools: {},
-    };
+    const contextConstructRefs: Partial<ConstructRefMap> = {};
     const dependencies: {
       clientRef: ClientRef;
-      construct: ILambdaDependency | Construct;
+      construct: ILambdaDependency<any> | Construct;
     }[] = [];
 
     for (const contextValue of Object.values(lambdaRef.context)) {
@@ -73,17 +42,19 @@ export class Idea2LambdaFunction
         contextValue as ClientRef | ResourceRef
       );
       const ref = clientRef.ref;
-      const constructClass = getIdea2ConstructClass(ref.type);
+      const construct = resolveConstruct(this, ref);
 
-      const dependencyConstruct: ILambdaDependency | Construct | undefined =
-        constructClass.cachedFactory(this, ref as any);
-
-      if (dependencyConstruct) {
-        if ('provideConstructRef' in dependencyConstruct) {
-          dependencyConstruct.provideConstructRef(contextConstructRefs);
+      if (construct) {
+        if ('getConstructRef' in construct) {
+          contextConstructRefs[ref.type] = Object.assign(
+            contextConstructRefs[ref.type] ?? {},
+            {
+              [ref.id]: (construct as any).getConstructRef(),
+            }
+          );
         }
 
-        dependencies.push({ construct: dependencyConstruct, clientRef });
+        dependencies.push({ construct, clientRef });
       }
     }
 
@@ -119,8 +90,8 @@ export class Idea2LambdaFunction
     }
   }
 
-  provideConstructRef(contextRefMap: ConstructRefMap): void {
-    contextRefMap.functions[this.lambdaRef.id] = {
+  getConstructRef() {
+    return {
       functionName: this.lambdaFunction.functionName,
       region: Stack.of(this).region,
     };

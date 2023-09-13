@@ -122,3 +122,8 @@ export interface UserPoolClientRef<T extends UserPoolRef, O extends object> {
   ref: T;
   options?: O;
 }
+
+export interface UserPoolConstructRef {
+  userPoolId: string;
+  region: string;
+}

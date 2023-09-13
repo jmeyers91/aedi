@@ -1,13 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Stack, StackProps } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-import { Idea2StackContext } from './idea2-infra-utils';
+import { Idea2StackContext, resolveConstruct } from './idea2-infra-utils';
 import { Idea2App } from '@sep6/idea2';
 import { writeFileSync } from 'fs';
-import {
-  getIdea2ConstructClass,
-  idea2ConstructClassMap,
-} from './idea2-construct-registry';
 
 export class Idea2Stack extends Stack implements Idea2StackContext {
   idea2App: Idea2App;
@@ -34,10 +30,7 @@ export class Idea2Stack extends Stack implements Idea2StackContext {
     this.namePrefix = `${id}-`;
 
     for (const resourceRef of idea2App.resourceRefs.values()) {
-      const constructClass = getIdea2ConstructClass(resourceRef.type);
-      if ('cachedFactory' in constructClass) {
-        constructClass.cachedFactory(this, resourceRef as any);
-      }
+      resolveConstruct(this, resourceRef);
     }
 
     writeFileSync(

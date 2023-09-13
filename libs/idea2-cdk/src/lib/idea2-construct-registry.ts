@@ -6,6 +6,7 @@ import { Idea2DynamoTable } from './idea2-dynamo-construct';
 import { Idea2LambdaFunction } from './idea2-lambda-construct';
 import { Idea2RestApi } from './idea2-rest-api-construct';
 import { Idea2UserPool } from './idea2-user-pool-construct';
+import { Idea2StaticSite } from './idea2-static-site-construct';
 
 export const idea2ConstructClassMap = {
   [RefType.BUCKET]: Idea2Bucket,
@@ -13,7 +14,9 @@ export const idea2ConstructClassMap = {
   [RefType.LAMBDA]: Idea2LambdaFunction,
   [RefType.REST_API]: Idea2RestApi,
   [RefType.USER_POOL]: Idea2UserPool,
+  [RefType.STATIC_SITE]: Idea2StaticSite,
 } satisfies Record<RefType, { new (...args: any): Construct }>;
+export type Idea2ConstructClassMap = typeof idea2ConstructClassMap;
 
 export function getIdea2ConstructClass<T extends RefType>(
   refType: T

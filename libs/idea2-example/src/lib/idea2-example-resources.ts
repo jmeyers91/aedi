@@ -1,11 +1,14 @@
-import { bucket, table, restApi, GENERATED, userPool } from '@sep6/idea2';
+import { bucket, table, restApi, userPool, staticSite } from '@sep6/idea2';
 import { idea } from './idea2-example-app';
 
 export const api = restApi(idea, 'rest-api', {});
 
 export const webAppBucket = bucket(idea, 'web-app-bucket', {
   assetPath: './dist/apps/sep6-app',
-  domain: GENERATED,
+});
+
+export const webAppSite = staticSite(idea, 'web-app', {
+  bucket: webAppBucket,
 });
 
 export const counterTable = table<

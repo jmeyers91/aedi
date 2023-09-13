@@ -19,20 +19,15 @@ import {
   DynamoDBClient,
   DynamoDBClientConfig,
 } from '@aws-sdk/client-dynamodb';
-import { resolveLambdaRuntimeEnv } from '../idea2-client-utils';
+import { resolveConstructRef } from '../idea2-client-utils';
 import type { DynamoClientRef, DynamoRef } from './idea2-dynamo-types';
 
 export function getDynamoTableClient<T extends DynamoClientRef<any, any>>(
-  dynamoClientRef: T
+  clientRef: T
 ) {
-  const dynamoRefId = dynamoClientRef.ref.id;
-  const tableConstructRef =
-    resolveLambdaRuntimeEnv().IDEA_CONSTRUCT_REF_MAP.tables[dynamoRefId];
+  const { tableName, region } = resolveConstructRef(clientRef);
 
-  return new DynamoTable(
-    tableConstructRef.tableName,
-    tableConstructRef.region
-  ) as MaybeReadonly<
+  return new DynamoTable(tableName, region) as MaybeReadonly<
     T['ref'] extends DynamoRef<infer R, infer Q>
       ? DynamoTable<R, Q>
       : DynamoTable<any, any>,

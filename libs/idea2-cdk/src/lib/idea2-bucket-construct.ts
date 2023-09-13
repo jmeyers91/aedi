@@ -1,41 +1,24 @@
-import { RemovalPolicy, CfnOutput, Stack } from 'aws-cdk-lib';
-import {
-  Distribution,
-  OriginAccessIdentity,
-  ViewerProtocolPolicy,
-} from 'aws-cdk-lib/aws-cloudfront';
-import { S3Origin } from 'aws-cdk-lib/aws-cloudfront-origins';
+import { RemovalPolicy, Stack } from 'aws-cdk-lib';
+import { Distribution } from 'aws-cdk-lib/aws-cloudfront';
 import { Bucket } from 'aws-cdk-lib/aws-s3';
 import { BucketDeployment, Source } from 'aws-cdk-lib/aws-s3-deployment';
 import { Construct } from 'constructs';
-import { createConstructName, getIdea2StackContext } from './idea2-infra-utils';
-import { BucketRef, ConstructRefMap, RefType } from '@sep6/idea2';
+import { resolveConstruct, createConstructName } from './idea2-infra-utils';
+import { BucketConstructRef, BucketRef } from '@sep6/idea2';
 import { ILambdaDependency } from './idea2-infra-types';
 import { Idea2LambdaFunction } from './idea2-lambda-construct';
 
-export class Idea2Bucket extends Construct implements ILambdaDependency {
-  static cachedFactory(scope: Construct, bucketRef: BucketRef): Idea2Bucket {
-    const cache = getIdea2StackContext(scope).getCache<Idea2Bucket>(
-      RefType.BUCKET
-    );
-    const cached = cache.get(bucketRef.id);
-    if (cached) {
-      return cached;
-    }
-    const bucket = new Idea2Bucket(Stack.of(scope), `bucket-${bucketRef.id}`, {
-      bucketRef,
-    });
-    cache.set(bucketRef.id, bucket);
-    return bucket;
-  }
-
+export class Idea2Bucket
+  extends Construct
+  implements ILambdaDependency<BucketConstructRef>
+{
   public readonly bucket: Bucket;
   public readonly bucketRef: BucketRef;
 
   constructor(
     scope: Construct,
     id: string,
-    { bucketRef }: { bucketRef: BucketRef }
+    { resourceRef: bucketRef }: { resourceRef: BucketRef }
   ) {
     super(scope, id);
 
@@ -52,34 +35,9 @@ export class Idea2Bucket extends Construct implements ILambdaDependency {
     if (bucketRef.assetPath) {
       let distribution: Distribution | undefined = undefined;
 
-      if (bucketRef.domain) {
-        const originAccessIdentity = new OriginAccessIdentity(
-          this,
-          'access-identity'
-        );
-
-        bucket.grantRead(originAccessIdentity);
-
-        // TODO: Add DNS support
-        distribution = new Distribution(this, 'distribution', {
-          defaultBehavior: {
-            origin: new S3Origin(bucket, { originAccessIdentity }),
-            viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
-          },
-          defaultRootObject: 'index.html',
-          errorResponses: [
-            {
-              httpStatus: 404,
-              responseHttpStatus: 200,
-              responsePagePath: '/index.html',
-            },
-          ],
-        });
-
-        new CfnOutput(this, 'bucket-url', {
-          description: `URL for bucket distribution: ${bucketRef.id}`,
-          value: `https://${distribution.domainName}`,
-        });
+      if (bucketRef.staticSite) {
+        const staticSite = resolveConstruct(this, bucketRef.staticSite);
+        distribution = staticSite.getBucketDistribution({ bucket, bucketRef });
       }
 
       new BucketDeployment(this, 'deployment', {
@@ -90,8 +48,8 @@ export class Idea2Bucket extends Construct implements ILambdaDependency {
     }
   }
 
-  provideConstructRef(contextRefMap: ConstructRefMap): void {
-    contextRefMap.buckets[this.bucketRef.id] = {
+  getConstructRef() {
+    return {
       bucketName: this.bucket.bucketName,
       region: Stack.of(this).region,
     };

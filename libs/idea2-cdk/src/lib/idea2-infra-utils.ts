@@ -1,9 +1,13 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Stack } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-import { Idea2App } from '@sep6/idea2';
+import { Idea2App, ResourceRef } from '@sep6/idea2';
+import {
+  Idea2ConstructClassMap,
+  getIdea2ConstructClass,
+} from './idea2-construct-registry';
 
 export function getIdea2StackContext(construct: Construct): Idea2StackContext {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return Stack.of(construct) as any;
 }
 
@@ -13,6 +17,31 @@ export function getNamePrefix(construct: Construct): string {
 
 export function createConstructName(scope: Construct, name: string): string {
   return `${getNamePrefix(scope)}${name}`;
+}
+
+export function resolveConstruct<R extends ResourceRef>(
+  scope: Construct,
+  resourceRef: R
+): InstanceType<Idea2ConstructClassMap[R['type']]> {
+  const cache = getIdea2StackContext(scope).getCache<
+    Idea2ConstructClassMap[R['type']]
+  >(resourceRef.type);
+
+  const cached = cache.get(resourceRef.id);
+  if (cached) {
+    return cached as any;
+  }
+
+  const constructClass = getIdea2ConstructClass(resourceRef.type);
+  const construct = new (constructClass as any)(
+    Stack.of(scope), // Put all idea2 constructs in the root of the stack
+    `${resourceRef.type}-${resourceRef.id}`,
+    { resourceRef }
+  );
+
+  cache.set(resourceRef.id, construct as any);
+
+  return construct as any;
 }
 
 export interface Idea2StackContext {

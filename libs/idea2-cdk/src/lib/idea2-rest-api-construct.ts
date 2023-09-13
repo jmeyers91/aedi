@@ -1,36 +1,19 @@
-import { Stack } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-import { RestApiRef, RefType } from '@sep6/idea2';
-import { getIdea2StackContext } from './idea2-infra-utils';
+import { RestApiRef, RestApiConstructRef } from '@sep6/idea2';
+import { resolveConstruct } from './idea2-infra-utils';
 import { Cors, LambdaIntegration, RestApi } from 'aws-cdk-lib/aws-apigateway';
-import { Idea2LambdaFunction } from './idea2-lambda-construct';
+import { ILambdaDependency } from './idea2-infra-types';
 
-export class Idea2RestApi extends Construct {
-  static cachedFactory(scope: Construct, restApiRef: RestApiRef): Idea2RestApi {
-    const cache = getIdea2StackContext(scope).getCache<Idea2RestApi>(
-      RefType.REST_API
-    );
-    const cached = cache.get(restApiRef.id);
-    if (cached) {
-      return cached;
-    }
-    const restApi = new Idea2RestApi(
-      Stack.of(scope),
-      `rest-api-${restApiRef.id}`,
-      {
-        restApiRef,
-      }
-    );
-    cache.set(restApiRef.id, restApi);
-    return restApi;
-  }
-
+export class Idea2RestApi
+  extends Construct
+  implements ILambdaDependency<RestApiConstructRef>
+{
   public readonly restApi: RestApi;
 
   constructor(
     scope: Construct,
     id: string,
-    { restApiRef }: { restApiRef: RestApiRef }
+    { resourceRef: restApiRef }: { resourceRef: RestApiRef }
   ) {
     super(scope, id);
 
@@ -54,12 +37,17 @@ export class Idea2RestApi extends Construct {
       apiGatewayResource.addMethod(
         route.method,
         new LambdaIntegration(
-          Idea2LambdaFunction.cachedFactory(
-            this,
-            route.lambdaRef
-          ).lambdaFunction
+          resolveConstruct(this, route.lambdaRef).lambdaFunction
         )
       );
     }
+  }
+
+  getConstructRef(): RestApiConstructRef {
+    return {};
+  }
+
+  grantLambdaAccess() {
+    // TODO: Anything to add here?
   }
 }

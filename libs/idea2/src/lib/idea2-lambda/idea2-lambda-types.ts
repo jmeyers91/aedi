@@ -36,3 +36,8 @@ export interface LambdaClientRef<
   ref: T;
   options?: O;
 }
+
+export interface LambdaConstructRef {
+  functionName: string;
+  region: string;
+}

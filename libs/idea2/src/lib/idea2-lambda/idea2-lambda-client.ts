@@ -1,15 +1,17 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { InvokeCommand, LambdaClient } from '@aws-sdk/client-lambda';
-import { resolveLambdaRuntimeEnv } from '../idea2-client-utils';
+import {
+  resolveConstructRef,
+  resolveLambdaRuntimeEnv,
+} from '../idea2-client-utils';
 import { LambdaClientRef } from './idea2-lambda-types';
 
 export function getCallableLambdaRef<T extends LambdaClientRef<any, any>>(
-  lambdaClientRef: T
+  clientRef: T
 ) {
   const runtimeEnv = resolveLambdaRuntimeEnv();
-  const lambdaRef = lambdaClientRef.ref;
-  const fnConstructRef =
-    runtimeEnv.IDEA_CONSTRUCT_REF_MAP.functions[lambdaRef.id];
+  const lambdaRef = clientRef.ref;
+  const fnConstructRef = resolveConstructRef(clientRef);
   const { region, functionName } = fnConstructRef;
   const lambdaClient = new LambdaClient({ region });
 

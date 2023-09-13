@@ -1,22 +1,32 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type {
   BucketClientRef,
+  BucketConstructRef,
   BucketRef,
 } from './idea2-bucket/idea2-bucket-types';
 import type {
   DynamoClientRef,
   AnyDynamoRef,
+  DynamoConstructRef,
 } from './idea2-dynamo/idea2-dynamo-types';
 import type {
   AnyLambdaRef,
   LambdaClientRef,
+  LambdaConstructRef,
 } from './idea2-lambda/idea2-lambda-types';
 import type {
   RestApiClientRef,
+  RestApiConstructRef,
   RestApiRef,
 } from './idea2-rest-api/idea2-rest-api-types';
 import {
+  StaticSiteClientRef,
+  StaticSiteConstructRef,
+  StaticSiteRef,
+} from './idea2-static-site';
+import {
   UserPoolClientRef,
+  UserPoolConstructRef,
   UserPoolRef,
 } from './idea2-user-pool/idea2-user-pool-types';
 
@@ -26,6 +36,7 @@ export enum RefType {
   BUCKET = 'bucket',
   REST_API = 'rest-api',
   USER_POOL = 'user-pool',
+  STATIC_SITE = 'static-site',
 }
 
 export type ResourceRef =
@@ -33,38 +44,28 @@ export type ResourceRef =
   | AnyDynamoRef
   | BucketRef
   | RestApiRef
-  | UserPoolRef;
+  | UserPoolRef
+  | StaticSiteRef;
 
 export type ClientRef =
   | LambdaClientRef<AnyLambdaRef, any>
   | DynamoClientRef<AnyDynamoRef, any>
   | BucketClientRef<BucketRef, any>
   | RestApiClientRef<RestApiRef, any>
-  | UserPoolClientRef<UserPoolRef, any>;
+  | UserPoolClientRef<UserPoolRef, any>
+  | StaticSiteClientRef<StaticSiteRef, any>;
 
-export interface ConstructRefMap {
-  functions: Record<
-    string,
-    {
-      functionName: string;
-      region: string;
-    }
-  >;
-  tables: Record<
-    string,
-    {
-      tableName: string;
-      region: string;
-    }
-  >;
-  buckets: Record<string, { bucketName: string; region: string }>;
-  userPools: Record<
-    string,
-    {
-      userPoolId: string;
-      region: string;
-    }
-  >;
+// TODO: Replace this with something more generalized
+// Each resource type should be able to define construct data that it expects
+// This can be a map from RefType -> SpecificRefConstructType
+export interface ConstructRefMap
+  extends Record<RefType, Record<string, object>> {
+  [RefType.BUCKET]: Record<string, BucketConstructRef>;
+  [RefType.DYNAMO]: Record<string, DynamoConstructRef>;
+  [RefType.LAMBDA]: Record<string, LambdaConstructRef>;
+  [RefType.REST_API]: Record<string, RestApiConstructRef>;
+  [RefType.STATIC_SITE]: Record<string, StaticSiteConstructRef>;
+  [RefType.USER_POOL]: Record<string, UserPoolConstructRef>;
 }
 
 export type WrapContext<C> = {
@@ -77,5 +78,5 @@ export type WrapContext<C> = {
 
 export interface Idea2AppHandlerEnv {
   IDEA_FUNCTION_ID: string;
-  IDEA_CONSTRUCT_REF_MAP: ConstructRefMap;
+  IDEA_CONSTRUCT_REF_MAP: Partial<ConstructRefMap>;
 }

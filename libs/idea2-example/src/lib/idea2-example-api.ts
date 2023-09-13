@@ -26,7 +26,10 @@ export const healthcheck = addRoute(
   lambda(
     idea,
     'healthcheck',
-    { bucket: webAppBucket, appUserPool },
+    {
+      bucket: webAppBucket,
+      appUserPool,
+    },
 
     async (ctx, _: RouteEvent) => {
       try {
