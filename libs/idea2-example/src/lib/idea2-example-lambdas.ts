@@ -3,8 +3,8 @@ import {
   getBucketClient,
   getDynamoTableClient,
   lambda,
-  getCallableLambdaRef,
   getSecretValue,
+  invoke,
 } from '@sep6/idea2';
 import { idea } from './idea2-example-app';
 import {
@@ -58,8 +58,7 @@ export const lambda1 = lambda(
     try {
       const event = 'hello from lambda1';
       console.log(`Calling lambda2 with event`, event);
-      const callable = await getCallableLambdaRef(fn2);
-      const result = await callable({ counterId: event });
+      const result = await invoke(fn2, { counterId: event });
       console.log(`Received result`, result);
 
       return { success: true, result };

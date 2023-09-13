@@ -9,8 +9,6 @@ import { LambdaClientRef } from './idea2-lambda-types';
 export function getCallableLambdaRef<T extends LambdaClientRef<any, any>>(
   clientRef: T
 ) {
-  const runtimeEnv = resolveLambdaRuntimeEnv();
-  const lambdaRef = clientRef.ref;
   const fnConstructRef = resolveConstructRef(clientRef);
   const { region, functionName } = fnConstructRef;
   const lambdaClient = new LambdaClient({ region });
@@ -18,13 +16,6 @@ export function getCallableLambdaRef<T extends LambdaClientRef<any, any>>(
   return async (
     event: Parameters<T['ref']['fn']>[1]
   ): Promise<Awaited<ReturnType<T['ref']['fn']>>> => {
-    if (!fnConstructRef) {
-      console.log('runtimeEnv', runtimeEnv);
-      throw new Error(
-        `Unable to find lambda ${lambdaRef.id} in construct ref map.`
-      );
-    }
-
     const result = await lambdaClient.send(
       new InvokeCommand({
         FunctionName: functionName,
@@ -44,4 +35,11 @@ export function getCallableLambdaRef<T extends LambdaClientRef<any, any>>(
       throw error;
     }
   };
+}
+
+export async function invoke<T extends LambdaClientRef<any, any>>(
+  clientRef: T,
+  event: Parameters<T['ref']['fn']>[1]
+): Promise<Awaited<ReturnType<T['ref']['fn']>>> {
+  return getCallableLambdaRef(clientRef)(event);
 }

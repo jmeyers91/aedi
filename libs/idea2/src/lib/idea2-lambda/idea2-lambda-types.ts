@@ -13,7 +13,7 @@ export type BrandedLambdaRefFnWithEvent<C, E, R> = LambdaRefFnWithEvent<
   E,
   R
 > & {
-  __eventType: E;
+  __eventType?: E;
 };
 export type LambdaRefFn<C> = LambdaRefFnWithEvent<C, any, any>;
 
