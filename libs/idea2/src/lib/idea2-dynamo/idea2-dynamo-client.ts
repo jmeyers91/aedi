@@ -19,14 +19,12 @@ import {
   DynamoDBClient,
   DynamoDBClientConfig,
 } from '@aws-sdk/client-dynamodb';
-import { resolveConstructRef } from '../idea2-client-utils';
 import type { DynamoClientRef, DynamoRef } from './idea2-dynamo-types';
+import { ResolvedClientRef } from '../idea2-types';
 
-export function getDynamoTableClient<T extends DynamoClientRef<any, any>>(
-  clientRef: T
-) {
-  const { tableName, region } = resolveConstructRef(clientRef);
-
+export function getDynamoTableClient<T extends DynamoClientRef<any, any>>({
+  constructRef: { tableName, region },
+}: ResolvedClientRef<T>) {
   return new DynamoTable(tableName, region) as MaybeReadonly<
     T['ref'] extends DynamoRef<infer R, infer Q>
       ? DynamoTable<R, Q>

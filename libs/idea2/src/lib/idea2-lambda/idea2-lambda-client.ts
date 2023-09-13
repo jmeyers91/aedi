@@ -1,16 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { InvokeCommand, LambdaClient } from '@aws-sdk/client-lambda';
-import {
-  resolveConstructRef,
-  resolveLambdaRuntimeEnv,
-} from '../idea2-client-utils';
 import { LambdaClientRef } from './idea2-lambda-types';
+import { ResolvedClientRef } from '../idea2-types';
 
-export function getCallableLambdaRef<T extends LambdaClientRef<any, any>>(
-  clientRef: T
-) {
-  const fnConstructRef = resolveConstructRef(clientRef);
-  const { region, functionName } = fnConstructRef;
+export function getCallableLambdaRef<T extends LambdaClientRef<any, any>>({
+  constructRef: { functionName, region },
+}: ResolvedClientRef<T>) {
   const lambdaClient = new LambdaClient({ region });
 
   return async (
@@ -38,7 +33,7 @@ export function getCallableLambdaRef<T extends LambdaClientRef<any, any>>(
 }
 
 export async function invoke<T extends LambdaClientRef<any, any>>(
-  clientRef: T,
+  clientRef: ResolvedClientRef<T>,
   event: Parameters<T['ref']['fn']>[1]
 ): Promise<Awaited<ReturnType<T['ref']['fn']>>> {
   return getCallableLambdaRef(clientRef)(event);

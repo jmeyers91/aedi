@@ -76,7 +76,7 @@ export const secretLambda = lambda(
   },
   async ({ exampleSecret }) => {
     try {
-      console.log(`Getting secret`, exampleSecret.ref.id);
+      console.log(`Getting secret`, exampleSecret.clientRef.ref.id);
       const secretValue = await getSecretValue(exampleSecret);
       return { success: true, secretValue };
     } catch (error) {

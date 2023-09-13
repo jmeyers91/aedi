@@ -77,11 +77,19 @@ export interface ConstructRefMap
   [RefType.USER_POOL]: Record<string, UserPoolConstructRef>;
 }
 
+export type ResolvedClientRef<
+  C extends { refType: RefType; ref: ResourceRef }
+> = {
+  refType: C['refType'];
+  clientRef: C;
+  constructRef: ConstructRefMap[C['refType']][string];
+};
+
 export type WrapContext<C> = {
   [K in keyof C]: C[K] extends ClientRef
-    ? C[K]
+    ? ResolvedClientRef<C[K]>
     : C[K] extends ResourceRef
-    ? { refType: C[K]['type']; ref: C[K] }
+    ? ResolvedClientRef<{ refType: C[K]['type']; ref: C[K] }>
     : never;
 };
 
