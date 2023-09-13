@@ -16,11 +16,14 @@ export type DynamoRef<T, PK extends keyof T> = {
   };
 };
 
+export type AnyDynamoRef = DynamoRef<any, any>;
+
 export interface DynamoClientRef<
   T extends DynamoRef<any, any>,
   O extends DynamoRefClientOptions
 > {
-  dynamo: T;
+  ref: T;
+  refType: RefType.DYNAMO;
   options?: O;
 }
 

@@ -4,12 +4,12 @@ import type {
   BucketRef,
 } from './idea2-bucket/idea2-bucket-types';
 import type {
-  DynamoRef,
   DynamoClientRef,
+  AnyDynamoRef,
 } from './idea2-dynamo/idea2-dynamo-types';
 import type {
+  AnyLambdaRef,
   LambdaClientRef,
-  LambdaRef,
 } from './idea2-lambda/idea2-lambda-types';
 import type {
   RestApiClientRef,
@@ -23,16 +23,8 @@ import {
 export type WrapContext<C> = {
   [K in keyof C]: C[K] extends ClientRef
     ? C[K]
-    : C[K] extends LambdaRef<any, any, any>
-    ? { lambda: C[K] }
-    : C[K] extends DynamoRef<any, any>
-    ? { dynamo: C[K] }
-    : C[K] extends BucketRef
-    ? { bucket: C[K] }
-    : C[K] extends RestApiRef
-    ? { restApi: C[K] }
-    : C[K] extends UserPoolRef
-    ? { userPool: C[K] }
+    : C[K] extends ResourceRef
+    ? { refType: C[K]['type']; ref: C[K] }
     : never;
 };
 
@@ -45,18 +37,18 @@ export enum RefType {
 }
 
 export type ResourceRef =
-  | LambdaRef<any, any, any>
-  | DynamoRef<any, any>
+  | AnyLambdaRef
+  | AnyDynamoRef
   | BucketRef
   | RestApiRef
   | UserPoolRef;
 
 export type ClientRef =
-  | LambdaClientRef
-  | DynamoClientRef<any, any>
-  | BucketClientRef
-  | RestApiClientRef
-  | UserPoolClientRef;
+  | LambdaClientRef<AnyLambdaRef, any>
+  | DynamoClientRef<AnyDynamoRef, any>
+  | BucketClientRef<BucketRef, any>
+  | RestApiClientRef<RestApiRef, any>
+  | UserPoolClientRef<UserPoolRef, any>;
 
 export interface ConstructRefMap {
   functions: Record<

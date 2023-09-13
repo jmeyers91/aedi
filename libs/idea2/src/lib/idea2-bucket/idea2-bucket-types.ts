@@ -8,6 +8,8 @@ export type BucketRef = {
   domain?: { domainName: string; domainZone: string } | typeof GENERATED;
 };
 
-export interface BucketClientRef {
-  bucket: BucketRef;
+export interface BucketClientRef<T extends BucketRef, O extends object> {
+  refType: RefType.BUCKET;
+  ref: T;
+  options?: O;
 }

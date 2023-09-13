@@ -7,17 +7,13 @@ export function bucket(
   id: string,
   options: Omit<BucketRef, 'id' | 'type'>
 ): BucketRef {
-  if (app.buckets.has(id)) {
-    throw new Error(`Duplicate dynamo table id: ${id}`);
-  }
-
   const bucketRef: BucketRef = {
     ...options,
     type: RefType.BUCKET,
     id,
   };
 
-  app.buckets.set(id, bucketRef);
+  app.addResourceRef(bucketRef);
 
   return bucketRef;
 }

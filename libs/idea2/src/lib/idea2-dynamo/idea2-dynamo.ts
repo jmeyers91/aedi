@@ -8,17 +8,13 @@ export function table<T, PK extends keyof T>(
   id: string,
   options: Omit<DynamoRef<T, PK>, 'id' | 'type'>
 ): DynamoRef<T, PK> {
-  if (app.tables.has(id)) {
-    throw new Error(`Duplicate dynamo table id: ${id}`);
-  }
-
   const dynamoRef: DynamoRef<T, PK> = {
     ...options,
     type: RefType.DYNAMO,
     id,
   };
 
-  app.tables.set(id, dynamoRef);
+  app.addResourceRef(dynamoRef);
 
   return dynamoRef;
 }
@@ -26,5 +22,9 @@ export function table<T, PK extends keyof T>(
 export function readonly<T extends DynamoRef<any, any>>(
   dynamo: T
 ): DynamoClientRef<T, { readonly: true }> {
-  return { dynamo, options: { readonly: true } };
+  return {
+    ref: dynamo,
+    refType: RefType.DYNAMO,
+    options: { readonly: true },
+  };
 }

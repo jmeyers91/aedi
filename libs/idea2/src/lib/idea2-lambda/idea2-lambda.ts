@@ -15,9 +15,6 @@ export function lambda<C, E, R>(
   context: C,
   fn: LambdaRefFnWithEvent<C, E, R>
 ): LambdaRef<C, E, R> {
-  if (app.lambdas.has(id)) {
-    throw new Error(`Duplicate lambda id: ${id}`);
-  }
   const callsite = callsites()[1];
   const absoluteFilepath = callsite.getFileName();
   if (!absoluteFilepath) {
@@ -37,7 +34,7 @@ export function lambda<C, E, R>(
     lambdaHandler,
   };
 
-  app.lambdas.set(id, lambdaRef);
+  app.addResourceRef(lambdaRef);
 
   return lambdaRef;
 }

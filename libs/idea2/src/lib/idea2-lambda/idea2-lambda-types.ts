@@ -26,6 +26,13 @@ export type LambdaRef<C, E, R> = {
   context: C;
 };
 
-export interface LambdaClientRef {
-  lambda: LambdaRef<any, any, any>;
+export type AnyLambdaRef = LambdaRef<any, any, any>;
+
+export interface LambdaClientRef<
+  T extends LambdaRef<any, any, any>,
+  O extends object
+> {
+  refType: RefType.LAMBDA;
+  ref: T;
+  options?: O;
 }

@@ -7,17 +7,13 @@ export function userPool(
   id: string,
   options: Omit<UserPoolRef, 'id' | 'type'>
 ): UserPoolRef {
-  if (app.userPools.has(id)) {
-    throw new Error(`Duplicate user pool id: ${id}`);
-  }
-
   const userPoolRef: UserPoolRef = {
     ...options,
     type: RefType.USER_POOL,
     id,
   };
 
-  app.userPools.set(id, userPoolRef);
+  app.addResourceRef(userPoolRef);
 
   return userPoolRef;
 }

@@ -17,6 +17,7 @@ import {
 } from '@sep6/idea2';
 import { Idea2UserPool } from './idea2-user-pool-construct';
 import { ILambdaDependency } from './idea2-infra-types';
+import { getIdea2ConstructClass } from './idea2-construct-registry';
 
 export class Idea2LambdaFunction
   extends Construct
@@ -64,42 +65,24 @@ export class Idea2LambdaFunction
     };
     const dependencies: {
       clientRef: ClientRef;
-      construct: ILambdaDependency;
+      construct: ILambdaDependency | Construct;
     }[] = [];
 
     for (const contextValue of Object.values(lambdaRef.context)) {
       const clientRef = getClientRefFromRef(
         contextValue as ClientRef | ResourceRef
       );
-      let dependencyConstruct: ILambdaDependency | undefined = undefined;
+      const ref = clientRef.ref;
+      const constructClass = getIdea2ConstructClass(ref.type);
 
-      if ('lambda' in clientRef) {
-        dependencyConstruct = Idea2LambdaFunction.cachedFactory(
-          this,
-          clientRef.lambda
-        );
-      }
-
-      if ('dynamo' in clientRef) {
-        dependencyConstruct = Idea2DynamoTable.cachedFactory(
-          this,
-          clientRef.dynamo
-        );
-      }
-
-      if ('bucket' in clientRef) {
-        dependencyConstruct = Idea2Bucket.cachedFactory(this, clientRef.bucket);
-      }
-
-      if ('userPool' in clientRef) {
-        dependencyConstruct = Idea2UserPool.cachedFactory(
-          this,
-          clientRef.userPool
-        );
-      }
+      const dependencyConstruct: ILambdaDependency | Construct | undefined =
+        constructClass.cachedFactory(this, ref as any);
 
       if (dependencyConstruct) {
-        dependencyConstruct.provideConstructRef(contextConstructRefs);
+        if ('provideConstructRef' in dependencyConstruct) {
+          dependencyConstruct.provideConstructRef(contextConstructRefs);
+        }
+
         dependencies.push({ construct: dependencyConstruct, clientRef });
       }
     }
@@ -127,10 +110,12 @@ export class Idea2LambdaFunction
     console.log(`- Lambda ${lambdaRef.id} -> ${lambdaRef.filepath}`);
 
     for (const { construct, clientRef } of dependencies) {
-      construct.grantLambdaAccess(
-        this,
-        'options' in clientRef ? clientRef.options : undefined
-      );
+      if ('grantLambdaAccess' in construct) {
+        construct.grantLambdaAccess(
+          this,
+          'options' in clientRef ? clientRef.options : undefined
+        );
+      }
     }
   }
 

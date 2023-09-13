@@ -1,21 +1,21 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { InvokeCommand, LambdaClient } from '@aws-sdk/client-lambda';
-import type { ClientRef } from '../idea2-types';
 import { resolveLambdaRuntimeEnv } from '../idea2-client-utils';
+import { LambdaClientRef } from './idea2-lambda-types';
 
-export function getCallableLambdaRef<
-  T extends Extract<ClientRef, { lambda: any }>
->(lambdaClientRef: T) {
+export function getCallableLambdaRef<T extends LambdaClientRef<any, any>>(
+  lambdaClientRef: T
+) {
   const runtimeEnv = resolveLambdaRuntimeEnv();
-  const lambdaRef = lambdaClientRef.lambda;
+  const lambdaRef = lambdaClientRef.ref;
   const fnConstructRef =
     runtimeEnv.IDEA_CONSTRUCT_REF_MAP.functions[lambdaRef.id];
   const { region, functionName } = fnConstructRef;
   const lambdaClient = new LambdaClient({ region });
 
   return async (
-    event: Parameters<T['lambda']['fn']>[1]
-  ): Promise<Awaited<ReturnType<T['lambda']['fn']>>> => {
+    event: Parameters<T['ref']['fn']>[1]
+  ): Promise<Awaited<ReturnType<T['ref']['fn']>>> => {
     if (!fnConstructRef) {
       console.log('runtimeEnv', runtimeEnv);
       throw new Error(

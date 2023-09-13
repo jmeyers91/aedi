@@ -14,6 +14,8 @@ export interface RestApiRef {
   routes: RestApiRefRoute[];
 }
 
-export interface RestApiClientRef {
-  restApi: RestApiRef;
+export interface RestApiClientRef<T extends RestApiRef, O extends object> {
+  refType: RefType.REST_API;
+  ref: T;
+  options?: O;
 }

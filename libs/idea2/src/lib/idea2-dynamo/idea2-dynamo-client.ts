@@ -25,15 +25,15 @@ import type { DynamoClientRef, DynamoRef } from './idea2-dynamo-types';
 export function getDynamoTableClient<T extends DynamoClientRef<any, any>>(
   dynamoClientRef: T
 ) {
-  const dynamoRef = dynamoClientRef.dynamo.id;
+  const dynamoRefId = dynamoClientRef.ref.id;
   const tableConstructRef =
-    resolveLambdaRuntimeEnv().IDEA_CONSTRUCT_REF_MAP.tables[dynamoRef];
+    resolveLambdaRuntimeEnv().IDEA_CONSTRUCT_REF_MAP.tables[dynamoRefId];
 
   return new DynamoTable(
     tableConstructRef.tableName,
     tableConstructRef.region
   ) as MaybeReadonly<
-    T['dynamo'] extends DynamoRef<infer R, infer Q>
+    T['ref'] extends DynamoRef<infer R, infer Q>
       ? DynamoTable<R, Q>
       : DynamoTable<any, any>,
     T['options']

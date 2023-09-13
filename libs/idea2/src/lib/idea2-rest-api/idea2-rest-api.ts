@@ -18,10 +18,6 @@ export function restApi(
   id: string,
   options: Omit<RestApiRef, 'id' | 'type' | 'routes'>
 ): RestApiRef {
-  if (app.restApis.has(id)) {
-    throw new Error(`Duplicate rest-api id: ${id}`);
-  }
-
   const restApiRef: RestApiRef = {
     ...options,
     type: RefType.REST_API,
@@ -29,7 +25,7 @@ export function restApi(
     routes: [],
   };
 
-  app.restApis.set(id, restApiRef);
+  app.addResourceRef(restApiRef);
 
   return restApiRef;
 }

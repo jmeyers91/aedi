@@ -2,12 +2,12 @@
 
 import { S3Client } from '@aws-sdk/client-s3';
 import { resolveLambdaRuntimeEnv } from '../idea2-client-utils';
-import type { ClientRef } from '../idea2-types';
+import { BucketClientRef } from './idea2-bucket-types';
 
-export function getBucketClient<T extends Extract<ClientRef, { bucket: any }>>(
-  bucketClientRef: T
+export function getBucketClient<T extends BucketClientRef<any, any>>(
+  clientRef: T
 ) {
-  const bucketRefId = bucketClientRef.bucket.id;
+  const bucketRefId = clientRef.ref.id;
   const bucketConstructRef =
     resolveLambdaRuntimeEnv().IDEA_CONSTRUCT_REF_MAP.buckets[bucketRefId];
 

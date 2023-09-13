@@ -117,6 +117,8 @@ export type UserPoolRef = {
   };
 };
 
-export interface UserPoolClientRef {
-  userPool: UserPoolRef;
+export interface UserPoolClientRef<T extends UserPoolRef, O extends object> {
+  refType: RefType.USER_POOL;
+  ref: T;
+  options?: O;
 }
