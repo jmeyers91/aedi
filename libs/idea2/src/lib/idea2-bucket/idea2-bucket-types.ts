@@ -1,5 +1,5 @@
-import { StaticSiteRef } from '../idea2-static-site';
 import type { RefType } from '../idea2-types';
+import { StaticSiteRef } from '../idea2-static-site';
 
 export type BucketRef = {
   type: RefType.BUCKET;
