@@ -1,11 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Stack } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-import { Idea2App, ResourceRef } from '@sep6/idea2';
-import {
-  Idea2ConstructClassMap,
-  getIdea2ConstructClass,
-} from './idea2-construct-registry';
+import { Idea2App, RefType, ResourceRef } from '@sep6/idea2';
+import { Idea2Constructs, idea2Constructs } from './idea2-constructs';
 
 export function getIdea2StackContext(construct: Construct): Idea2StackContext {
   return Stack.of(construct) as any;
@@ -22,9 +19,9 @@ export function createConstructName(scope: Construct, name: string): string {
 export function resolveConstruct<R extends ResourceRef>(
   scope: Construct,
   resourceRef: R
-): InstanceType<Idea2ConstructClassMap[R['type']]> {
+): InstanceType<Idea2Constructs[R['type']]> {
   const cache = getIdea2StackContext(scope).getCache<
-    Idea2ConstructClassMap[R['type']]
+    Idea2Constructs[R['type']]
   >(resourceRef.type);
 
   const cached = cache.get(resourceRef.id);
@@ -42,6 +39,12 @@ export function resolveConstruct<R extends ResourceRef>(
   cache.set(resourceRef.id, construct as any);
 
   return construct as any;
+}
+
+export function getIdea2ConstructClass<T extends RefType>(
+  refType: T
+): (typeof idea2Constructs)[T] {
+  return idea2Constructs[refType];
 }
 
 export interface Idea2StackContext {

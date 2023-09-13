@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Construct } from 'constructs';
-import { resolveConstruct, createConstructName } from './idea2-infra-utils';
+import { resolveConstruct, createConstructName } from '../idea2-infra-utils';
 import { Stack, Duration } from 'aws-cdk-lib';
 import { Runtime } from 'aws-cdk-lib/aws-lambda';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
@@ -13,7 +13,7 @@ import {
   ResourceRef,
   getClientRefFromRef,
 } from '@sep6/idea2';
-import { ILambdaDependency } from './idea2-infra-types';
+import { ILambdaDependency } from '../idea2-infra-types';
 
 export class Idea2LambdaFunction
   extends Construct

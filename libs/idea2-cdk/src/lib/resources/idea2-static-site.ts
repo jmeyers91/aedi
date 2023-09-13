@@ -1,5 +1,5 @@
 import { Construct } from 'constructs';
-import { ILambdaDependency } from './idea2-infra-types';
+import { ILambdaDependency } from '../idea2-infra-types';
 import { StaticSiteConstructRef, StaticSiteRef } from '@sep6/idea2';
 import { CfnOutput } from 'aws-cdk-lib';
 import {
@@ -8,8 +8,8 @@ import {
   ViewerProtocolPolicy,
 } from 'aws-cdk-lib/aws-cloudfront';
 import { S3Origin } from 'aws-cdk-lib/aws-cloudfront-origins';
-import { Idea2Bucket } from './idea2-bucket-construct';
-import { resolveConstruct } from './idea2-infra-utils';
+import { Idea2Bucket } from './idea2-bucket';
+import { resolveConstruct } from '../idea2-infra-utils';
 
 export class Idea2StaticSite
   extends Construct

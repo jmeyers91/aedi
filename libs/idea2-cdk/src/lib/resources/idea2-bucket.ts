@@ -3,10 +3,10 @@ import { Distribution } from 'aws-cdk-lib/aws-cloudfront';
 import { Bucket } from 'aws-cdk-lib/aws-s3';
 import { BucketDeployment, Source } from 'aws-cdk-lib/aws-s3-deployment';
 import { Construct } from 'constructs';
-import { resolveConstruct, createConstructName } from './idea2-infra-utils';
+import { resolveConstruct, createConstructName } from '../idea2-infra-utils';
 import { BucketConstructRef, BucketRef } from '@sep6/idea2';
-import { ILambdaDependency } from './idea2-infra-types';
-import { Idea2LambdaFunction } from './idea2-lambda-construct';
+import { ILambdaDependency } from '../idea2-infra-types';
+import { Idea2LambdaFunction } from './idea2-lambda';
 
 export class Idea2Bucket
   extends Construct

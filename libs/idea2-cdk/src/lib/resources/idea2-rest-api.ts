@@ -1,8 +1,8 @@
 import { Construct } from 'constructs';
 import { RestApiRef, RestApiConstructRef } from '@sep6/idea2';
-import { resolveConstruct } from './idea2-infra-utils';
+import { resolveConstruct } from '../idea2-infra-utils';
 import { Cors, LambdaIntegration, RestApi } from 'aws-cdk-lib/aws-apigateway';
-import { ILambdaDependency } from './idea2-infra-types';
+import { ILambdaDependency } from '../idea2-infra-types';
 
 export class Idea2RestApi
   extends Construct
