@@ -4,9 +4,14 @@ import {
   getDynamoTableClient,
   lambda,
   getCallableLambdaRef,
+  getSecretValue,
 } from '@sep6/idea2';
 import { idea } from './idea2-example-app';
-import { counterTable, webAppBucket } from './idea2-example-resources';
+import {
+  counterTable,
+  exampleSecret,
+  webAppBucket,
+} from './idea2-example-resources';
 
 export const lambda2 = lambda(
   idea,
@@ -58,6 +63,23 @@ export const lambda1 = lambda(
       console.log(`Received result`, result);
 
       return { success: true, result };
+    } catch (error) {
+      return { success: false, error: (error as Error).message };
+    }
+  }
+);
+
+export const secretLambda = lambda(
+  idea,
+  'secretLambda',
+  {
+    exampleSecret,
+  },
+  async ({ exampleSecret }) => {
+    try {
+      console.log(`Getting secret`, exampleSecret.ref.id);
+      const secretValue = await getSecretValue(exampleSecret);
+      return { success: true, secretValue };
     } catch (error) {
       return { success: false, error: (error as Error).message };
     }

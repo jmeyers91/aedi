@@ -20,6 +20,11 @@ import type {
   RestApiRef,
 } from './idea2-rest-api/idea2-rest-api-types';
 import {
+  SecretClientRef,
+  SecretConstructRef,
+  SecretRef,
+} from './idea2-secret/idea2-secret-types';
+import {
   StaticSiteClientRef,
   StaticSiteConstructRef,
   StaticSiteRef,
@@ -31,29 +36,32 @@ import {
 } from './idea2-user-pool/idea2-user-pool-types';
 
 export enum RefType {
-  LAMBDA = 'lambda',
-  DYNAMO = 'dynamo',
   BUCKET = 'bucket',
+  DYNAMO = 'dynamo',
+  LAMBDA = 'lambda',
   REST_API = 'rest-api',
-  USER_POOL = 'user-pool',
+  SECRET = 'SECRET',
   STATIC_SITE = 'static-site',
+  USER_POOL = 'user-pool',
 }
 
 export type ResourceRef =
-  | AnyLambdaRef
-  | AnyDynamoRef
   | BucketRef
+  | AnyDynamoRef
+  | AnyLambdaRef
   | RestApiRef
-  | UserPoolRef
-  | StaticSiteRef;
+  | StaticSiteRef
+  | SecretRef
+  | UserPoolRef;
 
 export type ClientRef =
-  | LambdaClientRef<AnyLambdaRef, any>
-  | DynamoClientRef<AnyDynamoRef, any>
   | BucketClientRef<BucketRef, any>
+  | DynamoClientRef<AnyDynamoRef, any>
+  | LambdaClientRef<AnyLambdaRef, any>
   | RestApiClientRef<RestApiRef, any>
-  | UserPoolClientRef<UserPoolRef, any>
-  | StaticSiteClientRef<StaticSiteRef, any>;
+  | SecretClientRef<SecretRef, any>
+  | StaticSiteClientRef<StaticSiteRef, any>
+  | UserPoolClientRef<UserPoolRef, any>;
 
 // TODO: Replace this with something more generalized
 // Each resource type should be able to define construct data that it expects
@@ -64,6 +72,7 @@ export interface ConstructRefMap
   [RefType.DYNAMO]: Record<string, DynamoConstructRef>;
   [RefType.LAMBDA]: Record<string, LambdaConstructRef>;
   [RefType.REST_API]: Record<string, RestApiConstructRef>;
+  [RefType.SECRET]: Record<string, SecretConstructRef>;
   [RefType.STATIC_SITE]: Record<string, StaticSiteConstructRef>;
   [RefType.USER_POOL]: Record<string, UserPoolConstructRef>;
 }

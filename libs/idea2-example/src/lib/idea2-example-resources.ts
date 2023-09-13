@@ -1,4 +1,11 @@
-import { bucket, table, restApi, userPool, staticSite } from '@sep6/idea2';
+import {
+  bucket,
+  table,
+  restApi,
+  userPool,
+  staticSite,
+  secret,
+} from '@sep6/idea2';
 import { idea } from './idea2-example-app';
 
 export const api = restApi(idea, 'rest-api', {});
@@ -44,4 +51,8 @@ export const contactsTable = table<Contact, 'userId'>(idea, 'contact-table', {
 export const appUserPool = userPool(idea, 'user-pool', {
   selfSignUpEnabled: true,
   domainPrefix: 'idea2-dev',
+});
+
+export const exampleSecret = secret(idea, 'example-secret', {
+  arn: 'arn:aws:secretsmanager:us-west-2:664290008299:secret:idea2-example-secret-JTkxFp',
 });

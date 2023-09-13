@@ -7,6 +7,7 @@ import { Idea2LambdaFunction } from './resources/idea2-lambda';
 import { Idea2RestApi } from './resources/idea2-rest-api';
 import { Idea2UserPool } from './resources/idea2-user-pool';
 import { Idea2StaticSite } from './resources/idea2-static-site';
+import { Idea2Secret } from './resources/idea2-secret';
 
 export const idea2Constructs = {
   [RefType.BUCKET]: Idea2Bucket,
@@ -14,6 +15,7 @@ export const idea2Constructs = {
   [RefType.LAMBDA]: Idea2LambdaFunction,
   [RefType.REST_API]: Idea2RestApi,
   [RefType.USER_POOL]: Idea2UserPool,
+  [RefType.SECRET]: Idea2Secret,
   [RefType.STATIC_SITE]: Idea2StaticSite,
 } satisfies Record<RefType, { new (...args: any): Construct }>;
 export type Idea2Constructs = typeof idea2Constructs;

@@ -4,6 +4,7 @@ export * from './lib/idea2-dynamo';
 export * from './lib/idea2-lambda';
 export * from './lib/idea2-rest-api';
 export * from './lib/idea2-static-site';
+export * from './lib/idea2-secret';
 export * from './lib/idea2-user-pool';
 
 // Utilities

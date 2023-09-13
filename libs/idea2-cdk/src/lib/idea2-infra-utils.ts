@@ -3,6 +3,7 @@ import { Stack } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { Idea2App, RefType, ResourceRef } from '@sep6/idea2';
 import { Idea2Constructs, idea2Constructs } from './idea2-constructs';
+import { ILambdaDependency } from './idea2-infra-types';
 
 export function getIdea2StackContext(construct: Construct): Idea2StackContext {
   return Stack.of(construct) as any;
@@ -14,6 +15,12 @@ export function getNamePrefix(construct: Construct): string {
 
 export function createConstructName(scope: Construct, name: string): string {
   return `${getNamePrefix(scope)}${name}`;
+}
+
+export function isLambdaDependency(
+  construct: object
+): construct is ILambdaDependency<any> {
+  return 'grantLambdaAccess' in construct;
 }
 
 export function resolveConstruct<R extends ResourceRef>(

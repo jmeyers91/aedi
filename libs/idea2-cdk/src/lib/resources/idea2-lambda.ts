@@ -1,9 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Construct } from 'constructs';
-import { resolveConstruct, createConstructName } from '../idea2-infra-utils';
+import {
+  resolveConstruct,
+  createConstructName,
+  isLambdaDependency,
+} from '../idea2-infra-utils';
 import { Stack, Duration } from 'aws-cdk-lib';
 import { Runtime } from 'aws-cdk-lib/aws-lambda';
-import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
+import {
+  NodejsFunction,
+  NodejsFunctionProps,
+} from 'aws-cdk-lib/aws-lambda-nodejs';
 import {
   ClientRef,
   ConstructRefMap,
@@ -37,6 +44,7 @@ export class Idea2LambdaFunction
       construct: ILambdaDependency<any> | Construct;
     }[] = [];
 
+    // Collect dependencies from the lambda context refs
     for (const contextValue of Object.values(lambdaRef.context)) {
       const clientRef = getClientRefFromRef(
         contextValue as ClientRef | ResourceRef
@@ -63,7 +71,7 @@ export class Idea2LambdaFunction
       IDEA_CONSTRUCT_REF_MAP: contextConstructRefs,
     };
 
-    const nodeJsFunction = new NodejsFunction(this, lambdaRef.id, {
+    const baseNodejsFunctionProps: NodejsFunctionProps = {
       functionName: createConstructName(this, lambdaRef.id),
       runtime: Runtime.NODEJS_18_X,
       timeout: Duration.seconds(15),
@@ -75,11 +83,28 @@ export class Idea2LambdaFunction
           environment.IDEA_CONSTRUCT_REF_MAP
         ),
       },
-    });
+    };
+
+    // Allow each dependency resrouce the opportunity to extend the nodejs options
+    const transformedNodejsFunctionProps = dependencies
+      .map((it) => it.construct)
+      .filter(isLambdaDependency)
+      .reduce(
+        (props, construct) => construct.transformLambdaProps?.(props) ?? props,
+        baseNodejsFunctionProps
+      );
+
+    // Create the nodejs function
+    const nodeJsFunction = new NodejsFunction(
+      this,
+      lambdaRef.id,
+      transformedNodejsFunctionProps
+    );
     this.lambdaFunction = nodeJsFunction;
 
     console.log(`- Lambda ${lambdaRef.id} -> ${lambdaRef.filepath}`);
 
+    // Grant the lambda access to each of its dependencies.
     for (const { construct, clientRef } of dependencies) {
       if ('grantLambdaAccess' in construct) {
         construct.grantLambdaAccess(
