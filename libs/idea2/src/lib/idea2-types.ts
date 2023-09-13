@@ -20,14 +20,6 @@ import {
   UserPoolRef,
 } from './idea2-user-pool/idea2-user-pool-types';
 
-export type WrapContext<C> = {
-  [K in keyof C]: C[K] extends ClientRef
-    ? C[K]
-    : C[K] extends ResourceRef
-    ? { refType: C[K]['type']; ref: C[K] }
-    : never;
-};
-
 export enum RefType {
   LAMBDA = 'lambda',
   DYNAMO = 'dynamo',
@@ -74,6 +66,14 @@ export interface ConstructRefMap {
     }
   >;
 }
+
+export type WrapContext<C> = {
+  [K in keyof C]: C[K] extends ClientRef
+    ? C[K]
+    : C[K] extends ResourceRef
+    ? { refType: C[K]['type']; ref: C[K] }
+    : never;
+};
 
 export interface Idea2AppHandlerEnv {
   IDEA_FUNCTION_ID: string;
