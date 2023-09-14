@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { IResourceRef, IResourceTypeMap, RefType } from '../idea2-types';
 
 export interface ConstructRef extends IResourceRef {
