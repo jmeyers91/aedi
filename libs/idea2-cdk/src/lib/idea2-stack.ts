@@ -2,22 +2,13 @@
 import { Stack, StackProps } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { Idea2StackContext, resolveConstruct } from './idea2-infra-utils';
-import { Idea2App } from '@sep6/idea2';
+import { IResourceRef, Idea2App } from '@sep6/idea2';
 import { writeFileSync } from 'fs';
 
 export class Idea2Stack extends Stack implements Idea2StackContext {
   idea2App: Idea2App;
   namePrefix: string | undefined;
-  caches = new Map<string, Map<string, any>>();
-
-  getCache<T>(cacheId: string): Map<string, T> {
-    let cache = this.caches.get(cacheId);
-    if (!cache) {
-      cache = new Map();
-      this.caches.set(cacheId, cache);
-    }
-    return cache;
-  }
+  resourceConstructCache = new Map<string, Construct>();
 
   constructor(
     scope: Construct,
@@ -29,8 +20,15 @@ export class Idea2Stack extends Stack implements Idea2StackContext {
     this.idea2App = idea2App;
     this.namePrefix = `${id}-`;
 
-    for (const resourceRef of idea2App.resourceRefs) {
-      resolveConstruct(this, resourceRef);
+    const resourceConstructs = idea2App.resourceRefs.map((resourceRef) => ({
+      resourceRef,
+      construct: resolveConstruct(this, resourceRef),
+    }));
+
+    for (const { resourceRef, construct } of resourceConstructs) {
+      console.log(
+        `RESOURCE ${resourceRef.uid} -> CONSTRUCT ${construct.toString()}`
+      );
     }
 
     writeFileSync(
@@ -43,5 +41,16 @@ export class Idea2Stack extends Stack implements Idea2StackContext {
         2
       )
     );
+  }
+
+  getCachedResource(resourceRef: IResourceRef): Construct | undefined {
+    return this.resourceConstructCache.get(resourceRef.uid);
+  }
+
+  cacheResource(resourceRef: IResourceRef, construct: Construct): void {
+    if (this.resourceConstructCache.has(resourceRef.uid)) {
+      throw new Error(`Duplicate resource uid detected: ${resourceRef.uid}`);
+    }
+    this.resourceConstructCache.set(resourceRef.uid, construct);
   }
 }

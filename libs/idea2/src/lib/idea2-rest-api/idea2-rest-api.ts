@@ -16,7 +16,7 @@ export type RouteResponse<_T> = {
 export function restApi(
   scope: Scope,
   id: string,
-  options: Omit<CreateResourceOptions<RestApiRef>, 'routes'>
+  options: Omit<CreateResourceOptions<RestApiRef>, 'routes'> = {}
 ): RestApiRef {
   return createResource(RefType.REST_API, scope, id, {
     ...options,

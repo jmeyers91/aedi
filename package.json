@@ -7,7 +7,10 @@
     "dev": "npx nx serve sep6",
     "cdk": "paws admin && rm -rf cdk.out && npm run build && npx cdk --profile admin --region us-west-2",
     "api:deploy": "npm run cdk deploy idea2-stack",
-    "api:diff": "npm run cdk diff idea2-stack"
+    "api:diff": "npm run cdk diff idea2-stack",
+    "test:deploy": "npm run cdk deploy idea2-test-stack",
+    "test:diff": "npm run cdk diff idea2-test-stack",
+    "test": "npx nx test idea2-test-cases"
   },
   "private": true,
   "dependencies": {

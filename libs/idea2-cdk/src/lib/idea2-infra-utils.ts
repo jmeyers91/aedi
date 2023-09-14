@@ -30,11 +30,9 @@ export function resolveConstruct<R extends ResourceRef>(
   scope: Construct,
   resourceRef: R
 ): InstanceType<Idea2Constructs[R['type']]> {
-  const cache = getIdea2StackContext(scope).getCache<
-    Idea2Constructs[R['type']]
-  >(resourceRef.type);
+  const idea2StackContext = getIdea2StackContext(scope);
 
-  const cached = cache.get(resourceRef.id);
+  const cached = idea2StackContext.getCachedResource(resourceRef);
   if (cached) {
     return cached as any;
   }
@@ -55,7 +53,7 @@ export function resolveConstruct<R extends ResourceRef>(
     { resourceRef }
   );
 
-  cache.set(resourceRef.id, construct as any);
+  idea2StackContext.cacheResource(resourceRef, construct);
 
   return construct as any;
 }
@@ -69,5 +67,6 @@ export function getIdea2ConstructClass<T extends RefType>(
 export interface Idea2StackContext {
   idea2App: Idea2App;
   namePrefix?: string;
-  getCache<T>(cacheId: string): Map<string, T>;
+  getCachedResource(resourceRef: IResourceRef): Construct | undefined;
+  cacheResource(resourceRef: IResourceRef, resource: Construct): void;
 }
