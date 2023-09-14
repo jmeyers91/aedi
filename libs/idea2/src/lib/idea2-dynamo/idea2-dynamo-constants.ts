@@ -1,5 +1,10 @@
 import { DynamoRefClientOptions } from './idea2-dynamo-types';
 
-export const dynamoRefClientDefaultOptions = {
-  grantRead: true,
+/**
+ * These are the permissions used by dynamo tables that are passed to lambdas without calling any of the
+ * permission modifier functions on the dynamo table.
+ * Lambdas can read from their dependency tables by default.
+ */
+export const defaultDynamoRefClientOptions = {
+  read: true,
 } satisfies DynamoRefClientOptions;

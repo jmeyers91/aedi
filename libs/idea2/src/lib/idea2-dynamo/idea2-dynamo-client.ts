@@ -24,7 +24,7 @@ import {
 } from '@aws-sdk/client-dynamodb';
 import type { DynamoClientRef, DynamoRef } from './idea2-dynamo-types';
 import { OptionsWithDefaults, ResolvedClientRef } from '../idea2-types';
-import type { dynamoRefClientDefaultOptions } from './idea2-dynamo-constants';
+import type { defaultDynamoRefClientOptions } from './idea2-dynamo-constants';
 
 export interface IReadableDynamoTable<T, PK extends keyof T> {
   get(key: { [Key in PK]: T[Key] }): Promise<T | undefined>;
@@ -52,12 +52,17 @@ export interface IWritableDynamoTable<T, PK extends keyof T> {
   ): Promise<DeleteCommandOutput>;
 }
 
-export type IDynamoTable<T, PK extends keyof T, O> = (O extends {
-  grantWrite: true;
-}
+type WriteableOptions = { write: true } | { fullAccess: true };
+type ReadableOptions = { read: true } | { fullAccess: true };
+type MaybeWritableTable<T, PK extends keyof T, O> = O extends WriteableOptions
   ? IWritableDynamoTable<T, PK>
-  : object) &
-  (O extends { grantRead: true } ? IReadableDynamoTable<T, PK> : object);
+  : object;
+type MaybeReadableTable<T, PK extends keyof T, O> = O extends ReadableOptions
+  ? IReadableDynamoTable<T, PK>
+  : object;
+
+// prettier-ignore
+export type IDynamoTable<T, PK extends keyof T, O> = MaybeWritableTable<T, PK, O> & MaybeReadableTable<T, PK, O>;
 
 export function getDynamoTableClient<
   C extends DynamoClientRef<DynamoRef<any, any>, any>
@@ -70,7 +75,7 @@ export function getDynamoTableClient<
   ? IDynamoTable<
       T,
       PK,
-      OptionsWithDefaults<O, typeof dynamoRefClientDefaultOptions>
+      OptionsWithDefaults<O, typeof defaultDynamoRefClientOptions>
     >
   : IDynamoTable<any, any, any> {
   return new DynamoTable(tableName, region) as any;

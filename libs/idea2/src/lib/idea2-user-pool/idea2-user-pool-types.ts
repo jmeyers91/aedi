@@ -14,7 +14,7 @@ import {
   VerifyAuthChallengeResponseTriggerEvent,
 } from 'aws-lambda';
 import { LambdaRef } from '../idea2-lambda';
-import type { IResourceRef, RefType } from '../idea2-types';
+import type { IResourceRef, IResourceTypeMap, RefType } from '../idea2-types';
 
 export interface UserPoolRef extends IResourceRef {
   type: RefType.USER_POOL;
@@ -125,4 +125,14 @@ export interface UserPoolClientRef<T extends UserPoolRef, O extends object> {
 export interface UserPoolConstructRef {
   userPoolId: string;
   region: string;
+}
+
+export type UserPoolRefClientOptions = object;
+export type DefaultUserPoolRefClientOptions = object;
+export interface UserPoolTypeMap extends IResourceTypeMap {
+  ref: UserPoolRef;
+  options: UserPoolRefClientOptions;
+  defaultOptions: DefaultUserPoolRefClientOptions;
+  constructRef: UserPoolConstructRef;
+  clientRef: UserPoolClientRef<UserPoolRef, any>;
 }

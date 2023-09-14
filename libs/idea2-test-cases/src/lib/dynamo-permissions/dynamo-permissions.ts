@@ -1,10 +1,4 @@
-import {
-  getDynamoTableClient,
-  restApi,
-  table,
-  Get,
-  grantWrite,
-} from '@sep6/idea2';
+import { getDynamoTableClient, restApi, table, Get, grant } from '@sep6/idea2';
 import { createScope } from '../idea';
 
 const scope = createScope('dynamo-permissions');
@@ -41,7 +35,7 @@ export const hasWritePermissionsSuccess = Get(
   api,
   'hasWritePermissionsSuccess',
   '/write-success',
-  { counterTable: grantWrite(counterTable) },
+  { counterTable: grant(counterTable, { write: true }) },
   async (ctx) => {
     const table = getDynamoTableClient(ctx.counterTable);
 

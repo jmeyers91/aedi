@@ -2,6 +2,9 @@ import type {
   CreateResourceOptions,
   IIdea2App,
   IResourceRef,
+  LookupClientRef,
+  LookupOptions,
+  ResourceRef,
   Scope,
 } from './idea2-types';
 
@@ -32,4 +35,19 @@ export function appOf(scope: Scope): IIdea2App {
     scope = scope.getScope();
   }
   return scope;
+}
+
+export function grant<
+  R extends ResourceRef,
+  const O extends Partial<LookupOptions<R['type']>>
+>(ref: R, options: O) {
+  return {
+    ref,
+    refType: ref.type,
+    options,
+  } as Omit<LookupClientRef<R['type']>, 'options' | 'ref' | 'refType'> & {
+    options: O;
+    ref: R;
+    refType: R['type'];
+  };
 }

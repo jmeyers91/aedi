@@ -17,7 +17,7 @@ import {
   LambdaConstructRef,
   LambdaRef,
   ResourceRef,
-  ResourceUidMap,
+  ConstructRefLookupMap,
   getClientRefFromRef,
 } from '@sep6/idea2';
 import { ILambdaDependency } from '../idea2-infra-types';
@@ -38,7 +38,7 @@ export class Idea2LambdaFunction
 
     this.lambdaRef = lambdaRef;
 
-    const constructUidMap: ResourceUidMap = {};
+    const constructUidMap: ConstructRefLookupMap = {};
     const dependencies: {
       clientRef: ClientRef;
       construct: ILambdaDependency<any> | Construct;

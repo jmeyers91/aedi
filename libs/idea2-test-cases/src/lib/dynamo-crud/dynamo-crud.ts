@@ -7,7 +7,7 @@ import {
   Post,
   Put,
   Delete,
-  grantWrite,
+  grant,
 } from '@sep6/idea2';
 import { createScope } from '../idea';
 import { randomUUID } from 'crypto';
@@ -79,7 +79,11 @@ export const createContact = Post(
   api,
   'createContact',
   '/contacts',
-  { contactsTable: grantWrite(contactsTable) },
+  {
+    contactsTable: grant(contactsTable, {
+      write: true,
+    }),
+  },
   async (ctx, event) => {
     const { userId } = assertAuth(event);
     const contactId = randomUUID();
@@ -110,7 +114,7 @@ export const updateContact = Put(
   api,
   'updateContact',
   '/contacts/{contactId}',
-  { contactsTable: grantWrite(contactsTable) },
+  { contactsTable: grant(contactsTable, { write: true }) },
   async (ctx, event) => {
     const { userId } = assertAuth(event);
     const { contactId } = event.pathParameters;
@@ -132,7 +136,7 @@ export const deleteContact = Delete(
   api,
   'deleteContact',
   '/contacts/{contactId}',
-  { contactsTable: grantWrite(contactsTable) },
+  { contactsTable: grant(contactsTable, { write: true }) },
   async (ctx, event) => {
     const { userId } = assertAuth(event);
     const { contactId } = event.pathParameters;

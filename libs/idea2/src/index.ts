@@ -13,3 +13,4 @@ export * from './lib/idea2-app';
 export * from './lib/idea2-constants';
 export * from './lib/idea2-client-utils';
 export * from './lib/idea2-types';
+export * from './lib/idea2-resource-utils';

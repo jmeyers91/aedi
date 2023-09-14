@@ -1,13 +1,13 @@
 import type {
-  ConstructRefFromRefType,
+  LookupConstructRef,
   ResourceRef,
-  ResourceUidMap,
+  ConstructRefLookupMap,
 } from '@sep6/idea2';
 import { GetParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
 
 export interface RemoteConstructMap {
   ssmParamName: string;
-  resourceUidMap: ResourceUidMap;
+  ConstructRefLookupMap: ConstructRefLookupMap;
 }
 
 export async function loadIdea2ConstructMap(
@@ -22,7 +22,7 @@ export async function loadIdea2ConstructMap(
   // TODO: Add some sanity checks
   return {
     ssmParamName,
-    resourceUidMap: JSON.parse(response.Parameter?.Value as string),
+    ConstructRefLookupMap: JSON.parse(response.Parameter?.Value as string),
   };
 }
 
@@ -30,5 +30,5 @@ export function getConstructRef<R extends ResourceRef>(
   map: RemoteConstructMap,
   ref: R
 ) {
-  return map.resourceUidMap[ref.uid] as ConstructRefFromRefType<R['type']>;
+  return map.ConstructRefLookupMap[ref.uid] as LookupConstructRef<R['type']>;
 }

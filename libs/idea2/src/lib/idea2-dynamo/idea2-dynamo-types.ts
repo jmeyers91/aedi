@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { IResourceRef, RefType } from '../idea2-types';
+import type { IResourceRef, IResourceTypeMap, RefType } from '../idea2-types';
+import type { defaultDynamoRefClientOptions } from './idea2-dynamo-constants';
 
 export type DynamoKey = 'BINARY' | 'NUMBER' | 'STRING';
 
@@ -29,10 +30,18 @@ export interface DynamoConstructRef {
 }
 
 export interface DynamoRefClientOptions {
-  grantRead?: boolean;
-  grantWrite?: boolean;
+  read?: boolean;
+  write?: boolean;
+  fullAccess?: boolean;
 }
 
-export interface DynamoRefClientDefaultOptions {
-  grantRead: true;
+export type DefaultDynamoRefClientOptions =
+  typeof defaultDynamoRefClientOptions;
+
+export interface DynamoTypeMap extends IResourceTypeMap {
+  ref: AnyDynamoRef;
+  options: DynamoRefClientOptions;
+  defaultOptions: DefaultDynamoRefClientOptions;
+  constructRef: DynamoConstructRef;
+  clientRef: DynamoClientRef<AnyDynamoRef, any>;
 }

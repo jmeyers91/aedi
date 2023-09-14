@@ -10,33 +10,3 @@ export function table<T, PK extends keyof T>(
 ) {
   return createResource(RefType.DYNAMO, scope, id, options);
 }
-
-export function grantRead<T extends DynamoRef<any, any>>(
-  dynamo: T
-): DynamoClientRef<T, { grantRead: true }> {
-  return {
-    ref: dynamo,
-    refType: RefType.DYNAMO,
-    options: { grantRead: true },
-  };
-}
-
-export function grantWrite<T extends DynamoRef<any, any>>(
-  dynamo: T
-): DynamoClientRef<T, { grantWrite: true }> {
-  return {
-    ref: dynamo,
-    refType: RefType.DYNAMO,
-    options: { grantWrite: true },
-  };
-}
-
-export function grantWriteOnly<T extends DynamoRef<any, any>>(
-  dynamo: T
-): DynamoClientRef<T, { grantWrite: true; grantRead: false }> {
-  return {
-    ref: dynamo,
-    refType: RefType.DYNAMO,
-    options: { grantWrite: true, grantRead: false },
-  };
-}

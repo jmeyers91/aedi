@@ -4,7 +4,7 @@ import {
   DynamoConstructRef,
   DynamoRef,
   DynamoRefClientOptions,
-  dynamoRefClientDefaultOptions,
+  defaultDynamoRefClientOptions,
 } from '@sep6/idea2';
 import { createConstructName } from '../idea2-infra-utils';
 import { AttributeType, TableV2 } from 'aws-cdk-lib/aws-dynamodb';
@@ -55,12 +55,14 @@ export class Idea2DynamoTable
     { lambdaFunction }: Idea2LambdaFunction,
     options?: DynamoRefClientOptions
   ): void {
-    options = { ...dynamoRefClientDefaultOptions, ...options };
-    if (options.grantRead && options.grantWrite) {
+    options = { ...defaultDynamoRefClientOptions, ...options };
+    if (options.fullAccess) {
+      this.table.grantFullAccess(lambdaFunction);
+    } else if (options.read && options.write) {
       this.table.grantReadWriteData(lambdaFunction);
-    } else if (options.grantRead) {
+    } else if (options.read) {
       this.table.grantReadData(lambdaFunction);
-    } else if (options.grantWrite) {
+    } else if (options.write) {
       this.table.grantWriteData(lambdaFunction);
     }
   }
