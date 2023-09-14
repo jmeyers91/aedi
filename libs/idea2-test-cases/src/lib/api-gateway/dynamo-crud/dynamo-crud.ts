@@ -43,8 +43,8 @@ export const listContacts = Get(
   { contactsTable },
   async (ctx, event) => {
     const { userId } = assertAuth(event);
-
     const table = getDynamoTableClient(ctx.contactsTable);
+
     return await table.query({
       KeyConditionExpression: `userId = :userId`,
       ExpressionAttributeValues: {
@@ -61,7 +61,6 @@ export const getContact = Get(
   { contactsTable },
   async (ctx, event) => {
     const { userId } = assertAuth(event);
-
     const { contactId } = event.pathParameters;
     const contactsTable = getDynamoTableClient(ctx.contactsTable);
 
@@ -82,7 +81,6 @@ export const createContact = Post(
   { contactsTable },
   async (ctx, event) => {
     const { userId } = assertAuth(event);
-
     const contactId = randomUUID();
     const contactsTable = getDynamoTableClient(ctx.contactsTable);
     const {
@@ -91,6 +89,7 @@ export const createContact = Post(
       email = '',
       phone = '',
     } = JSON.parse(event.body ?? '{}');
+
     const contact = {
       userId,
       contactId,
@@ -113,11 +112,11 @@ export const updateContact = Put(
   { contactsTable },
   async (ctx, event) => {
     const { userId } = assertAuth(event);
-
-    const contactsTable = getDynamoTableClient(ctx.contactsTable);
     const { contactId } = event.pathParameters;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { firstName, lastName, email, phone } = event.body as any;
+    const contactsTable = getDynamoTableClient(ctx.contactsTable);
+    const { firstName, lastName, email, phone } = JSON.parse(
+      event.body ?? '{}'
+    );
 
     const updatedContact = await contactsTable.patch(
       { userId, contactId },
@@ -132,12 +131,15 @@ export const deleteContact = Delete(
   api,
   'deleteContact',
   '/contacts/{contactId}',
-  {},
-  (_, event) => {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  { contactsTable },
+  async (ctx, event) => {
     const { userId } = assertAuth(event);
+    const { contactId } = event.pathParameters;
+    const contactsTable = getDynamoTableClient(ctx.contactsTable);
 
-    return { TODO: true };
+    await contactsTable.delete({ Key: { userId, contactId } });
+
+    return { success: true };
   }
 );
 

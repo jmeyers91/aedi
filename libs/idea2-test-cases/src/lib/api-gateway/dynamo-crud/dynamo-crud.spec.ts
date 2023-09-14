@@ -96,4 +96,38 @@ describe('dynamo CRUD', () => {
       expect(response.status).toEqual(401);
     });
   });
+
+  describe('updateContact', () => {
+    test('PUT /contacts/{contactId} - success', async () => {
+      const updates = {
+        firstName: 'updated',
+        email: 'updated@example.com',
+      };
+
+      const response = await fetch(`${apiUrl}/contacts/${contact.contactId}`, {
+        method: 'PUT',
+        headers: {
+          Authorization: userId,
+        },
+        body: JSON.stringify(updates),
+      });
+
+      expect(await response.json()).toEqual({ ...contact, ...updates });
+      expect(response.status).toEqual(200);
+    });
+  });
+
+  describe('deleteContact', () => {
+    test('DELETE /contacts/{contactId} - success', async () => {
+      const response = await fetch(`${apiUrl}/contacts/${contact.contactId}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: userId,
+        },
+      });
+
+      expect(response.status).toEqual(200);
+      expect(await response.json()).toEqual({ success: true });
+    });
+  });
 });
