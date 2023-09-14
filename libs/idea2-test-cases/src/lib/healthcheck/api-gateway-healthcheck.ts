@@ -1,7 +1,7 @@
 import { RouteEvent, lambdaRoute, lambda, reply, restApi } from '@sep6/idea2';
-import { createScope } from '../../idea';
+import { createScope } from '../idea';
 
-const scope = createScope('api-gateway-healthcheck');
+const scope = createScope('healthcheck');
 
 export const api = restApi(scope, 'api');
 

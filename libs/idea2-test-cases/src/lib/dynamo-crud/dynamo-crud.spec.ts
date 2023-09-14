@@ -1,5 +1,5 @@
 import { getConstructRef } from '@sep6/idea2-local';
-import { loadTestConstructMap } from '../../test-utils/load-test-construct-map';
+import { loadTestConstructMap } from '../test-utils/load-test-construct-map';
 import { api as dynamoCrudApi } from './dynamo-crud';
 import { randomUUID } from 'crypto';
 

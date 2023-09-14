@@ -1,6 +1,6 @@
 import { getConstructRef } from '@sep6/idea2-local';
-import { loadTestConstructMap } from '../../test-utils/load-test-construct-map';
-import { api } from './api-gateway-healthcheck';
+import { loadTestConstructMap } from '../test-utils/load-test-construct-map';
+import { api } from './api-gateway-healthcheck-multi';
 
 describe('api-gateway healthcheck', () => {
   let apiUrl: string;
@@ -13,7 +13,7 @@ describe('api-gateway healthcheck', () => {
     const response = await fetch(`${apiUrl}/healthcheck`);
     expect(response.status).toEqual(200);
     expect(await response.json()).toEqual({
-      testName: 'healthcheck',
+      testName: 'healthcheck-multi',
       success: true,
     });
   });

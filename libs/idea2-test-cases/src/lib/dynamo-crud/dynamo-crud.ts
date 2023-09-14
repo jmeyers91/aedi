@@ -8,7 +8,7 @@ import {
   Put,
   Delete,
 } from '@sep6/idea2';
-import { createScope } from '../../idea';
+import { createScope } from '../idea';
 import { randomUUID } from 'crypto';
 
 const scope = createScope('dynamo-crud');
