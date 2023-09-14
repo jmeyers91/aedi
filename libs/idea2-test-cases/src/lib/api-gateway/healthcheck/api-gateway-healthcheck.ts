@@ -3,14 +3,14 @@ import { createScope } from '../../idea';
 
 const scope = createScope('api-gateway-healthcheck');
 
-const api = restApi(scope, 'api');
+export const api = restApi(scope, 'api');
 
 export const healthcheck = addRoute(
   api,
   'GET',
   '/healthcheck',
   lambda(scope, 'healthcheck', {}, (_, event: RouteEvent) => {
-    return reply({ success: true, event });
+    return reply({ testName: 'healthcheck', success: true });
   })
 );
 

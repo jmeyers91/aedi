@@ -83,26 +83,27 @@ export type ClientRef =
   | StaticSiteClientRef<StaticSiteRef, any>
   | UserPoolClientRef<UserPoolRef, any>;
 
-export interface ConstructRefMap
-  extends Record<RefType, Record<string, object>> {
-  [RefType.BUCKET]: Record<string, BucketConstructRef>;
-  [RefType.CONSTRUCT]: Record<string, ConstructConstructRef>;
-  [RefType.DYNAMO]: Record<string, DynamoConstructRef>;
-  [RefType.LAMBDA]: Record<string, LambdaConstructRef>;
-  [RefType.REST_API]: Record<string, RestApiConstructRef>;
-  [RefType.SECRET]: Record<string, SecretConstructRef>;
-  [RefType.STATIC_SITE]: Record<string, StaticSiteConstructRef>;
-  [RefType.USER_POOL]: Record<string, UserPoolConstructRef>;
+export interface ConstructRefLookup extends Record<RefType, object> {
+  [RefType.BUCKET]: BucketConstructRef;
+  [RefType.CONSTRUCT]: ConstructConstructRef;
+  [RefType.DYNAMO]: DynamoConstructRef;
+  [RefType.LAMBDA]: LambdaConstructRef;
+  [RefType.REST_API]: RestApiConstructRef;
+  [RefType.SECRET]: SecretConstructRef;
+  [RefType.STATIC_SITE]: StaticSiteConstructRef;
+  [RefType.USER_POOL]: UserPoolConstructRef;
 }
 
-export type ResourceUidMap = Record<string, ConstructRefMap[RefType][string]>;
+export type ConstructRefFromRefType<R extends RefType> = ConstructRefLookup[R];
+
+export type ResourceUidMap = Record<string, ConstructRefLookup[RefType]>;
 
 export type ResolvedClientRef<
   C extends { refType: RefType; ref: ResourceRef }
 > = {
   refType: C['refType'];
   clientRef: C;
-  constructRef: ConstructRefMap[C['refType']][string];
+  constructRef: ConstructRefFromRefType<C['refType']>;
 };
 
 export type WrapContext<C> = {

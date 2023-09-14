@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type {
-  ConstructRefMap,
+  ConstructRefFromRefType,
   ClientRef,
   ResourceRef,
   ResolvedClientRef,
@@ -55,7 +55,7 @@ export const getLambdaRefHandler = (
 function resolveConstructRef<T extends ClientRef>(
   constructUidMap: ResourceUidMap,
   clientRef: T
-): ConstructRefMap[T['refType']][string] {
+): ConstructRefFromRefType<T['refType']> {
   const resourceRef = clientRef.ref;
   const constructRef = constructUidMap[resourceRef.uid];
   if (!constructRef) {
@@ -63,5 +63,5 @@ function resolveConstructRef<T extends ClientRef>(
       `Unable to resolve construct reference with type ${resourceRef.type} and uid ${resourceRef.uid}`
     );
   }
-  return constructRef as ConstructRefMap[T['refType']][string];
+  return constructRef as ConstructRefFromRefType<T['refType']>;
 }

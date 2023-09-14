@@ -45,7 +45,9 @@ export class Idea2RestApi
   }
 
   getConstructRef(): RestApiConstructRef {
-    return {};
+    return {
+      url: this.restApi.url,
+    };
   }
 
   grantLambdaAccess() {

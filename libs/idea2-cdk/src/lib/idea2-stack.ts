@@ -4,6 +4,7 @@ import { Construct } from 'constructs';
 import { Idea2StackContext, resolveConstruct } from './idea2-infra-utils';
 import { IResourceRef, Idea2App } from '@sep6/idea2';
 import { writeFileSync } from 'fs';
+import { StringParameter } from 'aws-cdk-lib/aws-ssm';
 
 export class Idea2Stack extends Stack implements Idea2StackContext {
   idea2App: Idea2App;
@@ -25,11 +26,20 @@ export class Idea2Stack extends Stack implements Idea2StackContext {
       construct: resolveConstruct(this, resourceRef),
     }));
 
+    const completeConstructMap: Record<string, object> = {};
     for (const { resourceRef, construct } of resourceConstructs) {
       console.log(
         `RESOURCE ${resourceRef.uid} -> CONSTRUCT ${construct.toString()}`
       );
+      if ('getConstructRef' in construct) {
+        completeConstructMap[resourceRef.uid] = construct.getConstructRef();
+      }
     }
+
+    new StringParameter(this, 'construct-map', {
+      parameterName: `${id}-construct-map`,
+      stringValue: JSON.stringify(completeConstructMap, null, 2),
+    });
 
     writeFileSync(
       './idea2-report.json',

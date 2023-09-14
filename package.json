@@ -10,7 +10,7 @@
     "api:diff": "npm run cdk diff idea2-stack",
     "test:deploy": "npm run cdk deploy idea2-test-stack",
     "test:diff": "npm run cdk diff idea2-test-stack",
-    "test": "npx nx test idea2-test-cases"
+    "test": "paws admin && nx reset && AWS_PROFILE=admin AWS_REGION=us-west-2 npx nx test idea2-test-cases"
   },
   "private": true,
   "dependencies": {
@@ -20,6 +20,7 @@
     "@aws-sdk/client-dynamodb": "^3.408.0",
     "@aws-sdk/client-lambda": "^3.410.0",
     "@aws-sdk/client-s3": "^3.409.0",
+    "@aws-sdk/client-ssm": "^3.410.0",
     "@aws-sdk/credential-providers": "^3.409.0",
     "@aws-sdk/lib-dynamodb": "^3.408.0",
     "@aws-sdk/lib-storage": "^3.409.0",
