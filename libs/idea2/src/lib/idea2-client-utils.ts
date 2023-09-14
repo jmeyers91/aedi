@@ -11,7 +11,7 @@ export function resolveLambdaRuntimeEnv(): Idea2AppHandlerEnv {
   if (!cachedEnv) {
     cachedEnv = {
       IDEA_FUNCTION_ID: env('IDEA_FUNCTION_ID'),
-      IDEA_CONSTRUCT_REF_MAP: JSON.parse(env('IDEA_CONSTRUCT_REF_MAP')),
+      IDEA_CONSTRUCT_UID_MAP: JSON.parse(env('IDEA_CONSTRUCT_UID_MAP')),
     };
   }
   return cachedEnv;

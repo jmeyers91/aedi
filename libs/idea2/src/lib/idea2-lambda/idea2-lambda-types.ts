@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Context, Handler } from 'aws-lambda';
-import type { RefType, WrapContext } from '../idea2-types';
+import type { IResourceRef, RefType, WrapContext } from '../idea2-types';
 
 export type AnyFn = (...args: any[]) => any;
 export type LambdaRefFnWithEvent<C, E, R> = (
@@ -17,14 +17,13 @@ export type BrandedLambdaRefFnWithEvent<C, E, R> = LambdaRefFnWithEvent<
 };
 export type LambdaRefFn<C> = LambdaRefFnWithEvent<C, any, any>;
 
-export type LambdaRef<C, E, R> = {
+export interface LambdaRef<C, E, R> extends IResourceRef {
   type: RefType.LAMBDA;
-  id: string;
   filepath: string;
   fn: BrandedLambdaRefFnWithEvent<C, E, R>;
   lambdaHandler: Handler;
   context: C;
-};
+}
 
 export type AnyLambdaRef = LambdaRef<any, any, any>;
 

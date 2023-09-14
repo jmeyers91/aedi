@@ -24,8 +24,8 @@ export class Idea2Bucket
 
     this.bucketRef = bucketRef;
 
-    const bucket = new Bucket(this, bucketRef.id, {
-      bucketName: createConstructName(this, bucketRef.id),
+    const bucket = new Bucket(this, 'bucket', {
+      bucketName: createConstructName(this, bucketRef),
       autoDeleteObjects: true,
       removalPolicy: RemovalPolicy.DESTROY,
     });

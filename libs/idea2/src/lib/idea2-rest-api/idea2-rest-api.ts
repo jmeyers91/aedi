@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { Idea2App } from '../idea2-app';
 import type { APIGatewayEvent } from 'aws-lambda';
 import type { LambdaRef } from '../idea2-lambda/idea2-lambda-types';
 import type { RestApiRef, RestApiRefRoute } from './idea2-rest-api-types';
-import { RefType } from '../idea2-types';
+import { CreateResourceOptions, RefType, Scope } from '../idea2-types';
+import { createResource } from '../idea2-resource-utils';
 
 export type RouteEvent = APIGatewayEvent;
 export type RouteResponse<_T> = {
@@ -14,20 +14,14 @@ export type RouteResponse<_T> = {
 };
 
 export function restApi(
-  app: Idea2App,
+  scope: Scope,
   id: string,
-  options: Omit<RestApiRef, 'id' | 'type' | 'routes'>
+  options: Omit<CreateResourceOptions<RestApiRef>, 'routes'>
 ): RestApiRef {
-  const restApiRef: RestApiRef = {
+  return createResource(RefType.REST_API, scope, id, {
     ...options,
-    type: RefType.REST_API,
-    id,
     routes: [],
-  };
-
-  app.addResourceRef(restApiRef);
-
-  return restApiRef;
+  });
 }
 
 export function addRoute<

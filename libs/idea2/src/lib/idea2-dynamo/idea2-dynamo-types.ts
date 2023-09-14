@@ -1,11 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { RefType } from '../idea2-types';
+import type { IResourceRef, RefType } from '../idea2-types';
 
 export type DynamoKey = 'BINARY' | 'NUMBER' | 'STRING';
 
-export type DynamoRef<T, PK extends keyof T> = {
+export interface DynamoRef<T, PK extends keyof T> extends IResourceRef {
   type: RefType.DYNAMO;
-  id: string;
   partitionKey: {
     name: PK;
     type: DynamoKey;
@@ -14,7 +13,7 @@ export type DynamoRef<T, PK extends keyof T> = {
     name: keyof T;
     type: DynamoKey;
   };
-};
+}
 
 export type AnyDynamoRef = DynamoRef<any, any>;
 

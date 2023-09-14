@@ -4,6 +4,7 @@ import type {
   ClientRef,
   ResourceRef,
   ResolvedClientRef,
+  ResourceUidMap,
 } from '../idea2-types';
 import type { AnyLambdaRef } from './idea2-lambda-types';
 import type { Handler } from 'aws-lambda';
@@ -13,7 +14,7 @@ import {
 } from '../idea2-client-utils';
 
 export const getLambdaRefHandler = (
-  lambdaRef: Omit<AnyLambdaRef, 'lambdaHandler'>
+  lambdaRef: Pick<AnyLambdaRef, 'context' | 'fn'>
 ): Handler => {
   let wrappedContext: Record<string, ResolvedClientRef<any>> | undefined =
     undefined;
@@ -27,7 +28,7 @@ export const getLambdaRefHandler = (
     if (wrappedContext) {
       return wrappedContext;
     }
-    const { IDEA_CONSTRUCT_REF_MAP: constructRefMap } =
+    const { IDEA_CONSTRUCT_UID_MAP: constructUidMap } =
       resolveLambdaRuntimeEnv();
     wrappedContext = {};
     for (const [key, value] of Object.entries(lambdaRef.context)) {
@@ -36,7 +37,7 @@ export const getLambdaRefHandler = (
       wrappedContext[key] = {
         refType: clientRef.refType,
         clientRef,
-        constructRef: resolveConstructRef(constructRefMap, clientRef),
+        constructRef: resolveConstructRef(constructUidMap, clientRef),
       };
     }
     return wrappedContext;
@@ -52,14 +53,14 @@ export const getLambdaRefHandler = (
 };
 
 function resolveConstructRef<T extends ClientRef>(
-  constructRefMap: Partial<ConstructRefMap>,
+  constructUidMap: ResourceUidMap,
   clientRef: T
 ): ConstructRefMap[T['refType']][string] {
   const resourceRef = clientRef.ref;
-  const constructRef = constructRefMap[resourceRef.type]?.[resourceRef.id];
+  const constructRef = constructUidMap[resourceRef.uid];
   if (!constructRef) {
     throw new Error(
-      `Unable to resolve construct reference with type ${resourceRef.type} and id ${resourceRef.id}`
+      `Unable to resolve construct reference with type ${resourceRef.type} and uid ${resourceRef.uid}`
     );
   }
   return constructRef as ConstructRefMap[T['refType']][string];

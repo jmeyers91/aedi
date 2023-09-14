@@ -1,19 +1,11 @@
-import type { Idea2App } from '../idea2-app';
 import type { UserPoolRef } from './idea2-user-pool-types';
-import { RefType } from '../idea2-types';
+import { CreateResourceOptions, RefType, Scope } from '../idea2-types';
+import { createResource } from '../idea2-resource-utils';
 
 export function userPool(
-  app: Idea2App,
+  scope: Scope,
   id: string,
-  options: Omit<UserPoolRef, 'id' | 'type'>
+  options: CreateResourceOptions<UserPoolRef>
 ): UserPoolRef {
-  const userPoolRef: UserPoolRef = {
-    ...options,
-    type: RefType.USER_POOL,
-    id,
-  };
-
-  app.addResourceRef(userPoolRef);
-
-  return userPoolRef;
+  return createResource(RefType.USER_POOL, scope, id, options);
 }

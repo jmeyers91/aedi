@@ -6,7 +6,6 @@ import { SecretConstructRef, SecretRef } from '@sep6/idea2';
 import { NodejsFunctionProps } from 'aws-cdk-lib/aws-lambda-nodejs';
 import {
   ParamsAndSecretsLayerVersion,
-  ParamsAndSecretsLogLevel,
   ParamsAndSecretsVersions,
 } from 'aws-cdk-lib/aws-lambda';
 

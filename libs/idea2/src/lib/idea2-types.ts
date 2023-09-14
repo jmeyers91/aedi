@@ -4,6 +4,11 @@ import type {
   BucketConstructRef,
   BucketRef,
 } from './idea2-bucket/idea2-bucket-types';
+import {
+  ConstructClientRef,
+  ConstructConstructRef,
+  ConstructRef,
+} from './idea2-construct';
 import type {
   DynamoClientRef,
   AnyDynamoRef,
@@ -37,6 +42,7 @@ import {
 
 export enum RefType {
   BUCKET = 'bucket',
+  CONSTRUCT = 'construct',
   DYNAMO = 'dynamo',
   LAMBDA = 'lambda',
   REST_API = 'rest-api',
@@ -45,8 +51,21 @@ export enum RefType {
   USER_POOL = 'user-pool',
 }
 
+export interface IIdea2App {
+  isIdea2App: true;
+  addResourceRef(resourceRef: IResourceRef): void;
+}
+
+export interface IResourceRef {
+  uid: string;
+  id: string;
+  type: string;
+  getScope(): Scope;
+}
+
 export type ResourceRef =
   | BucketRef
+  | ConstructRef
   | AnyDynamoRef
   | AnyLambdaRef
   | RestApiRef
@@ -56,6 +75,7 @@ export type ResourceRef =
 
 export type ClientRef =
   | BucketClientRef<BucketRef, any>
+  | ConstructClientRef<ConstructRef, any>
   | DynamoClientRef<AnyDynamoRef, any>
   | LambdaClientRef<AnyLambdaRef, any>
   | RestApiClientRef<RestApiRef, any>
@@ -63,12 +83,10 @@ export type ClientRef =
   | StaticSiteClientRef<StaticSiteRef, any>
   | UserPoolClientRef<UserPoolRef, any>;
 
-// TODO: Replace this with something more generalized
-// Each resource type should be able to define construct data that it expects
-// This can be a map from RefType -> SpecificRefConstructType
 export interface ConstructRefMap
   extends Record<RefType, Record<string, object>> {
   [RefType.BUCKET]: Record<string, BucketConstructRef>;
+  [RefType.CONSTRUCT]: Record<string, ConstructConstructRef>;
   [RefType.DYNAMO]: Record<string, DynamoConstructRef>;
   [RefType.LAMBDA]: Record<string, LambdaConstructRef>;
   [RefType.REST_API]: Record<string, RestApiConstructRef>;
@@ -76,6 +94,8 @@ export interface ConstructRefMap
   [RefType.STATIC_SITE]: Record<string, StaticSiteConstructRef>;
   [RefType.USER_POOL]: Record<string, UserPoolConstructRef>;
 }
+
+export type ResourceUidMap = Record<string, ConstructRefMap[RefType][string]>;
 
 export type ResolvedClientRef<
   C extends { refType: RefType; ref: ResourceRef }
@@ -95,5 +115,12 @@ export type WrapContext<C> = {
 
 export interface Idea2AppHandlerEnv {
   IDEA_FUNCTION_ID: string;
-  IDEA_CONSTRUCT_REF_MAP: Partial<ConstructRefMap>;
+  IDEA_CONSTRUCT_UID_MAP: ResourceUidMap;
 }
+
+export type CreateResourceOptions<R extends IResourceRef> = Omit<
+  R,
+  'uid' | 'id' | 'type' | 'getScope'
+>;
+
+export type Scope = IResourceRef | IIdea2App;

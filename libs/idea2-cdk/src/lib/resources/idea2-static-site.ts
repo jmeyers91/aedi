@@ -9,7 +9,6 @@ import {
 } from 'aws-cdk-lib/aws-cloudfront';
 import { S3Origin } from 'aws-cdk-lib/aws-cloudfront-origins';
 import { Idea2Bucket } from './idea2-bucket';
-import { resolveConstruct } from '../idea2-infra-utils';
 
 export class Idea2StaticSite
   extends Construct
@@ -64,14 +63,18 @@ export class Idea2StaticSite
   }
 
   getConstructRef() {
-    if (this.staticSiteRef.bucket && !this.distribution) {
-      // Resolve the dependent bucket if it hasn't been resolved already
-      // This ensures the distribution URL is populated
-      resolveConstruct(this, this.staticSiteRef.bucket);
-    }
     if (!this.distribution) {
+      /**
+       * This should not be possible as static sites require a bucket to be created which means the bucket
+       * has to have been created and pushed to the resource stack before the static site could be created
+       * and pushed. The resource stack is evaluated in order which means the dependency should always
+       * be resolved by the time this construct is resolved.
+       *
+       * If this error actually appears, make sure nothing is mutating the resource ref objects.
+       * Additionally, make sure the resource array in the idea2 app is ordered correctly.
+       */
       throw new Error(
-        `Distribution is missing despite bucket reference existing.`
+        `Distribution construct is missing from the static site. This probably means the static site was resolved before the bucket.`
       );
     }
 

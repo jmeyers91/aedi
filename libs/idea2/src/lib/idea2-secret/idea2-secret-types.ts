@@ -1,10 +1,9 @@
-import type { RefType } from '../idea2-types';
+import type { IResourceRef, RefType } from '../idea2-types';
 
-export type SecretRef = {
+export interface SecretRef extends IResourceRef {
   type: RefType.SECRET;
-  id: string;
   arn: string;
-};
+}
 
 export interface SecretClientRef<T extends SecretRef, O extends object> {
   refType: RefType.SECRET;

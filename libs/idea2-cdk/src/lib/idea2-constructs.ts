@@ -8,9 +8,11 @@ import { Idea2RestApi } from './resources/idea2-rest-api';
 import { Idea2UserPool } from './resources/idea2-user-pool';
 import { Idea2StaticSite } from './resources/idea2-static-site';
 import { Idea2Secret } from './resources/idea2-secret';
+import { Idea2Construct } from './resources/idea2-construct';
 
 export const idea2Constructs = {
   [RefType.BUCKET]: Idea2Bucket,
+  [RefType.CONSTRUCT]: Idea2Construct,
   [RefType.DYNAMO]: Idea2DynamoTable,
   [RefType.LAMBDA]: Idea2LambdaFunction,
   [RefType.REST_API]: Idea2RestApi,

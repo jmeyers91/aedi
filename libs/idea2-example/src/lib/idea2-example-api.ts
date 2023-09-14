@@ -8,23 +8,28 @@ import {
   reply,
   getDynamoTableClient,
   getUserPoolClient,
+  restApi,
+  construct,
 } from '@sep6/idea2';
 import { idea } from './idea2-example-app';
 import {
   webAppBucket,
-  api,
   contactsTable,
   appUserPool,
 } from './idea2-example-resources';
 import { randomUUID } from 'crypto';
 import { ListUsersCommand } from '@aws-sdk/client-cognito-identity-provider';
 
+const scope = construct(idea, 'api-scope', {});
+
+const api = restApi(scope, 'rest-api', {});
+
 export const healthcheck = addRoute(
   api,
   'GET',
   '/healthcheck',
   lambda(
-    idea,
+    scope,
     'healthcheck',
     {
       bucket: webAppBucket,
@@ -67,7 +72,7 @@ export const getContacts = addRoute(
   'GET',
   '/contacts',
   lambda(
-    idea,
+    scope,
     'getContacts',
     { contactsTable },
 
@@ -92,7 +97,7 @@ export const createContact = addRoute(
   'POST',
   '/contacts',
   lambda(
-    idea,
+    scope,
     'createContact',
     { contactsTable },
 

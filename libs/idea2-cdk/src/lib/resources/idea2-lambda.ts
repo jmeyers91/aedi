@@ -13,11 +13,11 @@ import {
 } from 'aws-cdk-lib/aws-lambda-nodejs';
 import {
   ClientRef,
-  ConstructRefMap,
   Idea2AppHandlerEnv,
   LambdaConstructRef,
   LambdaRef,
   ResourceRef,
+  ResourceUidMap,
   getClientRefFromRef,
 } from '@sep6/idea2';
 import { ILambdaDependency } from '../idea2-infra-types';
@@ -38,7 +38,7 @@ export class Idea2LambdaFunction
 
     this.lambdaRef = lambdaRef;
 
-    const contextConstructRefs: Partial<ConstructRefMap> = {};
+    const constructUidMap: ResourceUidMap = {};
     const dependencies: {
       clientRef: ClientRef;
       construct: ILambdaDependency<any> | Construct;
@@ -54,12 +54,7 @@ export class Idea2LambdaFunction
 
       if (construct) {
         if ('getConstructRef' in construct) {
-          contextConstructRefs[ref.type] = Object.assign(
-            contextConstructRefs[ref.type] ?? {},
-            {
-              [ref.id]: (construct as any).getConstructRef(),
-            }
-          );
+          constructUidMap[ref.uid] = (construct as any).getConstructRef();
         }
 
         dependencies.push({ construct, clientRef });
@@ -68,19 +63,19 @@ export class Idea2LambdaFunction
 
     const environment: Idea2AppHandlerEnv = {
       IDEA_FUNCTION_ID: lambdaRef.id,
-      IDEA_CONSTRUCT_REF_MAP: contextConstructRefs,
+      IDEA_CONSTRUCT_UID_MAP: constructUidMap,
     };
 
     const baseNodejsFunctionProps: NodejsFunctionProps = {
-      functionName: createConstructName(this, lambdaRef.id),
+      functionName: createConstructName(this, lambdaRef),
       runtime: Runtime.NODEJS_18_X,
       timeout: Duration.seconds(15),
       handler: `index.${lambdaRef.id}.lambdaHandler`,
       entry: lambdaRef.filepath,
       environment: {
         ...environment,
-        IDEA_CONSTRUCT_REF_MAP: JSON.stringify(
-          environment.IDEA_CONSTRUCT_REF_MAP
+        IDEA_CONSTRUCT_UID_MAP: JSON.stringify(
+          environment.IDEA_CONSTRUCT_UID_MAP
         ),
       },
     };
@@ -97,7 +92,7 @@ export class Idea2LambdaFunction
     // Create the nodejs function
     const nodeJsFunction = new NodejsFunction(
       this,
-      lambdaRef.id,
+      'function',
       transformedNodejsFunctionProps
     );
     this.lambdaFunction = nodeJsFunction;
@@ -107,7 +102,7 @@ export class Idea2LambdaFunction
     // Grant the lambda access to each of its dependencies.
     for (const { construct, clientRef } of dependencies) {
       if ('grantLambdaAccess' in construct) {
-        construct.grantLambdaAccess(
+        construct.grantLambdaAccess?.(
           this,
           'options' in clientRef ? clientRef.options : undefined
         );

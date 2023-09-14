@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { Idea2App } from '../idea2-app';
 import type {
   LambdaRefFnWithEvent,
   LambdaRef,
@@ -7,10 +6,11 @@ import type {
 } from './idea2-lambda-types';
 import { relative } from 'path';
 import { getLambdaRefHandler } from './idea2-lambda-handler';
-import { RefType } from '../idea2-types';
+import { RefType, Scope } from '../idea2-types';
+import { createResource } from '../idea2-resource-utils';
 
 export function lambda<C, E, R>(
-  app: Idea2App,
+  scope: Scope,
   id: string,
   context: C,
   fn: LambdaRefFnWithEvent<C, E, R>
@@ -21,22 +21,18 @@ export function lambda<C, E, R>(
     throw new Error(`Unable to resolve file path for lambda: ${id}`);
   }
   const filepath = relative('.', absoluteFilepath);
-  const lambdaRefWithoutHandler: Omit<LambdaRef<C, E, R>, 'lambdaHandler'> = {
-    type: RefType.LAMBDA,
-    id,
+
+  const lambdaHandler = getLambdaRefHandler({
+    context,
+    fn,
+  });
+
+  return createResource<LambdaRef<C, E, R>>(RefType.LAMBDA, scope, id, {
     context,
     filepath,
     fn: fn as BrandedLambdaRefFnWithEvent<C, E, R>,
-  };
-  const lambdaHandler = getLambdaRefHandler(lambdaRefWithoutHandler);
-  const lambdaRef: LambdaRef<C, E, R> = {
-    ...lambdaRefWithoutHandler,
     lambdaHandler,
-  };
-
-  app.addResourceRef(lambdaRef);
-
-  return lambdaRef;
+  });
 }
 
 function callsites(): NodeJS.CallSite[] {

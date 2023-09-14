@@ -1,5 +1,6 @@
 // Resources
 export * from './lib/idea2-bucket';
+export * from './lib/idea2-construct';
 export * from './lib/idea2-dynamo';
 export * from './lib/idea2-lambda';
 export * from './lib/idea2-rest-api';

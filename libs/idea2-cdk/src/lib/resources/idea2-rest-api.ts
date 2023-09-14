@@ -1,6 +1,6 @@
 import { Construct } from 'constructs';
 import { RestApiRef, RestApiConstructRef } from '@sep6/idea2';
-import { resolveConstruct } from '../idea2-infra-utils';
+import { createConstructName, resolveConstruct } from '../idea2-infra-utils';
 import { Cors, LambdaIntegration, RestApi } from 'aws-cdk-lib/aws-apigateway';
 import { ILambdaDependency } from '../idea2-infra-types';
 
@@ -18,6 +18,7 @@ export class Idea2RestApi
     super(scope, id);
 
     this.restApi = new RestApi(this, restApiRef.id, {
+      restApiName: createConstructName(this, restApiRef),
       defaultCorsPreflightOptions: {
         allowCredentials: true,
         allowMethods: Cors.ALL_METHODS,

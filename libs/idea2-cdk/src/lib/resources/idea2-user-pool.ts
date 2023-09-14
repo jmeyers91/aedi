@@ -5,7 +5,7 @@ import { RemovalPolicy, Stack } from 'aws-cdk-lib';
 import { UserPool, UserPoolTriggers } from 'aws-cdk-lib/aws-cognito';
 import { Idea2LambdaFunction } from './idea2-lambda';
 import { ILambdaDependency } from '../idea2-infra-types';
-import { resolveConstruct } from '../idea2-infra-utils';
+import { createConstructName, resolveConstruct } from '../idea2-infra-utils';
 
 export class Idea2UserPool
   extends Construct
@@ -35,6 +35,7 @@ export class Idea2UserPool
     }
 
     this.userPool = new UserPool(this, id, {
+      userPoolName: createConstructName(this, userPoolRef),
       signInAliases: { email: true },
       selfSignUpEnabled: userPoolRef.selfSignUpEnabled,
       removalPolicy: RemovalPolicy.DESTROY, // TODO: Configurable

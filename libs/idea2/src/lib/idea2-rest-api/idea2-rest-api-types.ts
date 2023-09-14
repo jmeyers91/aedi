@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { LambdaRef } from '../idea2-lambda/idea2-lambda-types';
-import type { RefType } from '../idea2-types';
+import type { IResourceRef, RefType } from '../idea2-types';
 
 export interface RestApiRefRoute {
   method: string;
@@ -8,9 +8,8 @@ export interface RestApiRefRoute {
   lambdaRef: LambdaRef<any, any, any>;
 }
 
-export interface RestApiRef {
+export interface RestApiRef extends IResourceRef {
   type: RefType.REST_API;
-  id: string;
   routes: RestApiRefRoute[];
 }
 

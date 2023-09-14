@@ -14,11 +14,10 @@ import {
   VerifyAuthChallengeResponseTriggerEvent,
 } from 'aws-lambda';
 import { LambdaRef } from '../idea2-lambda';
-import type { RefType } from '../idea2-types';
+import type { IResourceRef, RefType } from '../idea2-types';
 
-export type UserPoolRef = {
+export interface UserPoolRef extends IResourceRef {
   type: RefType.USER_POOL;
-  id: string;
   domainPrefix: string;
   selfSignUpEnabled: boolean;
   triggers?: {
@@ -115,7 +114,7 @@ export type UserPoolRef = {
       VerifyAuthChallengeResponseTriggerEvent
     >;
   };
-};
+}
 
 export interface UserPoolClientRef<T extends UserPoolRef, O extends object> {
   refType: RefType.USER_POOL;

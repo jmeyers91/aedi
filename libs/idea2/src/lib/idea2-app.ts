@@ -1,15 +1,10 @@
-import type { ResourceRef } from './idea2-types';
+import type { IIdea2App, ResourceRef } from './idea2-types';
 
-export class Idea2App {
-  public readonly resourceRefs: Map<string, ResourceRef> = new Map();
+export class Idea2App implements IIdea2App {
+  public readonly isIdea2App = true;
+  public readonly resourceRefs: ResourceRef[] = [];
 
-  addResourceRef(resourceRef: ResourceRef) {
-    const key = `${resourceRef.type}.${resourceRef.id}`;
-    if (this.resourceRefs.has(key)) {
-      throw new Error(
-        `Resource with type ${resourceRef.type} and id ${resourceRef.id} has already been registered.`
-      );
-    }
-    this.resourceRefs.set(key, resourceRef);
+  addResourceRef(resourceRef: ResourceRef): void {
+    this.resourceRefs.push(resourceRef);
   }
 }

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Stack } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-import { Idea2App, RefType, ResourceRef } from '@sep6/idea2';
+import { IResourceRef, Idea2App, RefType, ResourceRef } from '@sep6/idea2';
 import { Idea2Constructs, idea2Constructs } from './idea2-constructs';
 import { ILambdaDependency } from './idea2-infra-types';
 
@@ -13,8 +13,11 @@ export function getNamePrefix(construct: Construct): string {
   return getIdea2StackContext(construct).namePrefix ?? '';
 }
 
-export function createConstructName(scope: Construct, name: string): string {
-  return `${getNamePrefix(scope)}${name}`;
+export function createConstructName(
+  scope: Construct,
+  resourceRef: IResourceRef
+): string {
+  return `${getNamePrefix(scope)}${resourceRef.uid.replace(/\./g, '-')}`;
 }
 
 export function isLambdaDependency(
@@ -37,9 +40,18 @@ export function resolveConstruct<R extends ResourceRef>(
   }
 
   const constructClass = getIdea2ConstructClass(resourceRef.type);
+  const resourceRefScope = resourceRef.getScope();
+
+  // If the resource scope is the app, use the place it in the stack
+  // Otherwise, resolve the scope construct and use it
+  const constructScope =
+    'isIdea2App' in resourceRefScope
+      ? Stack.of(scope)
+      : resolveConstruct(scope, resourceRefScope as ResourceRef);
+
   const construct = new (constructClass as any)(
-    Stack.of(scope), // Put all idea2 constructs in the root of the stack
-    `${resourceRef.type}-${resourceRef.id}`,
+    constructScope,
+    resourceRef.id,
     { resourceRef }
   );
 

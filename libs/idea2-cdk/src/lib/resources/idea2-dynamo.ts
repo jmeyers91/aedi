@@ -27,9 +27,9 @@ export class Idea2DynamoTable
 
     this.dynamoRef = dynamoRef;
 
-    this.table = new TableV2(this, dynamoRef.id, {
+    this.table = new TableV2(this, 'table', {
       removalPolicy: RemovalPolicy.DESTROY, // TODO: Make this configurable
-      tableName: createConstructName(this, dynamoRef.id),
+      tableName: createConstructName(this, dynamoRef),
       partitionKey: {
         name: dynamoRef.partitionKey.name,
         type: AttributeType[dynamoRef.partitionKey.type],

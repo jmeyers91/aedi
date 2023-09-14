@@ -29,7 +29,7 @@ export class Idea2Stack extends Stack implements Idea2StackContext {
     this.idea2App = idea2App;
     this.namePrefix = `${id}-`;
 
-    for (const resourceRef of idea2App.resourceRefs.values()) {
+    for (const resourceRef of idea2App.resourceRefs) {
       resolveConstruct(this, resourceRef);
     }
 

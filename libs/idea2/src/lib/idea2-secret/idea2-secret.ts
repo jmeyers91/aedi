@@ -1,19 +1,11 @@
-import type { Idea2App } from '../idea2-app';
 import type { SecretRef } from './idea2-secret-types';
-import { RefType } from '../idea2-types';
+import { CreateResourceOptions, RefType, Scope } from '../idea2-types';
+import { createResource } from '../idea2-resource-utils';
 
 export function secret(
-  app: Idea2App,
+  scope: Scope,
   id: string,
-  options: Omit<SecretRef, 'id' | 'type'>
+  options: CreateResourceOptions<SecretRef>
 ): SecretRef {
-  const secretRef: SecretRef = {
-    ...options,
-    type: RefType.SECRET,
-    id,
-  };
-
-  app.addResourceRef(secretRef);
-
-  return secretRef;
+  return createResource(RefType.SECRET, scope, id, options);
 }
