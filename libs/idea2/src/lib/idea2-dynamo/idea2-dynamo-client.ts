@@ -13,6 +13,9 @@ import {
   UpdateCommand,
   UpdateCommandInput,
   ScanCommand,
+  DeleteCommandOutput,
+  ScanCommandOutput,
+  QueryCommandOutput,
 } from '@aws-sdk/lib-dynamodb';
 import {
   AttributeValue,
@@ -20,25 +23,58 @@ import {
   DynamoDBClientConfig,
 } from '@aws-sdk/client-dynamodb';
 import type { DynamoClientRef, DynamoRef } from './idea2-dynamo-types';
-import { ResolvedClientRef } from '../idea2-types';
+import { OptionsWithDefaults, ResolvedClientRef } from '../idea2-types';
+import type { dynamoRefClientDefaultOptions } from './idea2-dynamo-constants';
 
-export function getDynamoTableClient<T extends DynamoClientRef<any, any>>({
-  constructRef: { tableName, region },
-}: ResolvedClientRef<T>) {
-  return new DynamoTable(tableName, region) as MaybeReadonly<
-    T['ref'] extends DynamoRef<infer R, infer Q>
-      ? DynamoTable<R, Q>
-      : DynamoTable<any, any>,
-    T['options']
-  >;
+export interface IReadableDynamoTable<T, PK extends keyof T> {
+  get(key: { [Key in PK]: T[Key] }): Promise<T | undefined>;
+  query(
+    input: Omit<QueryCommandInput, 'TableName'>
+  ): Promise<{ Items?: T[] } & QueryCommandOutput>;
+
+  scan(
+    input: Omit<ScanCommandInput, 'TableName'>
+  ): Promise<{ Items?: T[] } & ScanCommandOutput>;
 }
 
-type MaybeReadonly<
-  T extends DynamoTable<any, any>,
-  O extends { readonly: boolean }
-> = O extends { readonly: true }
-  ? Omit<T, 'put' | 'update' | 'patch' | 'delete'>
-  : T;
+export interface IWritableDynamoTable<T, PK extends keyof T> {
+  put(
+    input: Omit<PutCommandInput, 'TableName' | 'Item'> & { Item: T }
+  ): Promise<Partial<T>>;
+  update(
+    input: Omit<UpdateCommandInput, 'TableName' | 'Key'> & {
+      Key: { [Key in PK]: T[Key] };
+    }
+  ): Promise<any>;
+  patch(key: { [Key in PK]: T[Key] }, patch: Partial<T>): Promise<T>;
+  delete(
+    input: Omit<DeleteCommandInput, 'TableName'>
+  ): Promise<DeleteCommandOutput>;
+}
+
+export type IDynamoTable<T, PK extends keyof T, O> = (O extends {
+  grantWrite: true;
+}
+  ? IWritableDynamoTable<T, PK>
+  : object) &
+  (O extends { grantRead: true } ? IReadableDynamoTable<T, PK> : object);
+
+export function getDynamoTableClient<
+  C extends DynamoClientRef<DynamoRef<any, any>, any>
+>({
+  constructRef: { tableName, region },
+}: ResolvedClientRef<C>): C extends DynamoClientRef<
+  DynamoRef<infer T, infer PK>,
+  infer O
+>
+  ? IDynamoTable<
+      T,
+      PK,
+      OptionsWithDefaults<O, typeof dynamoRefClientDefaultOptions>
+    >
+  : IDynamoTable<any, any, any> {
+  return new DynamoTable(tableName, region) as any;
+}
 
 export class DynamoDb extends DynamoDBDocumentClient {
   constructor(config: DynamoDBClientConfig) {
@@ -93,13 +129,12 @@ export class DynamoDb extends DynamoDBDocumentClient {
   }
 }
 
-export class DynamoTable<T, K extends keyof T> {
+export class DynamoTable<T, K extends keyof T>
+  implements IReadableDynamoTable<T, K>, IWritableDynamoTable<T, K>
+{
   private readonly dynamoDb: DynamoDb;
 
-  constructor(
-    private readonly tableName: string,
-    private readonly region: string
-  ) {
+  constructor(private readonly tableName: string, region: string) {
     this.dynamoDb = new DynamoDb({
       region,
     });
@@ -109,6 +144,20 @@ export class DynamoTable<T, K extends keyof T> {
     return this.dynamoDb.get<T>({
       TableName: this.tableName,
       Key: key,
+    });
+  }
+
+  async query(input: Omit<QueryCommandInput, 'TableName'>) {
+    return this.dynamoDb.query<T>({
+      ...input,
+      TableName: this.tableName,
+    });
+  }
+
+  async scan(input: Omit<ScanCommandInput, 'TableName'>) {
+    return this.dynamoDb.scan<T>({
+      ...input,
+      TableName: this.tableName,
     });
   }
 
@@ -167,20 +216,6 @@ export class DynamoTable<T, K extends keyof T> {
 
     const result = await this.update(updateInput as any);
     return result as T;
-  }
-
-  async query(input: Omit<QueryCommandInput, 'TableName'>) {
-    return this.dynamoDb.query<T>({
-      ...input,
-      TableName: this.tableName,
-    });
-  }
-
-  async scan(input: Omit<ScanCommandInput, 'TableName'>) {
-    return this.dynamoDb.scan<T>({
-      ...input,
-      TableName: this.tableName,
-    });
   }
 
   async delete(input: Omit<DeleteCommandInput, 'TableName'>) {

@@ -124,4 +124,6 @@ export type CreateResourceOptions<R extends IResourceRef> = Omit<
   'uid' | 'id' | 'type' | 'getScope'
 >;
 
+export type OptionsWithDefaults<O, D> = Omit<D, keyof O> & O;
+
 export type Scope = IResourceRef | IIdea2App;

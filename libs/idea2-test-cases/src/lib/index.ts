@@ -1,4 +1,6 @@
-export * as healthcheck from './healthcheck';
-export * as healthcheckMulti from './healthcheck-multi';
-export * as dynamoCrus from './dynamo-crud';
+import './healthcheck';
+import './healthcheck-multi';
+import './dynamo-crud';
+import './dynamo-permissions';
+
 export * from './idea';

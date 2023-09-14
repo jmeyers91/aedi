@@ -17,10 +17,7 @@ export interface DynamoRef<T, PK extends keyof T> extends IResourceRef {
 
 export type AnyDynamoRef = DynamoRef<any, any>;
 
-export interface DynamoClientRef<
-  T extends DynamoRef<any, any>,
-  O extends DynamoRefClientOptions
-> {
+export interface DynamoClientRef<T extends DynamoRef<any, any>, O> {
   ref: T;
   refType: RefType.DYNAMO;
   options?: O;
@@ -32,5 +29,10 @@ export interface DynamoConstructRef {
 }
 
 export interface DynamoRefClientOptions {
-  readonly?: boolean;
+  grantRead?: boolean;
+  grantWrite?: boolean;
+}
+
+export interface DynamoRefClientDefaultOptions {
+  grantRead: true;
 }
