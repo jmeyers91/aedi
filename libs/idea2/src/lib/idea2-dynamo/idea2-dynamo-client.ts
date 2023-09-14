@@ -42,7 +42,11 @@ type MaybeReadonly<
 
 export class DynamoDb extends DynamoDBDocumentClient {
   constructor(config: DynamoDBClientConfig) {
-    super(new DynamoDBClient(config));
+    super(new DynamoDBClient(config), {
+      marshallOptions: {
+        removeUndefinedValues: true,
+      },
+    });
   }
 
   async get<T>(input: GetCommandInput): Promise<T | undefined> {
@@ -135,8 +139,9 @@ export class DynamoTable<T, K extends keyof T> {
       throw new Error('Empty patch.');
     }
 
-    const updateInput: Omit<UpdateCommandInput, 'TableName'> =
-      patchEntries.reduce(
+    const updateInput: Omit<UpdateCommandInput, 'TableName'> = patchEntries
+      .filter(([_, value]) => value !== undefined)
+      .reduce(
         (updateInput, [key, value], i) => ({
           ...updateInput,
           UpdateExpression: `${updateInput.UpdateExpression}${
