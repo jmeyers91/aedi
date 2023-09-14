@@ -5,6 +5,7 @@ import { Idea2StackContext, resolveConstruct } from './idea2-infra-utils';
 import { IResourceRef, Idea2App } from '@sep6/idea2';
 import { writeFileSync } from 'fs';
 import { StringParameter } from 'aws-cdk-lib/aws-ssm';
+import { Idea2LambdaFunction } from './resources/idea2-lambda';
 
 export class Idea2Stack extends Stack implements Idea2StackContext {
   idea2App: Idea2App;
@@ -29,7 +30,11 @@ export class Idea2Stack extends Stack implements Idea2StackContext {
     const completeConstructMap: Record<string, object> = {};
     for (const { resourceRef, construct } of resourceConstructs) {
       console.log(
-        `RESOURCE ${resourceRef.uid} -> CONSTRUCT ${construct.toString()}`
+        `RESOURCE ${resourceRef.uid} -> CONSTRUCT ${construct.toString()} ${
+          construct instanceof Idea2LambdaFunction
+            ? construct.lambdaRef.filepath
+            : ''
+        }`
       );
       if ('getConstructRef' in construct) {
         completeConstructMap[resourceRef.uid] = construct.getConstructRef();

@@ -14,7 +14,7 @@ import {
 } from '../idea2-client-utils';
 
 export const getLambdaRefHandler = (
-  lambdaRef: Pick<AnyLambdaRef, 'context' | 'fn'>
+  lambdaRef: Pick<AnyLambdaRef, 'uid' | 'context' | 'fn'>
 ): Handler => {
   let wrappedContext: Record<string, ResolvedClientRef<any>> | undefined =
     undefined;
@@ -44,6 +44,7 @@ export const getLambdaRefHandler = (
   }
 
   return async (event, context, callback) => {
+    console.log(`Lambda handler for ${lambdaRef.uid}`);
     try {
       callback(null, await lambdaRef.fn(getWrappedContext(), event, context));
     } catch (error) {

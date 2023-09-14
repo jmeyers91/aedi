@@ -4,7 +4,7 @@ import {
   getBucketClient,
   lambda,
   RouteEvent,
-  addRoute,
+  lambdaRoute,
   reply,
   getDynamoTableClient,
   getUserPoolClient,
@@ -24,7 +24,7 @@ const scope = construct(idea, 'api-scope', {});
 
 const api = restApi(scope, 'rest-api', {});
 
-export const healthcheck = addRoute(
+export const healthcheck = lambdaRoute(
   api,
   'GET',
   '/healthcheck',
@@ -67,7 +67,7 @@ export const healthcheck = addRoute(
   )
 );
 
-export const getContacts = addRoute(
+export const getContacts = lambdaRoute(
   api,
   'GET',
   '/contacts',
@@ -92,7 +92,7 @@ export const getContacts = addRoute(
   )
 );
 
-export const createContact = addRoute(
+export const createContact = lambdaRoute(
   api,
   'POST',
   '/contacts',

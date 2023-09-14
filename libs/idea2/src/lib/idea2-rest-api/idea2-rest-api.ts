@@ -1,9 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { APIGatewayEvent } from 'aws-lambda';
-import type { LambdaRef } from '../idea2-lambda/idea2-lambda-types';
+import type { APIGatewayEvent, Context } from 'aws-lambda';
+import type {
+  LambdaRef,
+  LambdaRefFnWithEvent,
+} from '../idea2-lambda/idea2-lambda-types';
 import type { RestApiRef, RestApiRefRoute } from './idea2-rest-api-types';
 import { CreateResourceOptions, RefType, Scope } from '../idea2-types';
 import { createResource } from '../idea2-resource-utils';
+import { lambda } from '../idea2-lambda';
 
 export type RouteEvent = APIGatewayEvent;
 export type RouteResponse<_T> = {
@@ -24,11 +28,24 @@ export function restApi(
   });
 }
 
-export function addRoute<
-  L extends
-    | LambdaRef<any, APIGatewayEvent, RouteResponse<any>>
-    | LambdaRef<any, APIGatewayEvent, Promise<RouteResponse<any>>>
->(restApiRef: RestApiRef, method: string, path: string, lambdaRef: L): L {
+export type RouteLambdaRef =
+  | LambdaRef<any, APIGatewayEvent, RouteResponse<any>>
+  | LambdaRef<any, APIGatewayEvent, Promise<RouteResponse<any>>>;
+
+type IsParameter<Part> = Part extends `{${infer ParamName}}`
+  ? ParamName
+  : never;
+type FilteredParts<Path> = Path extends `${infer PartA}/${infer PartB}`
+  ? IsParameter<PartA> | FilteredParts<PartB>
+  : IsParameter<Path>;
+type PathParameters<P extends string> = { [K in FilteredParts<P>]: string };
+
+export function lambdaRoute<L extends RouteLambdaRef>(
+  restApiRef: RestApiRef,
+  method: string,
+  path: string,
+  lambdaRef: L
+): L {
   const route: RestApiRefRoute = {
     method,
     path,
@@ -40,9 +57,122 @@ export function addRoute<
   return lambdaRef;
 }
 
-export function reply<T>(body?: T): RouteResponse<T> {
+export function route<P extends string, C, R>(
+  restApiRef: RestApiRef,
+  lambdaId: string,
+  method: string,
+  path: P,
+  lambdaContext: C,
+  fn: LambdaRefFnWithEvent<
+    C,
+    RouteEvent & { pathParameters: PathParameters<P> },
+    R
+  >
+): LambdaRef<C, RouteEvent, RouteResponse<R>> {
+  const wrappedLambdaHandlerFn = async (
+    ctx: any,
+    event: RouteEvent,
+    lambdaContext: Context
+  ): Promise<RouteResponse<R>> => {
+    try {
+      return reply(
+        await fn(
+          ctx,
+          event as RouteEvent & { pathParameters: PathParameters<P> },
+          lambdaContext
+        )
+      );
+    } catch (error) {
+      const { message, statusCode = 500 } = error as Error & {
+        statusCode?: number;
+      };
+      return errorReply(message, statusCode) as any;
+    }
+  };
+
+  const lambdaFn = lambda(
+    restApiRef.getScope(),
+    lambdaId,
+    lambdaContext,
+    wrappedLambdaHandlerFn
+  );
+
+  return lambdaRoute(restApiRef, method, path, lambdaFn) as any;
+}
+
+export function Get<P extends string, C, R>(
+  restApiRef: RestApiRef,
+  lambdaId: string,
+  path: P,
+  lambdaContext: C,
+  fn: LambdaRefFnWithEvent<
+    C,
+    RouteEvent & { pathParameters: PathParameters<P> },
+    R
+  >
+) {
+  return route(restApiRef, lambdaId, 'GET', path, lambdaContext, fn);
+}
+
+export function Post<P extends string, C, R>(
+  restApiRef: RestApiRef,
+  lambdaId: string,
+  path: P,
+  lambdaContext: C,
+  fn: LambdaRefFnWithEvent<
+    C,
+    RouteEvent & { pathParameters: PathParameters<P> },
+    R
+  >
+) {
+  return route(restApiRef, lambdaId, 'POST', path, lambdaContext, fn);
+}
+
+export function Put<P extends string, C, R>(
+  restApiRef: RestApiRef,
+  lambdaId: string,
+  path: P,
+  lambdaContext: C,
+  fn: LambdaRefFnWithEvent<
+    C,
+    RouteEvent & { pathParameters: PathParameters<P> },
+    R
+  >
+) {
+  return route(restApiRef, lambdaId, 'PUT', path, lambdaContext, fn);
+}
+
+export function Patch<P extends string, C, R>(
+  restApiRef: RestApiRef,
+  lambdaId: string,
+  path: P,
+  lambdaContext: C,
+  fn: LambdaRefFnWithEvent<
+    C,
+    RouteEvent & { pathParameters: PathParameters<P> },
+    R
+  >
+) {
+  return route(restApiRef, lambdaId, 'PATCH', path, lambdaContext, fn);
+}
+
+export function Delete<P extends string, C, R>(
+  restApiRef: RestApiRef,
+  lambdaId: string,
+  path: P,
+  lambdaContext: C,
+  fn: LambdaRefFnWithEvent<
+    C,
+    RouteEvent & { pathParameters: PathParameters<P> },
+    R
+  >
+) {
+  return route(restApiRef, lambdaId, 'DELETE', path, lambdaContext, fn);
+}
+
+export function reply<T>(body?: T, statusCode = 200): RouteResponse<T> {
   return {
-    statusCode: 200,
+    statusCode,
     body: body ? JSON.stringify(body) : undefined,
     headers: {
       'Access-Control-Allow-Headers':
@@ -51,4 +181,16 @@ export function reply<T>(body?: T): RouteResponse<T> {
       'Access-Control-Allow-Origin': `*`,
     },
   };
+}
+
+export function errorReply<T>(
+  error: T,
+  statusCode = 400
+): RouteResponse<{ error: T }> {
+  return reply(
+    {
+      error,
+    },
+    statusCode
+  );
 }

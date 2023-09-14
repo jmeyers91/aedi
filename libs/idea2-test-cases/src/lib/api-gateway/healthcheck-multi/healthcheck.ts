@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { addRoute, lambda, RouteEvent, reply } from '@sep6/idea2';
+import { lambdaRoute, lambda, RouteEvent, reply } from '@sep6/idea2';
 import { api, scope } from './shared';
 
-export const healthcheck = addRoute(
+export const healthcheck = lambdaRoute(
   api,
   'GET',
   '/healthcheck',
