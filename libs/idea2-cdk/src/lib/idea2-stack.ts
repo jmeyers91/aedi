@@ -32,7 +32,7 @@ export class Idea2Stack extends Stack implements Idea2StackContext {
       console.log(
         `RESOURCE ${resourceRef.uid} -> CONSTRUCT ${construct.toString()} ${
           construct instanceof Idea2LambdaFunction
-            ? construct.lambdaRef.filepath
+            ? construct.lambdaRef.handlerLocation?.filepath
             : ''
         }`
       );

@@ -1,3 +1,4 @@
+import { relative } from 'path';
 import type {
   CreateResourceOptions,
   IIdea2App,
@@ -20,6 +21,7 @@ export function createResource<R extends IResourceRef>(
     uid,
     id,
     type,
+    filepath: getRootCallsiteFilepath(),
     getScope() {
       return scope;
     },
@@ -50,4 +52,51 @@ export function grant<
     ref: R;
     refType: R['type'];
   };
+}
+
+function getRootCallsiteFilepath(): string {
+  if (process.env.NODE_ENV === 'test') {
+    /**
+     * For some reason callsites doesn't work correctly in jest, so for now we'll just stub the
+     * filename in tests. This filename is only ever relevant at synth-time.
+     * CDK also depends on `callsites`, so I expect it to continue working there.
+     */
+    return '';
+  }
+  /**
+   * Finds the callsite that doesn't happen inside a function.
+   */
+  const allCallsites = callsites();
+  const callsite = allCallsites.find((callsite) => {
+    return !callsite.getFunctionName();
+  });
+  if (!callsite) {
+    throw new Error(`Unable to find root callsite.`);
+  }
+  const absoluteFilepath = callsite.getFileName();
+  if (!absoluteFilepath) {
+    throw new Error(
+      `Unable to resolve file path for absolute path: ${absoluteFilepath} `
+    );
+  }
+  return relative('.', absoluteFilepath);
+}
+
+/**
+ * From: https://github.com/sindresorhus/callsites
+ */
+function callsites(): NodeJS.CallSite[] {
+  const _prepareStackTrace = Error.prepareStackTrace;
+  try {
+    let result: NodeJS.CallSite[] = [];
+    Error.prepareStackTrace = (_, callSites) => {
+      const callSitesWithoutCurrent = callSites.slice(1);
+      result = callSitesWithoutCurrent;
+      return callSitesWithoutCurrent;
+    };
+    new Error().stack;
+    return result;
+  } finally {
+    Error.prepareStackTrace = _prepareStackTrace;
+  }
 }

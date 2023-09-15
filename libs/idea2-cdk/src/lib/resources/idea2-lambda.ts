@@ -63,15 +63,22 @@ export class Idea2LambdaFunction
 
     const environment: Idea2AppHandlerEnv = {
       IDEA_FUNCTION_ID: lambdaRef.id,
+      IDEA_FUNCTION_UID: lambdaRef.uid,
       IDEA_CONSTRUCT_UID_MAP: constructUidMap,
     };
+
+    if (!lambdaRef.handlerLocation) {
+      throw new Error(
+        `Unable to resolve lambda handler location: ${lambdaRef.uid}`
+      );
+    }
 
     const baseNodejsFunctionProps: NodejsFunctionProps = {
       functionName: createConstructName(this, lambdaRef),
       runtime: Runtime.NODEJS_18_X,
       timeout: Duration.seconds(15),
-      handler: `index.${lambdaRef.id}.lambdaHandler`,
-      entry: lambdaRef.filepath,
+      handler: lambdaRef.handlerLocation.exportKey,
+      entry: lambdaRef.handlerLocation.filepath,
       environment: {
         ...environment,
         IDEA_CONSTRUCT_UID_MAP: JSON.stringify(
@@ -97,7 +104,9 @@ export class Idea2LambdaFunction
     );
     this.lambdaFunction = nodeJsFunction;
 
-    console.log(`- Lambda ${lambdaRef.id} -> ${lambdaRef.filepath}`);
+    console.log(
+      `- Lambda ${lambdaRef.id} -> ${lambdaRef.filepath} ${lambdaRef.handlerLocation.filepath} ${lambdaRef.handlerLocation.exportKey}`
+    );
 
     // Grant the lambda access to each of its dependencies.
     for (const { construct, clientRef } of dependencies) {

@@ -37,9 +37,14 @@ export type BrandedLambdaRefFnWithEvent<C, E, R> = LambdaRefFnWithEvent<
 };
 export type LambdaRefFn<C> = LambdaRefFnWithEvent<C, any, any>;
 
+export interface LambdaHandlerLocation {
+  filepath: string;
+  exportKey: string;
+}
+
 export interface LambdaRef<C, E, R> extends IResourceRef {
   type: RefType.LAMBDA;
-  filepath: string;
+  handlerLocation?: LambdaHandlerLocation;
   fn: BrandedLambdaRefFnWithEvent<C, E, R>;
   lambdaHandler: Handler;
   context: C;

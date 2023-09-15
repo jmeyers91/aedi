@@ -161,6 +161,7 @@ export type ConstructRefLookupMap = Record<string, LookupConstructRef<RefType>>;
  */
 export interface Idea2AppHandlerEnv {
   IDEA_FUNCTION_ID: string;
+  IDEA_FUNCTION_UID: string;
   IDEA_CONSTRUCT_UID_MAP: ConstructRefLookupMap;
 }
 
@@ -169,7 +170,7 @@ export interface Idea2AppHandlerEnv {
  */
 export type CreateResourceOptions<R extends IResourceRef> = Omit<
   R,
-  'uid' | 'id' | 'type' | 'getScope'
+  'uid' | 'id' | 'type' | 'getScope' | 'filepath'
 >;
 
 /**
@@ -197,5 +198,6 @@ export interface IResourceRef {
   uid: string;
   id: string;
   type: string;
+  filepath: string;
   getScope(): Scope;
 }
