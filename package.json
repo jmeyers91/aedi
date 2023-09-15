@@ -8,8 +8,9 @@
     "cdk": "paws admin && rm -rf cdk.out && npm run build && npx cdk --profile admin --region us-west-2",
     "api:deploy": "npm run cdk deploy idea2-stack",
     "api:diff": "npm run cdk diff idea2-stack",
-    "test:deploy": "npm run cdk deploy idea2-test-stack",
+    "test:deploy": "npm run cdk deploy idea2-test-stack && npm run test:fetch-map",
     "test:diff": "npm run cdk diff idea2-test-stack",
+    "test:fetch-map": "AWS_PAGER='' aws s3api get-object --bucket idea2-test-stack-construct-map --key map.json test-construct-map.json --profile admin && cat test-construct-map.json | jq > test-construct-map-formatted.json && mv test-construct-map-formatted.json test-construct-map.json",
     "test": "paws admin && nx reset && AWS_PROFILE=admin AWS_REGION=us-west-2 npx nx test idea2-test-cases"
   },
   "private": true,

@@ -3,31 +3,58 @@ import type {
   ResourceRef,
   ConstructRefLookupMap,
 } from '@sep6/idea2';
-import { GetParameterCommand, SSMClient } from '@aws-sdk/client-ssm';
+import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { existsSync, readFileSync } from 'fs';
 
 export interface RemoteConstructMap {
-  ssmParamName: string;
+  bucketName: string;
   constructRefLookupMap: ConstructRefLookupMap;
 }
 
-export async function loadIdea2ConstructMap(
-  ssmParamName: string
+export interface LocalConstructMap {
+  filepath: string;
+  constructRefLookupMap: ConstructRefLookupMap;
+}
+
+export async function loadIdea2ConstructMapFromS3(
+  bucketName: string
 ): Promise<RemoteConstructMap> {
-  const ssmClient = new SSMClient();
-  const response = await ssmClient.send(
-    new GetParameterCommand({
-      Name: ssmParamName,
+  const s3Client = new S3Client();
+  const response = await s3Client.send(
+    new GetObjectCommand({
+      Bucket: bucketName,
+      Key: 'map.json',
     })
   );
-  // TODO: Add some sanity checks
+  if (!response.Body) {
+    throw new Error(`Empty response from S3.`);
+  }
+
+  const data = JSON.parse(await response.Body.transformToString());
+
   return {
-    ssmParamName,
-    constructRefLookupMap: JSON.parse(response.Parameter?.Value as string),
+    bucketName,
+    constructRefLookupMap: data,
+  };
+}
+
+export async function loadIdea2ConstructMapFromFile(
+  filepath: string
+): Promise<LocalConstructMap> {
+  if (!existsSync(filepath)) {
+    throw new Error(`Missing local construct map: ${filepath}`);
+  }
+
+  const data = JSON.parse(readFileSync(filepath, 'utf8'));
+
+  return {
+    filepath,
+    constructRefLookupMap: data,
   };
 }
 
 export function getConstructRef<R extends ResourceRef>(
-  map: RemoteConstructMap,
+  map: RemoteConstructMap | LocalConstructMap,
   ref: R
 ) {
   return map.constructRefLookupMap[ref.uid] as LookupConstructRef<R['type']>;

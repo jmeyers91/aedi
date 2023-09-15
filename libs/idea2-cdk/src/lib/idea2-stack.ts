@@ -1,11 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Stack, StackProps } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
+import * as S3 from 'aws-cdk-lib/aws-s3';
 import { Idea2StackContext, resolveConstruct } from './idea2-infra-utils';
 import { IResourceRef, Idea2App } from '@sep6/idea2';
 import { writeFileSync } from 'fs';
-import { StringParameter } from 'aws-cdk-lib/aws-ssm';
 import { Idea2LambdaFunction } from './resources/idea2-lambda-construct';
+import { BucketDeployment, Source } from 'aws-cdk-lib/aws-s3-deployment';
 
 export class Idea2Stack extends Stack implements Idea2StackContext {
   idea2App: Idea2App;
@@ -15,7 +16,11 @@ export class Idea2Stack extends Stack implements Idea2StackContext {
   constructor(
     scope: Construct,
     id: string,
-    { idea2App, ...props }: StackProps & { idea2App: Idea2App }
+    {
+      idea2App,
+      mapBucketName,
+      ...props
+    }: StackProps & { idea2App: Idea2App; mapBucketName?: string }
   ) {
     super(scope, id, props);
 
@@ -41,10 +46,14 @@ export class Idea2Stack extends Stack implements Idea2StackContext {
       }
     }
 
-    new StringParameter(this, 'construct-map', {
-      parameterName: `${id}-construct-map`,
-      stringValue: JSON.stringify(completeConstructMap, null, 2),
-    });
+    if (mapBucketName) {
+      new BucketDeployment(this, 'deployment', {
+        sources: [Source.jsonData('map.json', completeConstructMap)],
+        destinationBucket: new S3.Bucket(this, 'construct-map-bucket', {
+          bucketName: mapBucketName,
+        }),
+      });
+    }
 
     writeFileSync(
       './idea2-report.json',
