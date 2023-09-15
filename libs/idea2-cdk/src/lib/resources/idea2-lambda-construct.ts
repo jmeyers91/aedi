@@ -16,9 +16,9 @@ import {
   Idea2AppHandlerEnv,
   LambdaConstructRef,
   LambdaRef,
-  ResourceRef,
   ConstructRefLookupMap,
   getClientRefFromRef,
+  LambdaDependencyGroup,
 } from '@sep6/idea2';
 import { ILambdaDependency } from '../idea2-infra-types';
 
@@ -45,10 +45,10 @@ export class Idea2LambdaFunction
     }[] = [];
 
     // Collect dependencies from the lambda context refs
-    for (const contextValue of Object.values(lambdaRef.context)) {
-      const clientRef = getClientRefFromRef(
-        contextValue as ClientRef | ResourceRef
-      );
+    for (const contextValue of Object.values(
+      lambdaRef.context as LambdaDependencyGroup
+    )) {
+      const clientRef = getClientRefFromRef(contextValue);
       const ref = clientRef.ref;
       const construct = resolveConstruct(this, ref);
 

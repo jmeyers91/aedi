@@ -1,4 +1,4 @@
-import { getDynamoTableClient, Get, grant, Table, RestApi } from '@sep6/idea2';
+import { Get, grant, Table, RestApi, TableClient } from '@sep6/idea2';
 import { Scope } from '../idea';
 
 const scope = Scope('dynamo-permissions');
@@ -21,10 +21,8 @@ export const hasReadPermissionsSuccess = Get(
   api,
   'hasReadPermissionsSuccess',
   '/read-success',
-  { counterTable },
-  async (ctx) => {
-    const table = getDynamoTableClient(ctx.counterTable);
-
+  { table: TableClient(counterTable) },
+  async ({ table }) => {
     await table.get({ counterId: 'test' });
 
     return { success: true };
@@ -35,10 +33,8 @@ export const hasWritePermissionsSuccess = Get(
   api,
   'hasWritePermissionsSuccess',
   '/write-success',
-  { counterTable: grant(counterTable, { write: true }) },
-  async (ctx) => {
-    const table = getDynamoTableClient(ctx.counterTable);
-
+  { table: TableClient(grant(counterTable, { write: true })) },
+  async ({ table }) => {
     await table.put({ Item: { counterId: 'test' } });
 
     return { success: true };
@@ -49,13 +45,12 @@ export const hasWritePermissionsFail = Get(
   api,
   'hasWritePermissionsFail',
   '/write-fail',
-  { counterTable },
-  async (ctx) => {
+  { table: TableClient(counterTable) },
+  async ({ table }) => {
     try {
-      const table = getDynamoTableClient(ctx.counterTable);
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (table as any).put({ Item: { counterId: 'test' } });
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-expect-error
+      await table.put({ Item: { counterId: 'test' } });
 
       return { success: true };
     } catch (error) {

@@ -22,9 +22,13 @@ import {
   DynamoDBClient,
   DynamoDBClientConfig,
 } from '@aws-sdk/client-dynamodb';
-import type { DynamoClientRef, DynamoRef } from './idea2-dynamo-types';
-import { OptionsWithDefaults, ResolvedClientRef } from '../idea2-types';
-import type { defaultDynamoRefClientOptions } from './idea2-dynamo-constants';
+import type {
+  DefaultDynamoRefClientOptions,
+  DynamoClientRef,
+  DynamoRef,
+} from './idea2-dynamo-types';
+import { TransformedRef } from '../idea2-lambda';
+import { OptionsWithDefaults } from '../idea2-types';
 
 export interface IReadableDynamoTable<T, PK extends keyof T> {
   get(key: { [Key in PK]: T[Key] }): Promise<T | undefined>;
@@ -64,21 +68,43 @@ type MaybeReadableTable<T, PK extends keyof T, O> = O extends ReadableOptions
 // prettier-ignore
 export type IDynamoTable<T, PK extends keyof T, O> = MaybeWritableTable<T, PK, O> & MaybeReadableTable<T, PK, O>;
 
-export function getDynamoTableClient<
-  C extends DynamoClientRef<DynamoRef<any, any>, any>
->({
-  constructRef: { tableName, region },
-}: ResolvedClientRef<C>): C extends DynamoClientRef<
-  DynamoRef<infer T, infer PK>,
-  infer O
+export type DynamoEntityType<R> = R extends DynamoClientRef<
+  DynamoRef<infer T, any>,
+  any
 >
-  ? IDynamoTable<
-      T,
-      PK,
-      OptionsWithDefaults<O, typeof defaultDynamoRefClientOptions>
-    >
-  : IDynamoTable<any, any, any> {
-  return new DynamoTable(tableName, region) as any;
+  ? T
+  : R extends DynamoRef<infer T, any>
+  ? T
+  : never;
+
+export type DynamoEntityPk<R> = R extends DynamoClientRef<
+  DynamoRef<any, infer PK>,
+  any
+>
+  ? PK
+  : R extends DynamoRef<any, infer PK>
+  ? PK
+  : never;
+
+export type DynamoClientOptions<R> = R extends DynamoClientRef<any, infer O>
+  ? OptionsWithDefaults<O, DefaultDynamoRefClientOptions>
+  : DefaultDynamoRefClientOptions;
+
+export function TableClient<
+  const R extends
+    | DynamoRef<any, any>
+    | DynamoClientRef<DynamoRef<any, any>, any>
+>(
+  ref: R
+): TransformedRef<
+  R,
+  IDynamoTable<DynamoEntityType<R>, DynamoEntityPk<R>, DynamoClientOptions<R>>
+> {
+  return {
+    transformedRef: ref,
+    transform: ({ constructRef }) =>
+      new DynamoTable(constructRef.tableName, constructRef.region),
+  };
 }
 
 export class DynamoDb extends DynamoDBDocumentClient {

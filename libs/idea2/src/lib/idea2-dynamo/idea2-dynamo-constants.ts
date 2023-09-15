@@ -7,4 +7,4 @@ import { DynamoRefClientOptions } from './idea2-dynamo-types';
  */
 export const defaultDynamoRefClientOptions = {
   read: true,
-} satisfies DynamoRefClientOptions;
+} as const satisfies DynamoRefClientOptions;

@@ -1,6 +1,5 @@
 import {
   RouteEvent,
-  getDynamoTableClient,
   Get,
   Post,
   Put,
@@ -8,6 +7,8 @@ import {
   grant,
   RestApi,
   Table,
+  TableClient,
+  reply,
 } from '@sep6/idea2';
 import { Scope } from '../idea';
 import { randomUUID } from 'crypto';
@@ -16,37 +17,44 @@ const scope = Scope('dynamo-crud');
 
 export const api = RestApi(scope, 'api');
 
-const contactsTable = Table<
+interface Contact {
+  userId: string;
+  contactId: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+}
+
+const contactsTableResource = Table<Contact, 'userId' | 'contactId'>(
+  scope,
+  'contacts-table',
   {
-    userId: string;
-    contactId: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-    phone: string;
-  },
-  'userId' | 'contactId'
->(scope, 'contacts-table', {
-  partitionKey: {
-    name: 'userId',
-    type: 'STRING',
-  },
-  sortKey: {
-    name: 'contactId',
-    type: 'STRING',
-  },
-});
+    partitionKey: {
+      name: 'userId',
+      type: 'STRING',
+    },
+    sortKey: {
+      name: 'contactId',
+      type: 'STRING',
+    },
+  }
+);
+
+const contactsTable = TableClient(contactsTableResource);
+const writableContactsTable = TableClient(
+  grant(contactsTableResource, { write: true })
+);
 
 export const listContacts = Get(
   api,
   'listContacts',
   '/contacts',
   { contactsTable },
-  async (ctx, event) => {
+  async ({ contactsTable }, event) => {
     const { userId } = assertAuth(event);
-    const table = getDynamoTableClient(ctx.contactsTable);
 
-    return await table.query({
+    return await contactsTable.query({
       KeyConditionExpression: `userId = :userId`,
       ExpressionAttributeValues: {
         ':userId': userId,
@@ -60,10 +68,9 @@ export const getContact = Get(
   'getContact',
   '/contacts/{contactId}',
   { contactsTable },
-  async (ctx, event) => {
+  async ({ contactsTable }, event) => {
     const { userId } = assertAuth(event);
     const { contactId } = event.pathParameters;
-    const contactsTable = getDynamoTableClient(ctx.contactsTable);
 
     const contact = await contactsTable.get({ userId, contactId });
 
@@ -79,15 +86,10 @@ export const createContact = Post(
   api,
   'createContact',
   '/contacts',
-  {
-    contactsTable: grant(contactsTable, {
-      write: true,
-    }),
-  },
-  async (ctx, event) => {
+  { contactsTable: writableContactsTable },
+  async ({ contactsTable }, event) => {
     const { userId } = assertAuth(event);
     const contactId = randomUUID();
-    const contactsTable = getDynamoTableClient(ctx.contactsTable);
     const {
       firstName = '',
       lastName = '',
@@ -114,11 +116,10 @@ export const updateContact = Put(
   api,
   'updateContact',
   '/contacts/{contactId}',
-  { contactsTable: grant(contactsTable, { write: true }) },
-  async (ctx, event) => {
+  { contactsTable: writableContactsTable },
+  async ({ contactsTable }, event) => {
     const { userId } = assertAuth(event);
     const { contactId } = event.pathParameters;
-    const contactsTable = getDynamoTableClient(ctx.contactsTable);
     const { firstName, lastName, email, phone } = JSON.parse(
       event.body ?? '{}'
     );
@@ -136,17 +137,65 @@ export const deleteContact = Delete(
   api,
   'deleteContact',
   '/contacts/{contactId}',
-  { contactsTable: grant(contactsTable, { write: true }) },
-  async (ctx, event) => {
+  { contactsTable: writableContactsTable },
+  async ({ contactsTable }, event) => {
     const { userId } = assertAuth(event);
     const { contactId } = event.pathParameters;
-    const contactsTable = getDynamoTableClient(ctx.contactsTable);
 
     await contactsTable.delete({ Key: { userId, contactId } });
 
     return { success: true };
   }
 );
+
+export const exportContacts = Get(
+  api,
+  'exportContacts',
+  '/contacts.csv',
+  { contactsTable },
+  async ({ contactsTable }, event) => {
+    const { userId } = assertAuth(event);
+
+    const { Items: contacts = [] } = await contactsTable.query({
+      KeyConditionExpression: `userId = :userId`,
+      ExpressionAttributeValues: {
+        ':userId': userId,
+      },
+    });
+
+    const keys: (keyof Contact)[] = ['firstName', 'lastName', 'email', 'phone'];
+    const csv = [
+      keys,
+      ...contacts.map((contact) => keys.map((key) => contact[key])),
+    ]
+      .map((row) => row.join(', '))
+      .join('\n');
+
+    return reply(csv, 200, {
+      'Content-Type': 'text/csv',
+    });
+  }
+);
+
+// Used to test responding with strings as HTML
+export const getHtml = Get(api, 'getHtml', '/html', {}, async () => {
+  return 'This text is assumed to be HTML and is returned as-is';
+});
+
+// Used to test responding with objects as JSON
+export const getJSON = Get(api, 'getJSON', '/json', {}, async () => {
+  return {
+    message:
+      'This object is assumed to be JSON and is stringified before being returned',
+  };
+});
+
+// Used to test custom responses
+export const getTeapot = Get(api, 'getTeapot', '/teapot', {}, async () => {
+  return reply("I'm a teapot", 418, {
+    'Content-Type': 'piping-hot/tea',
+  });
+});
 
 function assertAuth(event: RouteEvent): { userId: string } {
   const userId = event.headers.Authorization;

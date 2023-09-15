@@ -1,6 +1,6 @@
 import {
   RouteEvent,
-  getDynamoTableClient,
+  TableClient,
   Get,
   Post,
   Put,
@@ -52,6 +52,13 @@ function ContactService(
     },
   });
 
+  const readableContactsTable = TableClient(
+    grant(contactsTable, { read: true })
+  );
+  const writableContactsTable = TableClient(
+    grant(contactsTable, { write: true })
+  );
+
   const handler = lambdaProxyHandler(id, [
     Get(api, 'getServiceName', '/service-name', { contactsTable }, async () => {
       return { serviceName };
@@ -61,12 +68,11 @@ function ContactService(
       api,
       'listContacts',
       '/contacts',
-      { contactsTable },
-      async (ctx, event) => {
+      { contactsTable: readableContactsTable },
+      async ({ contactsTable }, event) => {
         const { userId } = assertAuth(event);
-        const table = getDynamoTableClient(ctx.contactsTable);
 
-        return await table.query({
+        return await contactsTable.query({
           KeyConditionExpression: `userId = :userId`,
           ExpressionAttributeValues: {
             ':userId': userId,
@@ -79,11 +85,10 @@ function ContactService(
       api,
       'getContact',
       '/contacts/{contactId}',
-      { contactsTable },
-      async (ctx, event) => {
+      { contactsTable: readableContactsTable },
+      async ({ contactsTable }, event) => {
         const { userId } = assertAuth(event);
         const { contactId } = event.pathParameters;
-        const contactsTable = getDynamoTableClient(ctx.contactsTable);
 
         const contact = await contactsTable.get({ userId, contactId });
 
@@ -100,14 +105,11 @@ function ContactService(
       'createContact',
       '/contacts',
       {
-        contactsTable: grant(contactsTable, {
-          write: true,
-        }),
+        contactsTable: writableContactsTable,
       },
-      async (ctx, event) => {
+      async ({ contactsTable }, event) => {
         const { userId } = assertAuth(event);
         const contactId = randomUUID();
-        const contactsTable = getDynamoTableClient(ctx.contactsTable);
         const {
           firstName = '',
           lastName = '',
@@ -134,11 +136,10 @@ function ContactService(
       api,
       'updateContact',
       '/contacts/{contactId}',
-      { contactsTable: grant(contactsTable, { write: true }) },
-      async (ctx, event) => {
+      { contactsTable: writableContactsTable },
+      async ({ contactsTable }, event) => {
         const { userId } = assertAuth(event);
         const { contactId } = event.pathParameters;
-        const contactsTable = getDynamoTableClient(ctx.contactsTable);
         const { firstName, lastName, email, phone } = JSON.parse(
           event.body ?? '{}'
         );
@@ -156,11 +157,10 @@ function ContactService(
       api,
       'deleteContact',
       '/contacts/{contactId}',
-      { contactsTable: grant(contactsTable, { write: true }) },
-      async (ctx, event) => {
+      { contactsTable: writableContactsTable },
+      async ({ contactsTable }, event) => {
         const { userId } = assertAuth(event);
         const { contactId } = event.pathParameters;
-        const contactsTable = getDynamoTableClient(ctx.contactsTable);
 
         await contactsTable.delete({ Key: { userId, contactId } });
 

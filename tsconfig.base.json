@@ -21,7 +21,6 @@
       "@sep6/constants": ["libs/constants/src/index.ts"],
       "@sep6/idea2": ["libs/idea2/src/index.ts"],
       "@sep6/idea2-cdk": ["libs/idea2-cdk/src/index.ts"],
-      "@sep6/idea2-example": ["libs/idea2-example/src/index.ts"],
       "@sep6/idea2-local": ["libs/idea2-local/src/index.ts"],
       "@sep6/idea2-test-cases": ["libs/idea2-test-cases/src/index.ts"],
       "@sep6/utils": ["libs/utils/src/index.ts"]

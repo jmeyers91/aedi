@@ -3,10 +3,13 @@ import type {
   LookupConstructRef,
   ClientRef,
   ResourceRef,
-  ResolvedClientRef,
   ConstructRefLookupMap,
 } from '../idea2-types';
-import type { AnyLambdaRef } from './idea2-lambda-types';
+import type {
+  AnyLambdaRef,
+  LambdaDependencyGroup,
+  TransformedRef,
+} from './idea2-lambda-types';
 import type { Handler } from 'aws-lambda';
 import {
   getClientRefFromRef,
@@ -16,8 +19,7 @@ import {
 export const getLambdaRefHandler = (
   lambdaRef: Pick<AnyLambdaRef, 'uid' | 'context' | 'fn'>
 ): Handler => {
-  let wrappedContext: Record<string, ResolvedClientRef<any>> | undefined =
-    undefined;
+  let wrappedContext: Record<string, any> | undefined = undefined;
 
   /**
    * Combines client refs with their corresponding construct ref (provided through the lambda env).
@@ -30,15 +32,12 @@ export const getLambdaRefHandler = (
     }
     const { IDEA_CONSTRUCT_UID_MAP: constructUidMap } =
       resolveLambdaRuntimeEnv();
+
     wrappedContext = {};
-    for (const [key, value] of Object.entries(lambdaRef.context)) {
-      // TODO: Add a sanity check to be sure `value` is a resource ref or client ref
-      const clientRef = getClientRefFromRef(value as ClientRef | ResourceRef);
-      wrappedContext[key] = {
-        refType: clientRef.refType,
-        clientRef,
-        constructRef: resolveConstructRef(constructUidMap, clientRef),
-      };
+    for (const [key, value] of Object.entries(
+      lambdaRef.context as LambdaDependencyGroup
+    )) {
+      wrappedContext[key] = resolveRef(constructUidMap, value);
     }
     return wrappedContext;
   }
@@ -52,6 +51,22 @@ export const getLambdaRefHandler = (
     }
   };
 };
+
+function resolveRef(
+  constructUidMap: ConstructRefLookupMap,
+  ref: ResourceRef | ClientRef | TransformedRef<any, any>
+): any {
+  if (!('transformedRef' in ref)) {
+    const clientRef = getClientRefFromRef(ref);
+    return {
+      refType: clientRef.refType,
+      clientRef,
+      constructRef: resolveConstructRef(constructUidMap, clientRef),
+    };
+  }
+
+  return ref.transform(resolveRef(constructUidMap, ref.transformedRef));
+}
 
 function resolveConstructRef<T extends ClientRef>(
   constructUidMap: ConstructRefLookupMap,

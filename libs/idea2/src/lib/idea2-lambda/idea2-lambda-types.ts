@@ -10,39 +10,67 @@ import type {
 } from '../idea2-types';
 
 export type AnyFn = (...args: any[]) => any;
-export type LambdaRefFnWithEvent<C, E, R> = (
+export type LambdaRefFnWithEvent<C extends LambdaDependencyGroup, E, R> = (
   context: WrapContext<C>,
   event: E,
   lambdaContext: Context
 ) => R;
+
+export type TransformedRef<
+  R extends ResourceRef | ClientRef | TransformedRef<any, any>,
+  C
+> = {
+  transformedRef: R;
+  transform(ref: ResolveRef<R>): C;
+};
+
+export type UnwrapTransformedRef<T> = T extends TransformedRef<infer R, infer C>
+  ? { ref: R; result: C; input: ResolveRef<R> }
+  : unknown;
+
+export type LambdaDependencyGroup = Record<
+  string,
+  ResourceRef | ClientRef | TransformedRef<any, any>
+>;
+
+export type ResolveSimpleRef<R> = R extends ClientRef
+  ? ResolvedClientRef<R>
+  : R extends ResourceRef
+  ? ResolvedClientRef<{ refType: R['type']; ref: R }>
+  : R;
+
+export type ResolveRef<R> = R extends TransformedRef<any, infer C>
+  ? C
+  : ResolveSimpleRef<R>;
 
 /**
  * Adds the construct ref data to the dependency object supplied when defining a lambda function.
  * This additional data is what is needed by construct client libraries to connect to their resources.
  */
 export type WrapContext<C> = {
-  [K in keyof C]: C[K] extends ClientRef
-    ? ResolvedClientRef<C[K]>
-    : C[K] extends ResourceRef
-    ? ResolvedClientRef<{ refType: C[K]['type']; ref: C[K] }>
-    : never;
+  [K in keyof C]: ResolveRef<C[K]>;
 };
 
-export type BrandedLambdaRefFnWithEvent<C, E, R> = LambdaRefFnWithEvent<
-  C,
+export type BrandedLambdaRefFnWithEvent<
+  C extends LambdaDependencyGroup,
   E,
   R
-> & {
+> = LambdaRefFnWithEvent<C, E, R> & {
   __eventType?: E;
 };
-export type LambdaRefFn<C> = LambdaRefFnWithEvent<C, any, any>;
+export type LambdaRefFn<C extends LambdaDependencyGroup> = LambdaRefFnWithEvent<
+  C,
+  any,
+  any
+>;
 
 export interface LambdaHandlerLocation {
   filepath: string;
   exportKey: string;
 }
 
-export interface LambdaRef<C, E, R> extends IResourceRef {
+export interface LambdaRef<C extends LambdaDependencyGroup, E, R>
+  extends IResourceRef {
   type: RefType.LAMBDA;
   handlerLocation?: LambdaHandlerLocation;
   fn: BrandedLambdaRefFnWithEvent<C, E, R>;

@@ -12,6 +12,41 @@ describe('dynamo CRUD', () => {
     apiUrl = getConstructRef(await loadTestConstructMap(), dynamoCrudApi).url;
   });
 
+  describe('reply', () => {
+    test('GET /html - success - strings should be returned as HTML', async () => {
+      const response = await fetch(`${apiUrl}/html`);
+
+      expect(response.status).toEqual(200);
+      expect(await response.text()).toMatch(
+        'This text is assumed to be HTML and is returned as-is'
+      );
+      expect(response.headers.get('Content-Type')).toBe(
+        'text/html; charset=utf-8'
+      );
+    });
+
+    test('GET /json - success - objects should be returned as JSON', async () => {
+      const response = await fetch(`${apiUrl}/json`);
+
+      expect(response.status).toEqual(200);
+      expect(await response.json()).toEqual({
+        message:
+          'This object is assumed to be JSON and is stringified before being returned',
+      });
+      expect(response.headers.get('Content-Type')).toBe(
+        'application/json; charset=utf-8'
+      );
+    });
+
+    test('GET /teapot - success - the reply function can be used to override default status/headers', async () => {
+      const response = await fetch(`${apiUrl}/teapot`);
+
+      expect(response.status).toEqual(418);
+      expect(await response.text()).toEqual("I'm a teapot");
+      expect(response.headers.get('Content-Type')).toBe('piping-hot/tea');
+    });
+  });
+
   describe('listContacts', () => {
     test('GET /contacts - success', async () => {
       const response = await fetch(`${apiUrl}/contacts`, {
@@ -128,6 +163,22 @@ describe('dynamo CRUD', () => {
 
       expect(response.status).toEqual(200);
       expect(await response.json()).toEqual({ success: true });
+    });
+  });
+
+  describe('exportContacts', () => {
+    test('GET /contacts.csv - success', async () => {
+      const response = await fetch(`${apiUrl}/contacts.csv`, {
+        headers: {
+          Authorization: userId,
+        },
+      });
+
+      expect(response.status).toEqual(200);
+      expect(await response.text()).toMatch(
+        /firstName, lastName, email, phone/
+      );
+      expect(response.headers.get('Content-Type')).toBe('text/csv');
     });
   });
 });

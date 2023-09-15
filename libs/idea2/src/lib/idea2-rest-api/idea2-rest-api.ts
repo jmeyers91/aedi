@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { APIGatewayEvent, Context } from 'aws-lambda';
 import type {
+  LambdaDependencyGroup,
   LambdaRef,
   LambdaRefFnWithEvent,
 } from '../idea2-lambda/idea2-lambda-types';
@@ -10,11 +11,11 @@ import { createResource } from '../idea2-resource-utils';
 import { Lambda } from '../idea2-lambda';
 
 export type RouteEvent = APIGatewayEvent;
-export type RouteResponse<_T> = {
+export type RouteResponse<T> = {
   statusCode: number;
   body?: string;
   headers?: Record<string, string>;
-  __body?: _T;
+  __body?: T;
 };
 
 export function RestApi(
@@ -32,8 +33,11 @@ export type RouteLambdaRef =
   | LambdaRef<any, APIGatewayEvent, RouteResponse<any>>
   | LambdaRef<any, APIGatewayEvent, Promise<RouteResponse<any>>>;
 
+// Utilities for inferring path param variable names
 type IsParameter<Part> = Part extends `{${infer ParamName}}`
-  ? ParamName
+  ? ParamName extends `${infer WithoutPlus}+`
+    ? WithoutPlus
+    : ParamName
   : never;
 type FilteredParts<Path> = Path extends `${infer PartA}/${infer PartB}`
   ? IsParameter<PartA> | FilteredParts<PartB>
@@ -57,7 +61,7 @@ export function LambdaRoute<L extends RouteLambdaRef>(
   return lambdaRef;
 }
 
-export function route<P extends string, C, R>(
+export function Route<P extends string, C extends LambdaDependencyGroup, R>(
   restApiRef: RestApiRef,
   lambdaId: string,
   method: string,
@@ -100,7 +104,7 @@ export function route<P extends string, C, R>(
   return LambdaRoute(restApiRef, method, path, lambda) as any;
 }
 
-export function Get<P extends string, C, R>(
+export function Get<P extends string, C extends LambdaDependencyGroup, R>(
   restApiRef: RestApiRef,
   lambdaId: string,
   path: P,
@@ -111,10 +115,10 @@ export function Get<P extends string, C, R>(
     R
   >
 ) {
-  return route(restApiRef, lambdaId, 'GET', path, lambdaContext, fn);
+  return Route(restApiRef, lambdaId, 'GET', path, lambdaContext, fn);
 }
 
-export function Post<P extends string, C, R>(
+export function Post<P extends string, C extends LambdaDependencyGroup, R>(
   restApiRef: RestApiRef,
   lambdaId: string,
   path: P,
@@ -125,10 +129,10 @@ export function Post<P extends string, C, R>(
     R
   >
 ) {
-  return route(restApiRef, lambdaId, 'POST', path, lambdaContext, fn);
+  return Route(restApiRef, lambdaId, 'POST', path, lambdaContext, fn);
 }
 
-export function Put<P extends string, C, R>(
+export function Put<P extends string, C extends LambdaDependencyGroup, R>(
   restApiRef: RestApiRef,
   lambdaId: string,
   path: P,
@@ -139,10 +143,10 @@ export function Put<P extends string, C, R>(
     R
   >
 ) {
-  return route(restApiRef, lambdaId, 'PUT', path, lambdaContext, fn);
+  return Route(restApiRef, lambdaId, 'PUT', path, lambdaContext, fn);
 }
 
-export function Patch<P extends string, C, R>(
+export function Patch<P extends string, C extends LambdaDependencyGroup, R>(
   restApiRef: RestApiRef,
   lambdaId: string,
   path: P,
@@ -153,10 +157,10 @@ export function Patch<P extends string, C, R>(
     R
   >
 ) {
-  return route(restApiRef, lambdaId, 'PATCH', path, lambdaContext, fn);
+  return Route(restApiRef, lambdaId, 'PATCH', path, lambdaContext, fn);
 }
 
-export function Delete<P extends string, C, R>(
+export function Delete<P extends string, C extends LambdaDependencyGroup, R>(
   restApiRef: RestApiRef,
   lambdaId: string,
   path: P,
@@ -167,20 +171,58 @@ export function Delete<P extends string, C, R>(
     R
   >
 ) {
-  return route(restApiRef, lambdaId, 'DELETE', path, lambdaContext, fn);
+  return Route(restApiRef, lambdaId, 'DELETE', path, lambdaContext, fn);
 }
 
-export function reply<T>(body?: T, statusCode = 200): RouteResponse<T> {
-  return {
-    statusCode,
-    body: body ? JSON.stringify(body) : undefined,
-    headers: {
-      'Access-Control-Allow-Headers':
-        'Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token',
-      'Access-Control-Allow-Methods': '*',
-      'Access-Control-Allow-Origin': `*`,
-    },
+export class Reply<T> implements RouteResponse<T> {
+  statusCode!: number;
+  body?: string | undefined;
+  headers?: Record<string, string> | undefined;
+  __body?: T | undefined;
+
+  constructor(response: RouteResponse<T>) {
+    Object.assign(this, response);
+  }
+}
+
+export function reply<T>(
+  bodyObject?: T | Reply<T>,
+  statusCode?: number,
+  headersObject?: Record<string, string>
+): Reply<T> {
+  /**
+   * Unwrap nested reply calls automatically.
+   * This enables returning a `reply` call from a route handler that wraps replies automatically.
+   */
+  if (bodyObject instanceof Reply) {
+    return bodyObject;
+  }
+
+  const headers: Record<string, string> = {
+    'Access-Control-Allow-Headers':
+      'Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token',
+    'Access-Control-Allow-Methods': '*',
+    'Access-Control-Allow-Origin': '*',
   };
+  let body: string | undefined;
+
+  if (typeof bodyObject === 'string') {
+    body = bodyObject;
+    headers['Content-Type'] = 'text/html; charset=utf-8';
+  } else if (bodyObject !== null && bodyObject !== undefined) {
+    body = JSON.stringify(bodyObject);
+    headers['Content-Type'] = 'application/json; charset=utf-8';
+  }
+
+  if (headersObject) {
+    Object.assign(headers, headersObject);
+  }
+
+  return new Reply({
+    statusCode: statusCode ?? 200,
+    body,
+    headers,
+  });
 }
 
 export function errorReply<T>(

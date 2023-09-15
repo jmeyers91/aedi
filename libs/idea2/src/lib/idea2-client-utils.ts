@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import type { TransformedRef } from './idea2-lambda';
 import {
   type ClientRef,
   type Idea2AppHandlerEnv,
@@ -18,7 +19,12 @@ export function resolveLambdaRuntimeEnv(): Idea2AppHandlerEnv {
   return cachedEnv;
 }
 
-export function getClientRefFromRef(ref: ResourceRef | ClientRef): ClientRef {
+export function getClientRefFromRef(
+  ref: ResourceRef | ClientRef | TransformedRef<any, any>
+): ClientRef {
+  if ('transformedRef' in ref) {
+    return getClientRefFromRef(ref.transformedRef);
+  }
   if ('ref' in ref) {
     return ref;
   }

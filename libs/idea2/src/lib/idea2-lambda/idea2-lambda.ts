@@ -4,12 +4,13 @@ import type {
   LambdaRef,
   BrandedLambdaRefFnWithEvent,
   LambdaHandlerLocation,
+  LambdaDependencyGroup,
 } from './idea2-lambda-types';
 import { getLambdaRefHandler } from './idea2-lambda-handler';
 import { RefType, Scope } from '../idea2-types';
 import { createResource } from '../idea2-resource-utils';
 
-export function Lambda<C, E, R>(
+export function Lambda<const C extends LambdaDependencyGroup, E, R>(
   scope: Scope,
   id: string,
   context: C,
