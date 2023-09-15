@@ -22,7 +22,7 @@ export function RestApi(
   id: string,
   options: Omit<CreateResourceOptions<RestApiRef>, 'routes'> = {}
 ): RestApiRef {
-  return createResource(RefType.REST_API, scope, id, {
+  return createResource<RestApiRef>(RefType.REST_API, scope, id, {
     ...options,
     routes: [],
   });
