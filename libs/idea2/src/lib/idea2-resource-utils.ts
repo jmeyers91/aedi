@@ -54,7 +54,10 @@ export function grant<
   };
 }
 
-function getRootCallsiteFilepath(): string {
+/**
+ * Returns the filepath of the current callsite that is at the root scope.
+ */
+export function getRootCallsiteFilepath(): string {
   if (process.env.NODE_ENV === 'test') {
     /**
      * For some reason callsites doesn't work correctly in jest, so for now we'll just stub the

@@ -13,7 +13,4 @@ const lambdas = [
   Post(api, 'echo', '/echo', {}, (_, event) => JSON.parse(event.body ?? '{}')),
 ];
 
-export const handler = lambdaProxyHandler(
-  { exportKey: 'index.handler.lambdaHandler', filepath: scope.filepath },
-  lambdas
-);
+export const handler = lambdaProxyHandler('handler', lambdas);

@@ -2,11 +2,21 @@ import { Handler } from 'aws-lambda';
 import { AnyLambdaRef, LambdaHandlerLocation } from './idea2-lambda-types';
 import { resolveLambdaRuntimeEnv } from '../idea2-client-utils';
 import { getLambdaRefHandler } from './idea2-lambda-handler';
+import { getRootCallsiteFilepath } from '../idea2-resource-utils';
+
+export interface LambdaProxyHandler {
+  lambdaProxyHandler: Handler;
+}
 
 export function lambdaProxyHandler(
-  handlerLocation: LambdaHandlerLocation,
+  exportVarName: string,
   lambdaRefs: AnyLambdaRef[]
-): { lambdaHandler: Handler } {
+): LambdaProxyHandler {
+  const handlerLocation: LambdaHandlerLocation = {
+    filepath: getRootCallsiteFilepath(),
+    exportKey: `index.${exportVarName}.lambdaProxyHandler`,
+  };
+
   for (const lambdaRef of lambdaRefs) {
     lambdaRef.handlerLocation = handlerLocation;
   }
@@ -14,7 +24,7 @@ export function lambdaProxyHandler(
   let cachedHandler: Handler;
 
   return {
-    lambdaHandler: (event, context, callback) => {
+    lambdaProxyHandler: (event, context, callback) => {
       if (!cachedHandler) {
         const { IDEA_FUNCTION_UID } = resolveLambdaRuntimeEnv();
         const lambdaRef = lambdaRefs.find(
