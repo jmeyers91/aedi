@@ -19,43 +19,51 @@ import {
 export const getLambdaRefHandler = (
   lambdaRef: Pick<AnyLambdaRef, 'uid' | 'context' | 'fn'>
 ): Handler => {
-  let wrappedContext: Record<string, any> | undefined = undefined;
+  let dependencies: Promise<Record<string, any>> | undefined = undefined;
 
   /**
    * Combines client refs with their corresponding construct ref (provided through the lambda env).
    * The wrapped context is passed to the lambda handler and is used to access dependency resources.
    * The wrapped context is lazily created to avoid execution at build-time.
+   *
+   * If a transformed ref is passed, the construct ref is passed into its transform function to
+   * get the resolved value that is passed to the lambda.
    */
-  function getWrappedContext() {
-    if (wrappedContext) {
-      return wrappedContext;
-    }
+  async function bootstrapDependenies() {
     const { IDEA_CONSTRUCT_UID_MAP: constructUidMap } =
       resolveLambdaRuntimeEnv();
 
-    wrappedContext = {};
-    for (const [key, value] of Object.entries(
-      lambdaRef.context as LambdaDependencyGroup
-    )) {
-      wrappedContext[key] = resolveRef(constructUidMap, value);
-    }
-    return wrappedContext;
+    // Resolve dependencies concurrently
+    return Object.fromEntries(
+      await Promise.all(
+        Object.entries(lambdaRef.context as LambdaDependencyGroup).map(
+          async ([key, value]) => [
+            key,
+            await resolveRef(constructUidMap, value),
+          ]
+        )
+      )
+    );
   }
 
   return async (event, context, callback) => {
     console.log(`Lambda handler for ${lambdaRef.uid}`);
     try {
-      callback(null, await lambdaRef.fn(getWrappedContext(), event, context));
+      // Cache the promise - dependencies should only be resolved once.
+      if (!dependencies) {
+        dependencies = bootstrapDependenies();
+      }
+      callback(null, await lambdaRef.fn(await dependencies, event, context));
     } catch (error) {
       callback(error as Error);
     }
   };
 };
 
-function resolveRef(
+async function resolveRef(
   constructUidMap: ConstructRefLookupMap,
   ref: ResourceRef | ClientRef | TransformedRef<any, any>
-): any {
+): Promise<any> {
   if (!('transformedRef' in ref)) {
     const clientRef = getClientRefFromRef(ref);
     return {
@@ -65,7 +73,7 @@ function resolveRef(
     };
   }
 
-  return ref.transform(resolveRef(constructUidMap, ref.transformedRef));
+  return ref.transform(await resolveRef(constructUidMap, ref.transformedRef));
 }
 
 function resolveConstructRef<T extends ClientRef>(

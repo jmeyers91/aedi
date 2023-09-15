@@ -4,5 +4,6 @@ import './dynamo-crud';
 import './dynamo-crud-service';
 import './dynamo-permissions';
 import './lambda-handler-proxy';
+import './transforms';
 
 export * from './idea';

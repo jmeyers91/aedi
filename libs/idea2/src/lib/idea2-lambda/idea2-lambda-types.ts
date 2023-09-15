@@ -40,7 +40,7 @@ export type ResolveSimpleRef<R> = R extends ClientRef
   : R;
 
 export type ResolveRef<R> = R extends TransformedRef<any, infer C>
-  ? C
+  ? Awaited<C>
   : ResolveSimpleRef<R>;
 
 /**

@@ -1,5 +1,6 @@
 import { relative } from 'path';
 import type {
+  ClientRef,
   CreateResourceOptions,
   IIdea2App,
   IResourceRef,
@@ -8,6 +9,7 @@ import type {
   ResourceRef,
   Scope,
 } from './idea2-types';
+import { TransformedRef, ResolveRef } from './idea2-lambda';
 
 export function createResource<R extends IResourceRef>(
   type: R['type'],
@@ -51,6 +53,16 @@ export function grant<
     options: O;
     ref: R;
     refType: R['type'];
+  };
+}
+
+export function mapRef<
+  R extends ResourceRef | ClientRef | TransformedRef<any, any>,
+  T
+>(ref: R, fn: (resolvedRef: ResolveRef<R>) => T): TransformedRef<R, T> {
+  return {
+    transformedRef: ref,
+    transform: fn,
   };
 }
 
