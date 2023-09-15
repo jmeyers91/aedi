@@ -12,7 +12,6 @@ export interface ConstructClientRef<T extends ConstructRef, O extends object> {
 }
 
 export type ConstructConstructRef = object;
-
 export type ConstructRefClientOptions = object;
 export type DefaultConstructRefClientOptions = object;
 

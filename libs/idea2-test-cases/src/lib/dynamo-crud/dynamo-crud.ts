@@ -1,22 +1,22 @@
 import {
   RouteEvent,
   getDynamoTableClient,
-  restApi,
-  table,
   Get,
   Post,
   Put,
   Delete,
   grant,
+  RestApi,
+  Table,
 } from '@sep6/idea2';
-import { createScope } from '../idea';
+import { Scope } from '../idea';
 import { randomUUID } from 'crypto';
 
-const scope = createScope('dynamo-crud');
+const scope = Scope('dynamo-crud');
 
-export const api = restApi(scope, 'api');
+export const api = RestApi(scope, 'api');
 
-const contactsTable = table<
+const contactsTable = Table<
   {
     userId: string;
     contactId: string;

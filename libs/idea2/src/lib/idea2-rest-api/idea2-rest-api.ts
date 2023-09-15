@@ -7,7 +7,7 @@ import type {
 import type { RestApiRef, RestApiRefRoute } from './idea2-rest-api-types';
 import { CreateResourceOptions, RefType, Scope } from '../idea2-types';
 import { createResource } from '../idea2-resource-utils';
-import { lambda } from '../idea2-lambda';
+import { Lambda } from '../idea2-lambda';
 
 export type RouteEvent = APIGatewayEvent;
 export type RouteResponse<_T> = {
@@ -17,7 +17,7 @@ export type RouteResponse<_T> = {
   __body?: _T;
 };
 
-export function restApi(
+export function RestApi(
   scope: Scope,
   id: string,
   options: Omit<CreateResourceOptions<RestApiRef>, 'routes'> = {}
@@ -40,7 +40,7 @@ type FilteredParts<Path> = Path extends `${infer PartA}/${infer PartB}`
   : IsParameter<Path>;
 type PathParameters<P extends string> = { [K in FilteredParts<P>]: string };
 
-export function lambdaRoute<L extends RouteLambdaRef>(
+export function LambdaRoute<L extends RouteLambdaRef>(
   restApiRef: RestApiRef,
   method: string,
   path: string,
@@ -90,14 +90,14 @@ export function route<P extends string, C, R>(
     }
   };
 
-  const lambdaFn = lambda(
+  const lambda = Lambda(
     restApiRef.getScope(),
     lambdaId,
     lambdaContext,
     wrappedLambdaHandlerFn
   );
 
-  return lambdaRoute(restApiRef, method, path, lambdaFn) as any;
+  return LambdaRoute(restApiRef, method, path, lambda) as any;
 }
 
 export function Get<P extends string, C, R>(

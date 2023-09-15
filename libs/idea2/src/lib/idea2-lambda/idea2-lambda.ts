@@ -9,7 +9,7 @@ import { getLambdaRefHandler } from './idea2-lambda-handler';
 import { RefType, Scope } from '../idea2-types';
 import { createResource } from '../idea2-resource-utils';
 
-export function lambda<C, E, R>(
+export function Lambda<C, E, R>(
   scope: Scope,
   id: string,
   context: C,

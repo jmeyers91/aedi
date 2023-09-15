@@ -1,6 +1,6 @@
-import { restApi } from '@sep6/idea2';
-import { createScope } from '../idea';
+import { RestApi } from '@sep6/idea2';
+import { Scope } from '../idea';
 
-export const scope = createScope('healthcheck-multi');
+export const scope = Scope('healthcheck-multi');
 
-export const api = restApi(scope, 'api');
+export const api = RestApi(scope, 'api');

@@ -1,11 +1,11 @@
-import { getDynamoTableClient, restApi, table, Get, grant } from '@sep6/idea2';
-import { createScope } from '../idea';
+import { getDynamoTableClient, Get, grant, Table, RestApi } from '@sep6/idea2';
+import { Scope } from '../idea';
 
-const scope = createScope('dynamo-permissions');
+const scope = Scope('dynamo-permissions');
 
-export const api = restApi(scope, 'api');
+export const api = RestApi(scope, 'api');
 
-const counterTable = table<
+const counterTable = Table<
   {
     counterId: string;
   },

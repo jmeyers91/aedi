@@ -3,7 +3,7 @@ import { CreateResourceOptions, RefType, Scope } from '../idea2-types';
 import { createResource } from '../idea2-resource-utils';
 import { BucketRef } from '../idea2-bucket';
 
-export function staticSite(
+export function StaticSite(
   scope: Scope,
   id: string,
   {

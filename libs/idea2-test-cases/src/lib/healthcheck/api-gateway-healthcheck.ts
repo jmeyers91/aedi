@@ -1,24 +1,25 @@
-import { RouteEvent, lambdaRoute, lambda, reply, restApi } from '@sep6/idea2';
-import { createScope } from '../idea';
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import { Lambda, RestApi, RouteEvent, LambdaRoute, reply } from '@sep6/idea2';
+import { Scope } from '../idea';
 
-const scope = createScope('healthcheck');
+const scope = Scope('healthcheck');
 
-export const api = restApi(scope, 'api');
+export const api = RestApi(scope, 'api');
 
-export const healthcheck = lambdaRoute(
+export const healthcheck = LambdaRoute(
   api,
   'GET',
   '/healthcheck',
-  lambda(scope, 'healthcheck', {}, (_, event: RouteEvent) => {
+  Lambda(scope, 'healthcheck', {}, (_, event: RouteEvent) => {
     return reply({ testName: 'healthcheck', success: true });
   })
 );
 
-export const echo = lambdaRoute(
+export const echo = LambdaRoute(
   api,
   'POST',
   '/echo',
-  lambda(scope, 'echo', {}, (_, event: RouteEvent) => {
+  Lambda(scope, 'echo', {}, (_, event: RouteEvent) => {
     return reply(JSON.parse(event.body as string));
   })
 );

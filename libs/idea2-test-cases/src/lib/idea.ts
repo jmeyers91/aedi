@@ -1,4 +1,4 @@
-import { Idea2App, construct } from '@sep6/idea2';
+import { Idea2App, Construct } from '@sep6/idea2';
 
 export const idea = new Idea2App();
-export const createScope = (id: string) => construct(idea, id);
+export const Scope = (id: string) => Construct(idea, id);
