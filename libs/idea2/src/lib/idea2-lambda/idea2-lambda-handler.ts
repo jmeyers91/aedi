@@ -5,12 +5,13 @@ import type {
   ResourceRef,
   ConstructRefLookupMap,
 } from '../idea2-types';
-import type {
+import {
   AnyLambdaRef,
   LambdaDependencyGroup,
   TransformedRef,
+  TransformedRefScope,
 } from './idea2-lambda-types';
-import type { Handler } from 'aws-lambda';
+import type { Callback, Context, Handler } from 'aws-lambda';
 import {
   getClientRefFromRef,
   resolveLambdaRuntimeEnv,
@@ -19,17 +20,26 @@ import {
 export const getLambdaRefHandler = (
   lambdaRef: Pick<AnyLambdaRef, 'uid' | 'context' | 'fn'>
 ): Handler => {
-  let dependencies: Promise<Record<string, any>> | undefined = undefined;
-
   /**
-   * Combines client refs with their corresponding construct ref (provided through the lambda env).
-   * The wrapped context is passed to the lambda handler and is used to access dependency resources.
-   * The wrapped context is lazily created to avoid execution at build-time.
-   *
-   * If a transformed ref is passed, the construct ref is passed into its transform function to
-   * get the resolved value that is passed to the lambda.
+   * Used to store resolved resources at the execution-context level.
+   * These cached values will be re-used between requests to the lambda.
+   * Invoke scoped transform refs aren't cached to ensure they're always
+   * recomputed when the lambda is invoked.
    */
-  async function bootstrapDependenies() {
+  let resolvedResourceCache: Map<
+    ResourceRef | ClientRef | TransformedRef<any, any>,
+    any
+  >;
+
+  async function resolveDependenies(
+    event: any,
+    context: Context,
+    callback: Callback
+  ) {
+    if (!resolvedResourceCache) {
+      resolvedResourceCache = new Map();
+    }
+
     const { IDEA_CONSTRUCT_UID_MAP: constructUidMap } =
       resolveLambdaRuntimeEnv();
 
@@ -39,7 +49,14 @@ export const getLambdaRefHandler = (
         Object.entries(lambdaRef.context as LambdaDependencyGroup).map(
           async ([key, value]) => [
             key,
-            await resolveRef(constructUidMap, value),
+            await resolveRef(
+              constructUidMap,
+              value,
+              resolvedResourceCache,
+              event,
+              context,
+              callback
+            ),
           ]
         )
       )
@@ -49,31 +66,73 @@ export const getLambdaRefHandler = (
   return async (event, context, callback) => {
     console.log(`Lambda handler for ${lambdaRef.uid}`);
     try {
-      // Cache the promise - dependencies should only be resolved once.
-      if (!dependencies) {
-        dependencies = bootstrapDependenies();
-      }
-      callback(null, await lambdaRef.fn(await dependencies, event, context));
+      const dependencies = await resolveDependenies(event, context, callback);
+      callback(null, await lambdaRef.fn(dependencies, event, context));
     } catch (error) {
       callback(error as Error);
     }
   };
 };
 
-async function resolveRef(
+function resolveRef(
   constructUidMap: ConstructRefLookupMap,
-  ref: ResourceRef | ClientRef | TransformedRef<any, any>
-): Promise<any> {
+  ref: ResourceRef | ClientRef | TransformedRef<any, any>,
+  cache: Map<ResourceRef | ClientRef | TransformedRef<any, any>, any>,
+  event: any,
+  context: Context,
+  callback: Callback
+): any {
+  if (cache.has(ref)) {
+    return cache.get(ref);
+  }
+
   if (!('transformedRef' in ref)) {
     const clientRef = getClientRefFromRef(ref);
-    return {
+    const resolvedRef = {
       refType: clientRef.refType,
       clientRef,
       constructRef: resolveConstructRef(constructUidMap, clientRef),
     };
+    cache.set(ref, resolvedRef);
+    return resolvedRef;
   }
 
-  return ref.transform(await resolveRef(constructUidMap, ref.transformedRef));
+  const resolvedRef = new Promise((resolve, reject) => {
+    fn();
+    async function fn() {
+      try {
+        const transformRef = ref as TransformedRef<any, any>;
+        resolve(
+          await transformRef.transform(
+            await resolveRef(
+              constructUidMap,
+              transformRef.transformedRef,
+              cache,
+              event,
+              context,
+              callback
+            ),
+            event,
+            context,
+            callback
+          )
+        );
+      } catch (error) {
+        reject(error);
+      }
+    }
+  });
+
+  /**
+   * Invoke scoped transform refs must be re-evaluated every time the lambda is invoked.
+   * Otherwise they will be referencing stale request.
+   * Static scoped transforms can
+   */
+  if (ref.transformedRefScope !== TransformedRefScope.INVOKE) {
+    cache.set(ref, resolvedRef);
+  }
+
+  return resolvedRef;
 }
 
 function resolveConstructRef<T extends ClientRef>(

@@ -9,7 +9,12 @@ import type {
   ResourceRef,
   Scope,
 } from './idea2-types';
-import { TransformedRef, ResolveRef } from './idea2-lambda';
+import {
+  TransformedRef,
+  ResolveRef,
+  TransformedRefScope,
+} from './idea2-lambda';
+import { Callback, Context } from 'aws-lambda';
 
 export function createResource<R extends IResourceRef>(
   type: R['type'],
@@ -58,12 +63,42 @@ export function grant<
 
 export function mapRef<
   R extends ResourceRef | ClientRef | TransformedRef<any, any>,
-  T
->(ref: R, fn: (resolvedRef: ResolveRef<R>) => T): TransformedRef<R, T> {
+  T,
+  S extends TransformedRefScope = TransformedRefScope.STATIC
+>(
+  ref: R,
+  fn: (
+    ...args: S extends TransformedRefScope.INVOKE
+      ? [
+          resolvedRef: ResolveRef<R>,
+          event: unknown,
+          context: Context,
+          callback: Callback
+        ]
+      : [resolvedRef: ResolveRef<R>]
+  ) => T,
+  scope?: S
+): TransformedRef<R, T> & { transformedRefScope: S } {
+  /**
+   * Mapping an invoke scope ref into a static scope creates weird behavior where the transform
+   * function would only ever receive the request context of the first request received
+   * by the lambda execution context. I don't see any value in adding allowing this situation at
+   * the moment, and I'm sure it would lead to confusing bugs if used unintentionally.
+   */
+  if (
+    scope === TransformedRefScope.STATIC &&
+    'transformedRefScope' in ref &&
+    ref.transformedRefScope === TransformedRefScope.INVOKE
+  ) {
+    throw new Error(
+      `You cannot map a ${TransformedRefScope.INVOKE} scope ref to a ${TransformedRefScope.STATIC} scope ref.`
+    );
+  }
   return {
+    transformedRefScope: (scope ?? TransformedRefScope.STATIC) as S,
     transformedRef: ref,
     transform: fn,
-  };
+  } as any;
 }
 
 /**

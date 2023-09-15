@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { Context, Handler } from 'aws-lambda';
+import type { Callback, Context, Handler } from 'aws-lambda';
 import type {
   ClientRef,
   IResourceRef,
@@ -16,13 +16,30 @@ export type LambdaRefFnWithEvent<C extends LambdaDependencyGroup, E, R> = (
   lambdaContext: Context
 ) => R;
 
+export enum TransformedRefScope {
+  STATIC = 'STATIC',
+  INVOKE = 'INVOKE',
+}
+
 export type TransformedRef<
   R extends ResourceRef | ClientRef | TransformedRef<any, any>,
   C
-> = {
-  transformedRef: R;
-  transform(ref: ResolveRef<R>): C;
-};
+> =
+  | {
+      transformedRefScope: TransformedRefScope.STATIC;
+      transformedRef: R;
+      transform(ref: ResolveRef<R>): C;
+    }
+  | {
+      transformedRefScope: TransformedRefScope.INVOKE;
+      transformedRef: R;
+      transform(
+        ref: ResolveRef<R>,
+        event: any,
+        context: Context,
+        callback: Callback
+      ): C;
+    };
 
 export type UnwrapTransformedRef<T> = T extends TransformedRef<infer R, infer C>
   ? { ref: R; result: C; input: ResolveRef<R> }
