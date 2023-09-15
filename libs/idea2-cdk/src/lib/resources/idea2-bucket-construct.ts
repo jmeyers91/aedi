@@ -6,7 +6,7 @@ import { Construct } from 'constructs';
 import { resolveConstruct, createConstructName } from '../idea2-infra-utils';
 import { BucketConstructRef, BucketRef } from '@sep6/idea2';
 import { ILambdaDependency } from '../idea2-infra-types';
-import { Idea2LambdaFunction } from './idea2-lambda';
+import { Idea2LambdaFunction } from './idea2-lambda-construct';
 
 export class Idea2Bucket
   extends Construct

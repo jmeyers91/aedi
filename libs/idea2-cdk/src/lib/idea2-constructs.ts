@@ -1,14 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { RefType } from '@sep6/idea2';
 import { Construct } from 'constructs';
-import { Idea2Bucket } from './resources/idea2-bucket';
-import { Idea2DynamoTable } from './resources/idea2-dynamo';
-import { Idea2LambdaFunction } from './resources/idea2-lambda';
-import { Idea2RestApi } from './resources/idea2-rest-api';
-import { Idea2UserPool } from './resources/idea2-user-pool';
-import { Idea2StaticSite } from './resources/idea2-static-site';
-import { Idea2Secret } from './resources/idea2-secret';
-import { Idea2Construct } from './resources/idea2-construct';
+import { Idea2Bucket } from './resources/idea2-bucket-construct';
+import { Idea2DynamoTable } from './resources/idea2-dynamo-construct';
+import { Idea2LambdaFunction } from './resources/idea2-lambda-construct';
+import { Idea2RestApi } from './resources/idea2-rest-api-construct';
+import { Idea2UserPool } from './resources/idea2-user-pool-construct';
+import { Idea2StaticSite } from './resources/idea2-static-site-construct';
+import { Idea2Secret } from './resources/idea2-secret-construct';
+import { Idea2Construct } from './resources/idea2-construct-construct';
 
 export const idea2Constructs = {
   [RefType.BUCKET]: Idea2Bucket,

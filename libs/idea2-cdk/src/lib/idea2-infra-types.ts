@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NodejsFunctionProps } from 'aws-cdk-lib/aws-lambda-nodejs';
-import { Idea2LambdaFunction } from './resources/idea2-lambda';
+import { Idea2LambdaFunction } from './resources/idea2-lambda-construct';
 
 export interface ILambdaDependency<C> {
   getConstructRef(): C;

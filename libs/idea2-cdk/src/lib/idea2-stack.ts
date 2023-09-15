@@ -5,7 +5,7 @@ import { Idea2StackContext, resolveConstruct } from './idea2-infra-utils';
 import { IResourceRef, Idea2App } from '@sep6/idea2';
 import { writeFileSync } from 'fs';
 import { StringParameter } from 'aws-cdk-lib/aws-ssm';
-import { Idea2LambdaFunction } from './resources/idea2-lambda';
+import { Idea2LambdaFunction } from './resources/idea2-lambda-construct';
 
 export class Idea2Stack extends Stack implements Idea2StackContext {
   idea2App: Idea2App;

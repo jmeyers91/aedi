@@ -8,7 +8,7 @@ import {
   ViewerProtocolPolicy,
 } from 'aws-cdk-lib/aws-cloudfront';
 import { S3Origin } from 'aws-cdk-lib/aws-cloudfront-origins';
-import { Idea2Bucket } from './idea2-bucket';
+import { Idea2Bucket } from './idea2-bucket-construct';
 
 export class Idea2StaticSite
   extends Construct

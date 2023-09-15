@@ -1,6 +1,6 @@
 import { Construct } from 'constructs';
 import { ILambdaDependency } from '../idea2-infra-types';
-import { Idea2LambdaFunction } from './idea2-lambda';
+import { Idea2LambdaFunction } from './idea2-lambda-construct';
 import { ISecret, Secret } from 'aws-cdk-lib/aws-secretsmanager';
 import { SecretConstructRef, SecretRef } from '@sep6/idea2';
 import { NodejsFunctionProps } from 'aws-cdk-lib/aws-lambda-nodejs';

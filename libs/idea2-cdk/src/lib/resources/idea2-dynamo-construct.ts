@@ -10,7 +10,7 @@ import { createConstructName } from '../idea2-infra-utils';
 import { AttributeType, TableV2 } from 'aws-cdk-lib/aws-dynamodb';
 import { RemovalPolicy, Stack } from 'aws-cdk-lib';
 import { ILambdaDependency } from '../idea2-infra-types';
-import { Idea2LambdaFunction } from './idea2-lambda';
+import { Idea2LambdaFunction } from './idea2-lambda-construct';
 
 export class Idea2DynamoTable
   extends Construct
