@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { getConstructRef } from '@sep6/idea2-local';
 import { RefType, getCallableLambdaRef } from '@sep6/idea2';
 import { loadTestConstructMap } from '../test-utils/load-test-construct-map';
