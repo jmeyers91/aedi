@@ -1,3 +1,4 @@
+import './basic-lambda';
 import './healthcheck';
 import './healthcheck-multi';
 import './dynamo-crud';
