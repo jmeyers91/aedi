@@ -104,30 +104,23 @@ describe('transforms', () => {
   });
 
   test('GET /nested-transform - success - should return different values for the dynamic portion but the same values for the static portion', async () => {
-    const response1 = await fetch(`${apiUrl}/nested-transform`);
-    const response1Body = await response1.json();
+    const requestCount = 5;
+    const responses: { uuid: { staticUuid: string; dynamicUuid: string } }[] =
+      [];
 
-    expect(response1.status).toEqual(200);
-    expect(response1Body).toEqual({
-      uuid: {
-        staticUuid: expect.any(String),
-        dynamicUuid: expect.any(String),
-      },
-    });
-
-    const { staticUuid } = response1Body.uuid;
-
-    for (let i = 0; i < 5; i += 1) {
-      const response2 = await fetch(`${apiUrl}/nested-transform`);
-      const response2Body = await response2.json();
-      expect(response2.status).toEqual(200);
-      expect(response2Body).toEqual({
-        uuid: {
-          staticUuid,
-          dynamicUuid: expect.any(String),
-        },
-      });
-      expect(response2Body).not.toEqual(response1Body);
+    for (const _ of Array.from({ length: requestCount })) {
+      const response = await fetch(`${apiUrl}/nested-transform`);
+      responses.push(await response.json());
     }
+
+    const staticIds = new Set(
+      responses.map((response) => response.uuid.staticUuid)
+    );
+    const dynamicIds = new Set(
+      responses.map((response) => response.uuid.dynamicUuid)
+    );
+
+    expect(staticIds.size).toEqual(1);
+    expect(dynamicIds.size).toEqual(requestCount);
   });
 });

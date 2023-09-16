@@ -155,20 +155,22 @@ export const invokeTransformCheck = Get(
   }
 );
 
+const rootUuid = randomUUID(); // this should be the same across all requests if they're hitting the same execution context
+
 /**
  * Dynamic transform referencing a static transform.
  * The static transform should be cached across the execution context and the
  * dynamic transform should be repeated on each request with the cached value.
  */
-const staticUuid = mapRef(counterTable, () => {
-  return randomUUID();
+const staticUuid = mapRef(counterTable, async () => {
+  // Wait a second to simulate an async service startup
+  await new Promise((resolve) => setTimeout(resolve, 1000));
+  return `${rootUuid}___${randomUUID()}`;
 });
 
 const dynamicUuid = mapRef(
   staticUuid,
-  (staticUuid) => {
-    return { staticUuid, dynamicUuid: randomUUID() };
-  },
+  (staticUuid) => ({ staticUuid, dynamicUuid: randomUUID() }),
   TransformedRefScope.INVOKE
 );
 
@@ -179,7 +181,5 @@ export const nestedTransformCheck = Get(
   {
     uuid: dynamicUuid,
   },
-  (data) => {
-    return data;
-  }
+  ({ uuid }) => ({ uuid })
 );

@@ -29,6 +29,7 @@ import type {
 } from './idea2-dynamo-types';
 import { TransformedRef, TransformedRefScope } from '../idea2-lambda';
 import { OptionsWithDefaults } from '../idea2-types';
+import { once } from '../idea2-resource-utils';
 
 export interface IReadableDynamoTable<T, PK extends keyof T> {
   get(key: { [Key in PK]: T[Key] }): Promise<T | undefined>;
@@ -103,8 +104,10 @@ export function TableClient<
   return {
     transformedRefScope: TransformedRefScope.STATIC,
     transformedRef: ref,
-    transform: ({ constructRef }) =>
-      new DynamoTable(constructRef.tableName, constructRef.region),
+    transform: once(
+      ({ constructRef }) =>
+        new DynamoTable(constructRef.tableName, constructRef.region)
+    ),
   };
 }
 

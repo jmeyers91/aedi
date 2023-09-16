@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { relative } from 'path';
 import type {
   ClientRef,
@@ -94,11 +95,27 @@ export function mapRef<
       `You cannot map a ${TransformedRefScope.INVOKE} scope ref to a ${TransformedRefScope.STATIC} scope ref.`
     );
   }
+  const appliedScope = (scope ?? TransformedRefScope.STATIC) as S;
   return {
-    transformedRefScope: (scope ?? TransformedRefScope.STATIC) as S,
+    transformedRefScope: appliedScope,
     transformedRef: ref,
-    transform: fn,
+    /**
+     * Static refs should only ever be run once in an execution context.
+     */
+    transform: appliedScope === TransformedRefScope.STATIC ? once(fn) : fn,
   } as any;
+}
+
+export function once<F extends (...args: any[]) => any>(fn: F): F {
+  let result: any;
+  let called = false;
+  return ((...args: any[]): any => {
+    if (!called) {
+      called = true;
+      result = fn(...args);
+    }
+    return result;
+  }) as any;
 }
 
 /**
