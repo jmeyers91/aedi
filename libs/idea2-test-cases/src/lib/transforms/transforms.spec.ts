@@ -1,6 +1,7 @@
 import { getConstructRef } from '@sep6/idea2-local';
 import { loadTestConstructMap } from '../test-utils/load-test-construct-map';
 import { api } from './transforms';
+import { randomUUID } from 'crypto';
 
 describe('transforms', () => {
   let apiUrl: string;
@@ -15,6 +16,35 @@ describe('transforms', () => {
     expect(await response.json()).toEqual({
       count: 0,
     });
+  });
+
+  test('GET /count/{counterId} - success - should return latest count', async () => {
+    const counterId = randomUUID();
+
+    expect(
+      await (await fetch(`${apiUrl}/counter/${counterId}`)).json()
+    ).toEqual({ count: 0 });
+
+    await fetch(`${apiUrl}/counter/${counterId}`, {
+      method: 'POST',
+    });
+    expect(
+      await (await fetch(`${apiUrl}/counter/${counterId}`)).json()
+    ).toEqual({ count: 1 });
+
+    await fetch(`${apiUrl}/counter/${counterId}`, {
+      method: 'POST',
+    });
+    expect(
+      await (await fetch(`${apiUrl}/counter/${counterId}`)).json()
+    ).toEqual({ count: 2 });
+
+    await fetch(`${apiUrl}/counter/${counterId}`, {
+      method: 'POST',
+    });
+    expect(
+      await (await fetch(`${apiUrl}/counter/${counterId}`)).json()
+    ).toEqual({ count: 3 });
   });
 
   test('GET /static-transform - success - should return the same value for repeated runs', async () => {

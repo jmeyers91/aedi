@@ -79,6 +79,14 @@ export const incrementCount = Post(
   }
 );
 
+export const getCount = Get(
+  api,
+  'getCount',
+  '/counter/{counterId}',
+  { count: countRequest },
+  ({ count }) => ({ count })
+);
+
 export const getTestCount = Get(
   api,
   'getTestCount',
@@ -92,14 +100,6 @@ export const getTestCountDynamic = Get(
   'getTestCountDynamic',
   '/test-count-dynamic',
   { count: countDynamic },
-  ({ count }) => ({ count })
-);
-
-export const getCount = Get(
-  api,
-  'getCount',
-  '/count/:counterId',
-  { count: countRequest },
   ({ count }) => ({ count })
 );
 
