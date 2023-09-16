@@ -1,15 +1,17 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { CognitoIdentityProviderClient } from '@aws-sdk/client-cognito-identity-provider';
-import { UserPoolClientRef } from './idea2-user-pool-types';
-import { ResolvedClientRef } from '../idea2-types';
+import { UserPoolClientRef, UserPoolRef } from './idea2-user-pool-types';
+import { mapRef } from '../idea2-resource-utils';
 
-export function getUserPoolClient<T extends UserPoolClientRef<any, any>>({
-  constructRef: { userPoolId, region },
-}: ResolvedClientRef<T>) {
-  return {
-    userPoolId,
-    userPoolClient: new CognitoIdentityProviderClient({
-      region,
-    }),
-  };
+export function UserPoolClient<
+  R extends UserPoolRef | UserPoolClientRef<any, any>
+>(userPoolRef: R) {
+  return mapRef(userPoolRef, ({ constructRef: { userPoolId, region } }) => {
+    return {
+      userPoolId,
+      client: new CognitoIdentityProviderClient({
+        region,
+      }),
+    };
+  });
 }

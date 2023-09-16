@@ -8,5 +8,6 @@ import './dynamo-permissions';
 import './lambda-handler-proxy';
 import './secret-access';
 import './transforms';
+import './user-pool-client';
 
 export * from './idea';
