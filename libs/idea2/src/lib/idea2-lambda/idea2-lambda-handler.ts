@@ -8,6 +8,7 @@ import type {
 import {
   AnyLambdaRef,
   LambdaDependencyGroup,
+  ResolveRef,
   TransformedRef,
 } from './idea2-lambda-types';
 import type { Callback, Context, Handler } from 'aws-lambda';
@@ -28,7 +29,11 @@ export const getLambdaRefHandler = (
         context,
         callback
       );
-      callback(null, await lambdaRef.fn(dependencies, event, context));
+
+      // TODO: Allow disabling this for use-cases that involve sending text directly to lambdas without using JSON
+      const eventObject =
+        typeof event === 'string' ? JSON.stringify(event) : event;
+      callback(null, await lambdaRef.fn(dependencies, eventObject, context));
     } catch (error) {
       callback(error as Error);
     }
@@ -49,13 +54,7 @@ async function resolveDependenies(
       Object.entries(lambdaRef.context as LambdaDependencyGroup).map(
         async ([key, value]) => [
           key,
-          await resolveLambdaDependency(
-            constructUidMap,
-            value,
-            event,
-            context,
-            callback
-          ),
+          await resolveRef(constructUidMap, value, event, context, callback),
         ]
       )
     )
@@ -70,13 +69,15 @@ async function resolveDependenies(
  * can be used to establish a connection with the construct's services.
  * When a transform ref is passed, it is evaluated recursively and the result is passed into the lambda.
  */
-async function resolveLambdaDependency(
+export async function resolveRef<
+  R extends ResourceRef | ClientRef | TransformedRef<any, any>
+>(
   constructUidMap: ConstructRefLookupMap,
-  ref: ResourceRef | ClientRef | TransformedRef<any, any>,
+  ref: R,
   event: any,
   context: Context,
   callback: Callback
-): Promise<any> {
+): Promise<ResolveRef<R>> {
   if (!('transformedRef' in ref)) {
     const clientRef = getClientRefFromRef(ref);
     const resolvedRef = {
@@ -85,7 +86,7 @@ async function resolveLambdaDependency(
       constructRef: resolveConstructRef(constructUidMap, clientRef),
     };
 
-    return resolvedRef;
+    return resolvedRef as ResolveRef<R>;
   }
 
   /**
@@ -93,7 +94,7 @@ async function resolveLambdaDependency(
    * the lambda, but because static refs wrap their callback in `once`, they will only be computed once.
    */
   return ref.transform(
-    await resolveLambdaDependency(
+    await resolveRef(
       constructUidMap,
       ref.transformedRef,
       event,

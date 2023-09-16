@@ -5,7 +5,7 @@ import { createResource } from '../idea2-resource-utils';
 export function Bucket(
   scope: Scope,
   id: string,
-  options: CreateResourceOptions<BucketRef>
+  options: CreateResourceOptions<BucketRef> = {}
 ): BucketRef {
   return createResource(RefType.BUCKET, scope, id, options);
 }

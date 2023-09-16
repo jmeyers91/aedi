@@ -1,3 +1,4 @@
+import './access-bucket-from-lambda';
 import './basic-lambda';
 import './healthcheck';
 import './healthcheck-multi';

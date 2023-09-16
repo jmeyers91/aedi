@@ -1,40 +1,49 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { InvokeCommand, LambdaClient } from '@aws-sdk/client-lambda';
-import { LambdaClientRef } from './idea2-lambda-types';
-import { ResolvedClientRef } from '../idea2-types';
+import {
+  InvokeCommand,
+  LambdaClient as AwsSdkLambdaClient,
+} from '@aws-sdk/client-lambda';
+import { LambdaRef, LambdaRefTypes } from './idea2-lambda-types';
+import { mapRef } from '../idea2-resource-utils';
 
-export function getCallableLambdaRef<T extends LambdaClientRef<any, any>>({
-  constructRef: { functionName, region },
-}: ResolvedClientRef<T>) {
-  const lambdaClient = new LambdaClient({ region });
-
-  return async (
-    event: Parameters<T['ref']['fn']>[1]
-  ): Promise<Awaited<ReturnType<T['ref']['fn']>>> => {
-    const result = await lambdaClient.send(
-      new InvokeCommand({
-        FunctionName: functionName,
-        Payload: JSON.stringify(event),
-        InvocationType: 'RequestResponse',
-      })
-    );
-
-    try {
-      if (!result.Payload) {
-        throw new Error('Payload is undefined.');
-      }
-
-      return JSON.parse(Buffer.from(result.Payload).toString('utf-8'));
-    } catch (error) {
-      console.log('Caught', error);
-      throw error;
-    }
-  };
+/**
+ * Maps a lambda ref into a plain AWS SDK Lambda client.
+ */
+export function LambdaClient<R extends LambdaRef<any, any, any>>(lambdaRef: R) {
+  return mapRef(lambdaRef, ({ constructRef: { region, functionName } }) => ({
+    functionName,
+    client: new AwsSdkLambdaClient({ region }),
+  }));
 }
 
-export async function invoke<T extends LambdaClientRef<any, any>>(
-  clientRef: ResolvedClientRef<T>,
-  event: Parameters<T['ref']['fn']>[1]
-): Promise<Awaited<ReturnType<T['ref']['fn']>>> {
-  return getCallableLambdaRef(clientRef)(event);
+/**
+ * Maps a lambda ref into a function that can be called to invoke the remote lambda.
+ */
+export function LambdaInvokeClient<R extends LambdaRef<any, any, any>>(
+  lambdaRef: R
+) {
+  return mapRef(LambdaClient(lambdaRef), async ({ client, functionName }) => {
+    return async (
+      event: LambdaRefTypes<R>['event']
+    ): Promise<Awaited<LambdaRefTypes<R>['result']>> => {
+      const result = await client.send(
+        new InvokeCommand({
+          FunctionName: functionName,
+          Payload: JSON.stringify(event),
+          InvocationType: 'RequestResponse',
+        })
+      );
+
+      try {
+        if (!result.Payload) {
+          throw new Error('Payload is undefined.');
+        }
+        const json = Buffer.from(result.Payload).toString('utf-8');
+        return JSON.parse(json);
+      } catch (error) {
+        console.log('Caught', error);
+        throw error;
+      }
+    };
+  });
 }

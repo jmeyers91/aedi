@@ -27,10 +27,13 @@ export function Lambda<const C extends LambdaDependencyGroup, E, R>(
     fn: fn as BrandedLambdaRefFnWithEvent<C, E, R>,
     lambdaHandler,
   });
+
+  // Can be overridden by lambda handler proxies
   const initialLocation: LambdaHandlerLocation = {
     filepath: lambda.filepath,
     exportKey: `index.${lambda.id}.lambdaHandler`,
   };
   lambda.handlerLocation = initialLocation;
+
   return lambda;
 }

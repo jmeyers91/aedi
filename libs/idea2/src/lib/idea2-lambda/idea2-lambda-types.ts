@@ -95,6 +95,14 @@ export interface LambdaRef<C extends LambdaDependencyGroup, E, R>
   context: C;
 }
 
+export type LambdaRefTypes<T> = T extends LambdaRef<infer C, infer E, infer R>
+  ? {
+      context: C;
+      event: E;
+      result: R;
+    }
+  : never;
+
 export type AnyLambdaRef = LambdaRef<any, any, any>;
 
 export interface LambdaClientRef<
