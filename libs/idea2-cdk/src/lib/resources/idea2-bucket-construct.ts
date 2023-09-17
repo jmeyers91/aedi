@@ -3,7 +3,7 @@ import { Distribution } from 'aws-cdk-lib/aws-cloudfront';
 import { Bucket } from 'aws-cdk-lib/aws-s3';
 import { BucketDeployment, Source } from 'aws-cdk-lib/aws-s3-deployment';
 import { Construct } from 'constructs';
-import { resolveConstruct, createConstructName } from '../idea2-infra-utils';
+import { createConstructName } from '../idea2-infra-utils';
 import { BucketConstructRef, BucketRef } from '@sep6/idea2';
 import { ILambdaDependency } from '../idea2-infra-types';
 import { Idea2LambdaFunction } from './idea2-lambda-construct';
@@ -33,17 +33,9 @@ export class Idea2Bucket
 
     // Deploy assets to the bucket if the asset path is set
     if (bucketRef.assetPath) {
-      let distribution: Distribution | undefined = undefined;
-
-      if (bucketRef.staticSite) {
-        const staticSite = resolveConstruct(this, bucketRef.staticSite);
-        distribution = staticSite.getBucketDistribution({ bucket, bucketRef });
-      }
-
       new BucketDeployment(this, 'deployment', {
         sources: [Source.asset(bucketRef.assetPath)],
         destinationBucket: bucket,
-        distribution,
       });
     }
   }

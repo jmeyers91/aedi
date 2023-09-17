@@ -1,12 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { IResourceRef, IResourceTypeMap, RefType } from '../idea2-types';
-import { StaticSiteRef } from '../idea2-static-site';
 import { defaultBucketRefClientOptions } from './idea2-bucket-constants';
 
 export interface BucketRef extends IResourceRef {
   type: RefType.BUCKET;
   assetPath?: string;
-  staticSite?: StaticSiteRef;
 }
 
 export interface BucketClientRef<T extends BucketRef, O extends object> {

@@ -7,6 +7,7 @@ import './dynamo-crud-service';
 import './dynamo-permissions';
 import './lambda-handler-proxy';
 import './secret-access';
+import './static-site';
 import './transforms';
 import './user-pool-client';
 
