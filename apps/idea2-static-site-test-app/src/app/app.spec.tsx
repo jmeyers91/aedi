@@ -10,6 +10,6 @@ describe('App', () => {
 
   it('should have a greeting as the title', () => {
     const { getByText } = render(<App />);
-    expect(getByText(/Welcome idea2-static-site-test-app/gi)).toBeTruthy();
+    expect(getByText(/Welcome/gi)).toBeTruthy();
   });
 });

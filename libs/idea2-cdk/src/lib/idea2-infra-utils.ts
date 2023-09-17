@@ -64,6 +64,15 @@ export function getIdea2ConstructClass<T extends RefType>(
   return idea2Constructs[refType];
 }
 
+export function isResourceRef(value: unknown): value is ResourceRef {
+  return !!(
+    value &&
+    typeof value === 'object' &&
+    'type' in value &&
+    Object.values(RefType).includes(value.type as RefType)
+  );
+}
+
 export interface Idea2StackContext {
   idea2App: Idea2App;
   namePrefix?: string;

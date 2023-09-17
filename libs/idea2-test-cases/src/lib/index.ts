@@ -11,4 +11,5 @@ import './static-site';
 import './transforms';
 import './user-pool-client';
 
+export type { staticSite } from './static-site';
 export * from './idea';
