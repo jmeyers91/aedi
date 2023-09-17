@@ -20,6 +20,12 @@ export interface UserPoolRef extends IResourceRef {
   type: RefType.USER_POOL;
   domainPrefix: string;
   selfSignUpEnabled: boolean;
+  signInAlias?: {
+    username?: boolean;
+    email?: boolean;
+    phone?: boolean;
+    preferredUsername?: boolean;
+  };
   triggers?: {
     /**
      * Creates an authentication challenge.

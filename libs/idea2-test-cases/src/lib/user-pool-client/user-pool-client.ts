@@ -7,6 +7,7 @@ const scope = Scope('user-pool-client');
 const userPool = UserPool(scope, 'user-pool', {
   domainPrefix: 'idea2-test-pool-1',
   selfSignUpEnabled: false,
+  signInAlias: { email: true },
 });
 
 export const getUserPoolInfo = Lambda(

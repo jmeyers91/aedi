@@ -12,6 +12,8 @@ describe('user-pool-client', () => {
       clientRef: expect.any(Object),
       constructRef: {
         userPoolId: expect.any(String),
+        userPoolClientId: expect.any(String),
+        identityPoolId: expect.any(String),
         region: expect.any(String),
       },
       refType: RefType.USER_POOL,

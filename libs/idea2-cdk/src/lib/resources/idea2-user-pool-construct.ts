@@ -2,10 +2,16 @@
 import { Construct } from 'constructs';
 import { UserPoolRef, UserPoolConstructRef } from '@sep6/idea2';
 import { RemovalPolicy, Stack } from 'aws-cdk-lib';
-import { UserPool, UserPoolTriggers } from 'aws-cdk-lib/aws-cognito';
+import {
+  CfnIdentityPool,
+  CfnIdentityPoolRoleAttachment,
+  UserPool,
+  UserPoolTriggers,
+} from 'aws-cdk-lib/aws-cognito';
 import { Idea2LambdaFunction } from './idea2-lambda-construct';
 import { ILambdaDependency } from '../idea2-infra-types';
 import { createConstructName, resolveConstruct } from '../idea2-infra-utils';
+import { Role, WebIdentityPrincipal } from 'aws-cdk-lib/aws-iam';
 
 export class Idea2UserPool
   extends Construct
@@ -13,6 +19,8 @@ export class Idea2UserPool
 {
   public readonly userPool: UserPool;
   public readonly userPoolRef: UserPoolRef;
+  public readonly userPoolClientId: string;
+  public readonly identityPoolId: string;
 
   constructor(
     scope: Construct,
@@ -35,12 +43,73 @@ export class Idea2UserPool
     }
 
     this.userPool = new UserPool(this, id, {
+      // TODO: Add additional user pool options
       userPoolName: createConstructName(this, userPoolRef),
-      signInAliases: { email: true },
+      signInAliases: userPoolRef.signInAlias,
       selfSignUpEnabled: userPoolRef.selfSignUpEnabled,
       removalPolicy: RemovalPolicy.DESTROY, // TODO: Configurable
       lambdaTriggers,
     });
+
+    const client = this.userPool.addClient('client');
+    this.userPoolClientId = client.userPoolClientId;
+
+    const identityPool = new CfnIdentityPool(this, 'cognito-user-restriction', {
+      identityPoolName: `${userPoolRef.uid.replace(/\./g, '-')}-identity-pool`,
+      allowUnauthenticatedIdentities: true,
+      cognitoIdentityProviders: [
+        {
+          clientId: client.userPoolClientId,
+          providerName: this.userPool.userPoolProviderName,
+        },
+      ],
+    });
+    this.identityPoolId = identityPool.ref;
+
+    const guestRole = new Role(this, 'cognito-user-pool-unauthed', {
+      assumedBy: new WebIdentityPrincipal('cognito-identity.amazonaws.com', {
+        StringEquals: {
+          'cognito-identity.amazonaws.com:aud': identityPool.ref,
+        },
+        'ForAnyValue:StringLike': {
+          'cognito-identity.amazonaws.com:amr': 'unauthenticated',
+        },
+      }),
+    });
+
+    const authedRole = new Role(this, 'cognito-user-pool-authed', {
+      assumedBy: new WebIdentityPrincipal('cognito-identity.amazonaws.com', {
+        StringEquals: {
+          'cognito-identity.amazonaws.com:aud': identityPool.ref,
+        },
+        'ForAnyValue:StringLike': {
+          'cognito-identity.amazonaws.com:amr': 'authenticated',
+        },
+      }),
+    });
+
+    new CfnIdentityPoolRoleAttachment(
+      this,
+      'cognito-user-pool-role-attachment',
+      {
+        identityPoolId: identityPool.ref,
+        roles: {
+          unauthenticated: guestRole.roleArn,
+          authenticated: authedRole.roleArn,
+        },
+        roleMappings: {
+          mapping: {
+            type: 'Token',
+            ambiguousRoleResolution: 'AuthenticatedRole',
+            identityProvider: `cognito-idp.${
+              Stack.of(this).region
+            }.amazonaws.com/${this.userPool.userPoolId}:${
+              client.userPoolClientId
+            }`,
+          },
+        },
+      }
+    );
 
     this.userPool.addDomain('domain', {
       cognitoDomain: {
@@ -53,6 +122,8 @@ export class Idea2UserPool
     return {
       userPoolId: this.userPool.userPoolId,
       region: Stack.of(this).region,
+      userPoolClientId: this.userPoolClientId,
+      identityPoolId: this.identityPoolId,
     };
   }
 
