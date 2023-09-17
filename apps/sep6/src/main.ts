@@ -1,6 +1,6 @@
 import { idea } from '@sep6/idea2-test-cases';
 
-const searchScope = 'dynamo-crud';
+const searchScope = 'static-site';
 
 for (const resource of idea.resourceRefs) {
   if (searchScope.length > 0 && !resource.uid.includes(searchScope)) {
