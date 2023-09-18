@@ -32,21 +32,20 @@ export class Idea2Stack extends Stack implements Idea2StackContext {
       construct: resolveConstruct(this, resourceRef),
     }));
 
-    const completeConstructMap: Record<string, object> = {};
-    for (const { resourceRef, construct } of resourceConstructs) {
-      console.log(
-        `RESOURCE ${resourceRef.uid} -> CONSTRUCT ${construct.toString()} ${
-          construct instanceof Idea2LambdaFunction
-            ? construct.lambdaRef.handlerLocation?.filepath
-            : ''
-        }`
-      );
-      if ('getConstructRef' in construct) {
-        completeConstructMap[resourceRef.uid] = construct.getConstructRef();
-      }
-    }
-
     if (mapBucketName) {
+      const completeConstructMap: Record<string, object> = {};
+      for (const { resourceRef, construct } of resourceConstructs) {
+        console.log(
+          `RESOURCE ${resourceRef.uid} -> CONSTRUCT ${construct.toString()} ${
+            construct instanceof Idea2LambdaFunction
+              ? construct.lambdaRef.handlerLocation?.filepath
+              : ''
+          }`
+        );
+        if ('getConstructRef' in construct) {
+          completeConstructMap[resourceRef.uid] = construct.getConstructRef();
+        }
+      }
       new BucketDeployment(this, 'deployment', {
         sources: [Source.jsonData('map.json', completeConstructMap)],
         destinationBucket: new S3.Bucket(this, 'construct-map-bucket', {
