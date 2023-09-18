@@ -1,6 +1,7 @@
 import {
   Delete,
   Get,
+  Lambda,
   Post,
   Put,
   RestApi,
@@ -14,13 +15,29 @@ import {
 } from '@sep6/idea2';
 import { Scope } from '../idea';
 import { randomUUID } from 'crypto';
+import { PreSignUpTriggerEvent } from 'aws-lambda';
 
 const scope = Scope('static-site');
 
 export const api = RestApi(scope, 'api');
+
+// Auto-confirm users to avoid dealing with email/sms codes in tests
+export const preSignUpTrigger = Lambda(
+  scope,
+  'preSignUpTrigger',
+  {},
+  (_, event: PreSignUpTriggerEvent) => {
+    event.response.autoConfirmUser = true;
+    return event;
+  }
+);
+
 export const userPool = UserPool(scope, 'user-pool', {
   domainPrefix: 'idea2-static-site-e2e',
   selfSignUpEnabled: true,
+  triggers: {
+    preSignUp: preSignUpTrigger,
+  },
 });
 export interface Contact {
   userId: string;
