@@ -15,7 +15,7 @@ test('renders title provided through client config', async ({ page }) => {
 test('can call the API healthcheck', async ({ page }) => {
   await page.goto('/');
 
-  page.locator('button').click();
+  page.locator('button:text("Healthcheck")').click();
 
   await page.waitForResponse((response) =>
     response.url().endsWith('/healthcheck')

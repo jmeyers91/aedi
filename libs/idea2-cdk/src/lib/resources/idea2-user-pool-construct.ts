@@ -118,7 +118,7 @@ export class Idea2UserPool
     });
   }
 
-  getConstructRef() {
+  getConstructRef(): UserPoolConstructRef {
     return {
       userPoolId: this.userPool.userPoolId,
       region: Stack.of(this).region,
