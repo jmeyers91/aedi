@@ -1,4 +1,5 @@
 import {
+  Bucket,
   Delete,
   Get,
   Lambda,
@@ -18,6 +19,10 @@ import { randomUUID } from 'crypto';
 import { PreSignUpTriggerEvent } from 'aws-lambda';
 
 const scope = Scope('static-site');
+
+const resourceScope = Scope('static-site-resources');
+
+const exampleBucket = Bucket(resourceScope, 'example-bucket');
 
 export const api = RestApi(scope, 'api');
 
@@ -53,6 +58,7 @@ export const staticSite = StaticSite(scope, 'site', {
   clientConfig: {
     api,
     userPool,
+    exampleBucket,
     title: 'client config title',
   },
 });

@@ -1,11 +1,12 @@
 import { Construct } from 'constructs';
-import { RestApiRef, RestApiConstructRef } from '@sep6/idea2';
+import { RestApiRef, RestApiConstructRef, RefType } from '@sep6/idea2';
 import { createConstructName, resolveConstruct } from '../idea2-infra-utils';
 import { Cors, LambdaIntegration, RestApi } from 'aws-cdk-lib/aws-apigateway';
 import { ILambdaDependency } from '../idea2-infra-types';
+import { Idea2BaseConstruct } from '../idea2-base-construct';
 
 export class Idea2RestApi
-  extends Construct
+  extends Idea2BaseConstruct<RefType.REST_API>
   implements ILambdaDependency<RestApiConstructRef>
 {
   public readonly restApi: RestApi;
@@ -13,9 +14,11 @@ export class Idea2RestApi
   constructor(
     scope: Construct,
     id: string,
-    { resourceRef: restApiRef }: { resourceRef: RestApiRef }
+    props: { resourceRef: RestApiRef }
   ) {
-    super(scope, id);
+    super(scope, id, props);
+
+    const restApiRef = this.resourceRef;
 
     this.restApi = new RestApi(this, restApiRef.id, {
       restApiName: createConstructName(restApiRef),

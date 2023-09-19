@@ -14,11 +14,13 @@ import {
   ConstructRefLookupMap,
   getClientRefFromRef,
   LambdaDependencyGroup,
+  RefType,
 } from '@sep6/idea2';
 import { ILambdaDependency } from '../idea2-infra-types';
+import { Idea2BaseConstruct } from '../idea2-base-construct';
 
 export class Idea2LambdaFunction
-  extends Construct
+  extends Idea2BaseConstruct<RefType.LAMBDA>
   implements ILambdaDependency<LambdaConstructRef>
 {
   public readonly lambdaFunction;
@@ -27,11 +29,11 @@ export class Idea2LambdaFunction
   constructor(
     scope: Construct,
     id: string,
-    { resourceRef: lambdaRef }: { resourceRef: LambdaRef<any, any, any> }
+    props: { resourceRef: LambdaRef<any, any, any> }
   ) {
-    super(scope, id);
+    super(scope, id, props);
 
-    this.lambdaRef = lambdaRef;
+    const lambdaRef = (this.lambdaRef = this.resourceRef);
 
     const constructUidMap: ConstructRefLookupMap = {};
     const dependencies: {

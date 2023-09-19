@@ -2,28 +2,25 @@ import { Construct } from 'constructs';
 import { ILambdaDependency } from '../idea2-infra-types';
 import { Idea2LambdaFunction } from './idea2-lambda-construct';
 import { ISecret, Secret } from 'aws-cdk-lib/aws-secretsmanager';
-import { SecretConstructRef, SecretRef } from '@sep6/idea2';
+import { RefType, SecretConstructRef, SecretRef } from '@sep6/idea2';
 import { NodejsFunctionProps } from 'aws-cdk-lib/aws-lambda-nodejs';
 import {
   ParamsAndSecretsLayerVersion,
   ParamsAndSecretsVersions,
 } from 'aws-cdk-lib/aws-lambda';
+import { Idea2BaseConstruct } from '../idea2-base-construct';
 
 export class Idea2Secret
-  extends Construct
+  extends Idea2BaseConstruct<RefType.SECRET>
   implements ILambdaDependency<SecretConstructRef>
 {
   public readonly secretRef: SecretRef;
   public readonly secret: ISecret;
 
-  constructor(
-    scope: Construct,
-    id: string,
-    { resourceRef: secretRef }: { resourceRef: SecretRef }
-  ) {
-    super(scope, id);
+  constructor(scope: Construct, id: string, props: { resourceRef: SecretRef }) {
+    super(scope, id, props);
 
-    this.secretRef = secretRef;
+    const secretRef = (this.secretRef = this.resourceRef);
 
     this.secret = Secret.fromSecretAttributes(this, 'secret', {
       secretCompleteArn: secretRef.arn,

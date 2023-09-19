@@ -1,9 +1,10 @@
-import { ConstructConstructRef, ConstructRef } from '@sep6/idea2';
+import { ConstructConstructRef, ConstructRef, RefType } from '@sep6/idea2';
 import { Construct } from 'constructs';
 import { ILambdaDependency } from '../idea2-infra-types';
+import { Idea2BaseConstruct } from '../idea2-base-construct';
 
 export class Idea2Construct
-  extends Construct
+  extends Idea2BaseConstruct<RefType.CONSTRUCT>
   implements ILambdaDependency<ConstructConstructRef>
 {
   public readonly constructRef: ConstructRef;
@@ -11,14 +12,16 @@ export class Idea2Construct
   constructor(
     scope: Construct,
     id: string,
-    { resourceRef: constructRef }: { resourceRef: ConstructRef }
+    props: { resourceRef: ConstructRef }
   ) {
-    super(scope, id);
+    super(scope, id, props);
 
-    this.constructRef = constructRef;
+    this.constructRef = this.resourceRef;
   }
 
   getConstructRef(): object {
     return {};
   }
+
+  grantLambdaAccess(): void {}
 }

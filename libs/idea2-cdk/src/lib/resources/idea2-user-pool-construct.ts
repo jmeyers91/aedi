@@ -1,5 +1,5 @@
 import { Construct } from 'constructs';
-import { UserPoolRef, UserPoolConstructRef } from '@sep6/idea2';
+import { UserPoolRef, UserPoolConstructRef, RefType } from '@sep6/idea2';
 import { RemovalPolicy, Stack } from 'aws-cdk-lib';
 import {
   CfnIdentityPool,
@@ -11,9 +11,10 @@ import { Idea2LambdaFunction } from './idea2-lambda-construct';
 import { ILambdaDependency } from '../idea2-infra-types';
 import { resolveConstruct } from '../idea2-infra-utils';
 import { Role, WebIdentityPrincipal } from 'aws-cdk-lib/aws-iam';
+import { Idea2BaseConstruct } from '../idea2-base-construct';
 
 export class Idea2UserPool
-  extends Construct
+  extends Idea2BaseConstruct<RefType.USER_POOL>
   implements ILambdaDependency<UserPoolConstructRef>
 {
   public readonly userPool: UserPool;
@@ -24,11 +25,11 @@ export class Idea2UserPool
   constructor(
     scope: Construct,
     id: string,
-    { resourceRef: userPoolRef }: { resourceRef: UserPoolRef }
+    props: { resourceRef: UserPoolRef }
   ) {
-    super(scope, id);
+    super(scope, id, props);
 
-    this.userPoolRef = userPoolRef;
+    const userPoolRef = (this.userPoolRef = this.resourceRef);
 
     const lambdaTriggers: UserPoolTriggers = {};
 

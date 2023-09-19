@@ -47,6 +47,8 @@ export interface StaticSiteClientRef<
 }
 
 export interface StaticSiteConstructRef {
+  region: string;
+  bucketName: string;
   url: string;
 }
 

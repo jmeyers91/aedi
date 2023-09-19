@@ -3,15 +3,17 @@ import {
   DynamoConstructRef,
   DynamoRef,
   DynamoRefClientOptions,
+  RefType,
   defaultDynamoRefClientOptions,
 } from '@sep6/idea2';
 import { AttributeType, TableV2 } from 'aws-cdk-lib/aws-dynamodb';
 import { RemovalPolicy, Stack } from 'aws-cdk-lib';
 import { ILambdaDependency } from '../idea2-infra-types';
 import { Idea2LambdaFunction } from './idea2-lambda-construct';
+import { Idea2BaseConstruct } from '../idea2-base-construct';
 
 export class Idea2DynamoTable
-  extends Construct
+  extends Idea2BaseConstruct<RefType.DYNAMO>
   implements ILambdaDependency<DynamoConstructRef>
 {
   public readonly table: TableV2;
@@ -20,11 +22,11 @@ export class Idea2DynamoTable
   constructor(
     scope: Construct,
     id: string,
-    { resourceRef: dynamoRef }: { resourceRef: DynamoRef<any, any> }
+    props: { resourceRef: DynamoRef<any, any> }
   ) {
-    super(scope, id);
+    super(scope, id, props);
 
-    this.dynamoRef = dynamoRef;
+    const dynamoRef = (this.dynamoRef = this.resourceRef);
 
     this.table = new TableV2(this, 'table', {
       removalPolicy: RemovalPolicy.DESTROY, // TODO: Make this configurable

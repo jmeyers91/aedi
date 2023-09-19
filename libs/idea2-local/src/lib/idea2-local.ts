@@ -9,8 +9,15 @@ import {
   TransformedRef,
   getClientRefFromRef,
   resolveRef,
+  Idea2App,
+  RefType,
+  StaticSiteRef,
 } from '@sep6/idea2';
-import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import {
+  GetObjectCommand,
+  PutObjectCommand,
+  S3Client,
+} from '@aws-sdk/client-s3';
 
 let s3Client: S3Client;
 const cache = new Map<ResourceRef, Promise<ConstructRef>>();
@@ -75,5 +82,44 @@ export async function resolveConstructRef<
     mockEvent,
     mockContext,
     mockCallback
+  );
+}
+
+export async function loadStaticSiteConfig<C>(
+  staticSite: StaticSiteRef<C>
+): Promise<Record<string, unknown>> {
+  const resolvedConfig: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(staticSite.clientConfig ?? {})) {
+    if (!isResourceRef(value)) {
+      resolvedConfig[key] = value;
+      continue;
+    }
+    resolvedConfig[key] = await loadConstructRef(value);
+  }
+  return resolvedConfig;
+}
+
+export async function uploadStaticSiteConfigScript<C>(
+  staticSite: StaticSiteRef<C>
+) {
+  const { bucketName, region } = await loadConstructRef(staticSite);
+  const staticSiteConfig = await loadStaticSiteConfig(staticSite);
+  const s3Client = new S3Client({ region });
+  await s3Client.send(
+    new PutObjectCommand({
+      Bucket: bucketName,
+      Key: 'client-config.js',
+      Body: `window.__clientConfig = ${JSON.stringify(staticSiteConfig)};`,
+    })
+  );
+  console.log(`Client config was uploaded to ${bucketName}`);
+}
+
+function isResourceRef(value: unknown): value is ResourceRef {
+  return !!(
+    value &&
+    typeof value === 'object' &&
+    'type' in value &&
+    Object.values(RefType).includes(value.type as RefType)
   );
 }

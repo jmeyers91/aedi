@@ -32,7 +32,7 @@ export class Idea2Stack extends Stack {
     this.resourceConstructs.push(resourceConstruct);
   }
 
-  createMapBucket() {
+  createMap() {
     new BucketDeployment(this, 'idea2-map-bucket-deployment', {
       sources: this.resourceConstructs.map(({ construct, resourceRef }) =>
         Source.jsonData(

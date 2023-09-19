@@ -2,25 +2,22 @@ import { RemovalPolicy, Stack } from 'aws-cdk-lib';
 import { Bucket } from 'aws-cdk-lib/aws-s3';
 import { BucketDeployment, Source } from 'aws-cdk-lib/aws-s3-deployment';
 import { Construct } from 'constructs';
-import { BucketConstructRef, BucketRef } from '@sep6/idea2';
+import { BucketConstructRef, BucketRef, RefType } from '@sep6/idea2';
 import { ILambdaDependency } from '../idea2-infra-types';
 import { Idea2LambdaFunction } from './idea2-lambda-construct';
+import { Idea2BaseConstruct } from '../idea2-base-construct';
 
 export class Idea2Bucket
-  extends Construct
+  extends Idea2BaseConstruct<RefType.BUCKET>
   implements ILambdaDependency<BucketConstructRef>
 {
   public readonly bucket: Bucket;
   public readonly bucketRef: BucketRef;
 
-  constructor(
-    scope: Construct,
-    id: string,
-    { resourceRef: bucketRef }: { resourceRef: BucketRef }
-  ) {
-    super(scope, id);
+  constructor(scope: Construct, id: string, props: { resourceRef: BucketRef }) {
+    super(scope, id, props);
 
-    this.bucketRef = bucketRef;
+    const bucketRef = (this.bucketRef = this.resourceRef);
 
     const bucket = new Bucket(this, 'bucket', {
       autoDeleteObjects: true,

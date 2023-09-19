@@ -44,7 +44,7 @@ export class Idea2CdkApp implements Idea2CdkAppContext {
     // Create map stack-specific map buckets once all the constructs are resolved
     for (const construct of resourceConstructs) {
       if (construct instanceof Idea2Stack) {
-        construct.createMapBucket();
+        construct.createMap();
       }
     }
   }
