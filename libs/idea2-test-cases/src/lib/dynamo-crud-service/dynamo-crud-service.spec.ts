@@ -1,24 +1,23 @@
-import { getConstructRef } from '@sep6/idea2-local';
-import { loadTestConstructMap } from '../test-utils/load-test-construct-map';
-import { service1, service2 } from './dynamo-crud-service';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { loadConstructRef } from '@sep6/idea2-local';
+import { Contact, service1, service2 } from './dynamo-crud-service';
 import { randomUUID } from 'crypto';
 
 describe('dynamo CRUD service', () => {
   test('APIs should not be the same', async () => {
-    const map = await loadTestConstructMap();
-    expect(getConstructRef(map, service1.api).url).not.toEqual(
-      getConstructRef(map, service2.api).url
+    expect((await loadConstructRef(service1.api)).url).not.toEqual(
+      (await loadConstructRef(service2.api)).url
     );
   });
 });
 
 describe('dynamo CRUD service 1', () => {
   const userId = randomUUID();
-  let contact: any;
+  let contact: Contact;
   let apiUrl: string;
 
   beforeAll(async () => {
-    apiUrl = getConstructRef(await loadTestConstructMap(), service1.api).url;
+    apiUrl = (await loadConstructRef(service1.api)).url;
   });
 
   describe('getServiceName', () => {
@@ -153,11 +152,11 @@ describe('dynamo CRUD service 1', () => {
 
 describe('dynamo CRUD service 2', () => {
   const userId = randomUUID();
-  let contact: any;
+  let contact: Contact;
   let apiUrl: string;
 
   beforeAll(async () => {
-    apiUrl = getConstructRef(await loadTestConstructMap(), service2.api).url;
+    apiUrl = (await loadConstructRef(service2.api)).url;
   });
 
   describe('getServiceName', () => {

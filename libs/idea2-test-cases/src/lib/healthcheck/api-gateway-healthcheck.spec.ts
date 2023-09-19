@@ -1,12 +1,11 @@
-import { getConstructRef } from '@sep6/idea2-local';
-import { loadTestConstructMap } from '../test-utils/load-test-construct-map';
+import { loadConstructRef } from '@sep6/idea2-local';
 import { api } from './api-gateway-healthcheck';
 
 describe('api-gateway healthcheck', () => {
   let apiUrl: string;
 
   beforeAll(async () => {
-    apiUrl = getConstructRef(await loadTestConstructMap(), api).url;
+    apiUrl = (await loadConstructRef(api)).url;
   });
 
   test('GET /healthcheck - success', async () => {

@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { resolveTestRef } from '../test-utils/load-test-construct-map';
+import { resolveConstructRef } from '@sep6/idea2-local';
 import { api as dynamoCrudApi } from './dynamo-crud';
 import { randomUUID } from 'crypto';
 
@@ -9,7 +9,7 @@ describe('dynamo CRUD', () => {
   let apiUrl: string;
 
   beforeAll(async () => {
-    apiUrl = (await resolveTestRef(dynamoCrudApi)).constructRef.url;
+    apiUrl = (await resolveConstructRef(dynamoCrudApi)).constructRef.url;
   });
 
   describe('reply', () => {

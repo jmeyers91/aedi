@@ -24,6 +24,15 @@ export const service2 = ContactService(outerScope, 'service2', {
   serviceName: 'Contact service 2',
 });
 
+export interface Contact {
+  userId: string;
+  contactId: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+}
+
 function ContactService(
   parentScope: Idea2Scope,
   id: string,
@@ -31,26 +40,20 @@ function ContactService(
 ) {
   const scope = Construct(parentScope, id);
   const api = RestApi(scope, 'api');
-  const contactsTable = Table<
+  const contactsTable = Table<Contact, 'userId' | 'contactId'>(
+    scope,
+    'contacts-table',
     {
-      userId: string;
-      contactId: string;
-      firstName: string;
-      lastName: string;
-      email: string;
-      phone: string;
-    },
-    'userId' | 'contactId'
-  >(scope, 'contacts-table', {
-    partitionKey: {
-      name: 'userId',
-      type: 'STRING',
-    },
-    sortKey: {
-      name: 'contactId',
-      type: 'STRING',
-    },
-  });
+      partitionKey: {
+        name: 'userId',
+        type: 'STRING',
+      },
+      sortKey: {
+        name: 'contactId',
+        type: 'STRING',
+      },
+    }
+  );
 
   const readableContactsTable = TableClient(
     grant(contactsTable, { read: true })

@@ -6,7 +6,6 @@ import {
   DynamoRefClientOptions,
   defaultDynamoRefClientOptions,
 } from '@sep6/idea2';
-import { createConstructName } from '../idea2-infra-utils';
 import { AttributeType, TableV2 } from 'aws-cdk-lib/aws-dynamodb';
 import { RemovalPolicy, Stack } from 'aws-cdk-lib';
 import { ILambdaDependency } from '../idea2-infra-types';
@@ -30,7 +29,6 @@ export class Idea2DynamoTable
 
     this.table = new TableV2(this, 'table', {
       removalPolicy: RemovalPolicy.DESTROY, // TODO: Make this configurable
-      tableName: createConstructName(this, dynamoRef),
       partitionKey: {
         name: dynamoRef.partitionKey.name,
         type: AttributeType[dynamoRef.partitionKey.type],

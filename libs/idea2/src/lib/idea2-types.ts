@@ -5,6 +5,7 @@ import type { DynamoTypeMap } from './idea2-dynamo/idea2-dynamo-types';
 import type { LambdaTypeMap } from './idea2-lambda/idea2-lambda-types';
 import type { RestApiTypeMap } from './idea2-rest-api/idea2-rest-api-types';
 import { SecretTypeMap } from './idea2-secret/idea2-secret-types';
+import { StackTypeMap } from './idea2-stack';
 import { StaticSiteTypeMap } from './idea2-static-site';
 import { UserPoolTypeMap } from './idea2-user-pool/idea2-user-pool-types';
 
@@ -17,7 +18,8 @@ export enum RefType {
   DYNAMO = 'dynamo',
   LAMBDA = 'lambda',
   REST_API = 'rest-api',
-  SECRET = 'SECRET',
+  SECRET = 'secret',
+  STACK = 'stack',
   STATIC_SITE = 'static-site',
   USER_POOL = 'user-pool',
 }
@@ -32,6 +34,7 @@ export interface ResourceRefTypeMap extends Record<RefType, IResourceTypeMap> {
   [RefType.LAMBDA]: LambdaTypeMap;
   [RefType.REST_API]: RestApiTypeMap;
   [RefType.SECRET]: SecretTypeMap;
+  [RefType.STACK]: StackTypeMap;
   [RefType.STATIC_SITE]: StaticSiteTypeMap;
   [RefType.USER_POOL]: UserPoolTypeMap;
 }

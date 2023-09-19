@@ -10,7 +10,7 @@ import {
 } from 'aws-cdk-lib/aws-cognito';
 import { Idea2LambdaFunction } from './idea2-lambda-construct';
 import { ILambdaDependency } from '../idea2-infra-types';
-import { createConstructName, resolveConstruct } from '../idea2-infra-utils';
+import { resolveConstruct } from '../idea2-infra-utils';
 import { Role, WebIdentityPrincipal } from 'aws-cdk-lib/aws-iam';
 
 export class Idea2UserPool
@@ -36,15 +36,12 @@ export class Idea2UserPool
     for (const [triggerName, triggerLambdaRef] of Object.entries(
       userPoolRef.triggers ?? {}
     )) {
-      lambdaTriggers[triggerName] = resolveConstruct(
-        this,
-        triggerLambdaRef
-      ).lambdaFunction;
+      lambdaTriggers[triggerName] =
+        resolveConstruct(triggerLambdaRef).lambdaFunction;
     }
 
     this.userPool = new UserPool(this, id, {
       // TODO: Add additional user pool options
-      userPoolName: createConstructName(this, userPoolRef),
       signInAliases: userPoolRef.signInAlias,
       selfSignUpEnabled: userPoolRef.selfSignUpEnabled,
       removalPolicy: RemovalPolicy.DESTROY, // TODO: Configurable

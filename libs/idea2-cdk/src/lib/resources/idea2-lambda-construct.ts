@@ -1,10 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Construct } from 'constructs';
-import {
-  resolveConstruct,
-  createConstructName,
-  isLambdaDependency,
-} from '../idea2-infra-utils';
+import { resolveConstruct, isLambdaDependency } from '../idea2-infra-utils';
 import { Stack, Duration } from 'aws-cdk-lib';
 import { Runtime } from 'aws-cdk-lib/aws-lambda';
 import {
@@ -50,7 +46,7 @@ export class Idea2LambdaFunction
     )) {
       const clientRef = getClientRefFromRef(contextValue);
       const ref = clientRef.ref;
-      const construct = resolveConstruct(this, ref);
+      const construct = resolveConstruct(ref);
 
       if (construct) {
         if ('getConstructRef' in construct) {
@@ -74,7 +70,6 @@ export class Idea2LambdaFunction
     }
 
     const baseNodejsFunctionProps: NodejsFunctionProps = {
-      functionName: createConstructName(this, lambdaRef),
       runtime: Runtime.NODEJS_18_X,
       timeout: Duration.seconds(15),
       handler: lambdaRef.handlerLocation.exportKey,

@@ -8,11 +8,13 @@
     "cdk": "paws admin && rm -rf cdk.out && npm run build && npx cdk --profile admin --region us-west-2",
     "api:deploy": "npm run cdk deploy idea2-stack",
     "api:diff": "npm run cdk diff idea2-stack",
-    "test:deploy": "npm run cdk deploy idea2-test-stack && npm run test:fetch-map",
+    "test:deploy": "npm run cdk deploy '*'",
     "test:diff": "npm run cdk diff idea2-test-stack",
-    "test:fetch-map": "AWS_PAGER='' aws s3api get-object --bucket idea2-test-stack-construct-map --key map.json test-construct-map.json --profile admin && cat test-construct-map.json | jq > test-construct-map-formatted.json && mv test-construct-map-formatted.json test-construct-map.json",
+    "test:synth": "npm run cdk synth idea2-test-stack",
     "test": "paws admin && nx reset && NODE_NO_WARNINGS=1 AWS_PROFILE=admin AWS_REGION=us-west-2 npx nx run-many -t test",
-    "e2e": "npx nx run-many -t e2e"
+    "test-case": "npx nx reset && NODE_NO_WARNINGS=1 AWS_PROFILE=admin AWS_REGION=us-west-2 npx nx run idea2-test-cases:test --testFile",
+    "e2e": "npm run e2e:fetch-map && npx nx reset && npx nx run-many -t e2e",
+    "e2e:fetch-map": "AWS_PAGER='' AWS_PROFILE=admin AWS_REGION=us-west-2 aws s3api get-object --bucket idea2-test-static-site-idea2-map-bucket --key idea2-test-static-site.site.json --no-paginate idea2-test-static-site.json"
   },
   "private": true,
   "dependencies": {

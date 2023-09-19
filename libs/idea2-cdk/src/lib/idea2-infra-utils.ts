@@ -1,23 +1,34 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Stack } from 'aws-cdk-lib';
+import { App, Stack, StackProps } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { IResourceRef, Idea2App, RefType, ResourceRef } from '@sep6/idea2';
 import { Idea2Constructs, idea2Constructs } from './idea2-constructs';
 import { ILambdaDependency } from './idea2-infra-types';
+import { AsyncLocalStorage } from 'async_hooks';
+import { Idea2Stack } from './resources/idea2-stack-construct';
 
-export function getIdea2StackContext(construct: Construct): Idea2StackContext {
-  return Stack.of(construct) as any;
+const idea2CdkAppContextStore = new AsyncLocalStorage<Idea2CdkAppContext>();
+
+export function runWithIdea2CdkAppContext<T>(
+  context: Idea2CdkAppContext,
+  fn: () => T
+): T {
+  return idea2CdkAppContextStore.run(context, fn);
 }
 
-export function getNamePrefix(construct: Construct): string {
-  return getIdea2StackContext(construct).namePrefix ?? '';
+export function getIdea2CdkAppContext(): Idea2CdkAppContext {
+  const context = idea2CdkAppContextStore.getStore();
+  if (!context) {
+    throw new Error(`Unable to resolve the Idea2 CDK app context.`);
+  }
+  return context;
 }
 
-export function createConstructName(
-  scope: Construct,
-  resourceRef: IResourceRef
-): string {
-  return `${getNamePrefix(scope)}${resourceRef.uid.replace(/\./g, '-')}`;
+/**
+ * Used to create a long hopefully unique name for resources that must be named.
+ */
+export function createConstructName(resourceRef: IResourceRef): string {
+  return `${resourceRef.uid.replace(/\./g, '-')}`;
 }
 
 export function isLambdaDependency(
@@ -27,10 +38,9 @@ export function isLambdaDependency(
 }
 
 export function resolveConstruct<R extends ResourceRef>(
-  scope: Construct,
   resourceRef: R
 ): InstanceType<Idea2Constructs[R['type']]> {
-  const idea2StackContext = getIdea2StackContext(scope);
+  const idea2StackContext = getIdea2CdkAppContext();
 
   const cached = idea2StackContext.getCachedResource(resourceRef);
   if (cached) {
@@ -39,23 +49,40 @@ export function resolveConstruct<R extends ResourceRef>(
 
   const constructClass = getIdea2ConstructClass(resourceRef.type);
   const resourceRefScope = resourceRef.getScope();
+  let constructScope: Construct;
 
-  // If the resource scope is the app, use the place it in the stack
-  // Otherwise, resolve the scope construct and use it
-  const constructScope =
-    'isIdea2App' in resourceRefScope
-      ? Stack.of(scope)
-      : resolveConstruct(scope, resourceRefScope as ResourceRef);
+  if (isIdea2App(resourceRefScope)) {
+    if (resourceRef.type !== RefType.STACK) {
+      throw new Error(`Resource must be in a stack: ${resourceRef.uid}`);
+    }
+    constructScope = idea2StackContext.cdkApp;
+  } else {
+    constructScope = resolveConstruct(resourceRefScope as ResourceRef);
+  }
 
   const construct = new (constructClass as any)(
     constructScope,
     resourceRef.id,
-    { resourceRef }
+    {
+      resourceRef,
+    }
   );
+
+  // Register all constructs with their stack for mapping
+  if (resourceRef.type !== RefType.STACK) {
+    (Stack.of(construct) as Idea2Stack).registerResourceConstruct({
+      resourceRef,
+      construct,
+    });
+  }
 
   idea2StackContext.cacheResource(resourceRef, construct);
 
   return construct as any;
+}
+
+function isIdea2App(value: unknown): value is Idea2App {
+  return !!(value && typeof value === 'object' && 'isIdea2App' in value);
 }
 
 export function getIdea2ConstructClass<T extends RefType>(
@@ -73,9 +100,10 @@ export function isResourceRef(value: unknown): value is ResourceRef {
   );
 }
 
-export interface Idea2StackContext {
+export interface Idea2CdkAppContext {
   idea2App: Idea2App;
-  namePrefix?: string;
+  cdkApp: App;
+  defaultStackProps: StackProps;
   getCachedResource(resourceRef: IResourceRef): Construct | undefined;
   cacheResource(resourceRef: IResourceRef, resource: Construct): void;
 }

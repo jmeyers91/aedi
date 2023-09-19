@@ -18,7 +18,7 @@ export class Idea2RestApi
     super(scope, id);
 
     this.restApi = new RestApi(this, restApiRef.id, {
-      restApiName: createConstructName(this, restApiRef),
+      restApiName: createConstructName(restApiRef),
       defaultCorsPreflightOptions: {
         allowCredentials: true,
         allowMethods: Cors.ALL_METHODS,
@@ -37,9 +37,7 @@ export class Idea2RestApi
       );
       apiGatewayResource.addMethod(
         route.method,
-        new LambdaIntegration(
-          resolveConstruct(this, route.lambdaRef).lambdaFunction
-        )
+        new LambdaIntegration(resolveConstruct(route.lambdaRef).lambdaFunction)
       );
     }
   }

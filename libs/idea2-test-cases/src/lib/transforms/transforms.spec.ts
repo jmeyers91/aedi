@@ -1,5 +1,4 @@
-import { getConstructRef } from '@sep6/idea2-local';
-import { loadTestConstructMap } from '../test-utils/load-test-construct-map';
+import { loadConstructRef } from '@sep6/idea2-local';
 import { api } from './transforms';
 import { randomUUID } from 'crypto';
 
@@ -7,7 +6,7 @@ describe('transforms', () => {
   let apiUrl: string;
 
   beforeAll(async () => {
-    apiUrl = getConstructRef(await loadTestConstructMap(), api).url;
+    apiUrl = (await loadConstructRef(api)).url;
   });
 
   test('GET /test-count - success - should return 0', async () => {

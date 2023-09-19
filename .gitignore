@@ -9,6 +9,7 @@ tmp
 /lambda-result
 /idea2-report.json
 /test-construct-map.json
+/idea2-test-static-site.json
 
 # dependencies
 node_modules

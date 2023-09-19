@@ -2,7 +2,6 @@ import { RemovalPolicy, Stack } from 'aws-cdk-lib';
 import { Bucket } from 'aws-cdk-lib/aws-s3';
 import { BucketDeployment, Source } from 'aws-cdk-lib/aws-s3-deployment';
 import { Construct } from 'constructs';
-import { createConstructName } from '../idea2-infra-utils';
 import { BucketConstructRef, BucketRef } from '@sep6/idea2';
 import { ILambdaDependency } from '../idea2-infra-types';
 import { Idea2LambdaFunction } from './idea2-lambda-construct';
@@ -24,7 +23,6 @@ export class Idea2Bucket
     this.bucketRef = bucketRef;
 
     const bucket = new Bucket(this, 'bucket', {
-      bucketName: createConstructName(this, bucketRef),
       autoDeleteObjects: true,
       removalPolicy: RemovalPolicy.DESTROY,
     });

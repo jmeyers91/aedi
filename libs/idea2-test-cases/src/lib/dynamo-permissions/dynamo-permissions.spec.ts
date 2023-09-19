@@ -1,12 +1,11 @@
-import { getConstructRef } from '@sep6/idea2-local';
-import { loadTestConstructMap } from '../test-utils/load-test-construct-map';
+import { loadConstructRef } from '@sep6/idea2-local';
 import { api as dynamoCrudApi } from './dynamo-permissions';
 
 describe('dynamo permissions', () => {
   let apiUrl: string;
 
   beforeAll(async () => {
-    apiUrl = getConstructRef(await loadTestConstructMap(), dynamoCrudApi).url;
+    apiUrl = (await loadConstructRef(dynamoCrudApi)).url;
   });
 
   test('GET /read-success - success', async () => {

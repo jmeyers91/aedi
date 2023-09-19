@@ -1,10 +1,10 @@
 import { LambdaInvokeClient, RefType } from '@sep6/idea2';
-import { resolveTestRef } from '../test-utils/load-test-construct-map';
 import { getBucketInfo, listBucket } from './access-bucket-from-lambda';
+import { resolveConstructRef } from '@sep6/idea2-local';
 
 describe('access-bucket-from-lambda', () => {
   test('Should be able to get the S3 construct ref', async () => {
-    const invoke = await resolveTestRef(LambdaInvokeClient(getBucketInfo));
+    const invoke = await resolveConstructRef(LambdaInvokeClient(getBucketInfo));
 
     const result = await invoke({});
 
@@ -19,7 +19,7 @@ describe('access-bucket-from-lambda', () => {
   });
 
   test('Should be able to list objects in the bucket', async () => {
-    const invoke = await resolveTestRef(LambdaInvokeClient(listBucket));
+    const invoke = await resolveConstructRef(LambdaInvokeClient(listBucket));
 
     const result = await invoke({});
 
@@ -54,7 +54,7 @@ describe('access-bucket-from-lambda', () => {
       IsTruncated: false,
       Marker: '',
       MaxKeys: 1000,
-      Name: 'idea2-test-stack-access-bucket-from-lambda-bucket',
+      Name: expect.any(String),
       Prefix: '',
     });
   });

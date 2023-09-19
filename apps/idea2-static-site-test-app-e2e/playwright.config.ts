@@ -2,10 +2,10 @@ import { defineConfig } from '@playwright/test';
 import { nxE2EPreset } from '@nx/playwright/preset';
 
 import { workspaceRoot } from '@nx/devkit';
-import * as testMap from '../../test-construct-map.json';
+import { url } from '../../idea2-test-static-site.json';
 
 // For CI, you may want to set BASE_URL to the deployed application.
-const baseURL = process.env['BASE_URL'] ?? testMap['static-site.site']['url'];
+const baseURL = process.env['BASE_URL'] ?? url;
 
 /**
  * Read environment variables from file.

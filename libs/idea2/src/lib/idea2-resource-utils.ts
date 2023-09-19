@@ -1,14 +1,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { relative } from 'path';
-import type {
-  ClientRef,
-  CreateResourceOptions,
-  IIdea2App,
-  IResourceRef,
-  LookupClientRef,
-  LookupOptions,
-  ResourceRef,
-  Scope,
+import {
+  RefType,
+  type ClientRef,
+  type CreateResourceOptions,
+  type IIdea2App,
+  type IResourceRef,
+  type LookupClientRef,
+  type LookupOptions,
+  type ResourceRef,
+  type Scope,
 } from './idea2-types';
 import {
   TransformedRef,
@@ -16,6 +17,7 @@ import {
   TransformedRefScope,
 } from './idea2-lambda';
 import { Callback, Context } from 'aws-lambda';
+import { StackRef } from './idea2-stack';
 
 export function createResource<R extends IResourceRef>(
   type: R['type'],
@@ -45,6 +47,13 @@ export function appOf(scope: Scope): IIdea2App {
     scope = scope.getScope();
   }
   return scope;
+}
+
+export function stackOf(resourceRef: ResourceRef): StackRef {
+  while (resourceRef.type !== RefType.STACK) {
+    resourceRef = resourceRef.getScope() as ResourceRef;
+  }
+  return resourceRef;
 }
 
 export function grant<

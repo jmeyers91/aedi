@@ -75,7 +75,7 @@ export class Idea2StaticSite
        */
       for (const [key, value] of Object.entries(staticSiteRef.clientConfig)) {
         if (isResourceRef(value)) {
-          const refConstruct = resolveConstruct(this, value);
+          const refConstruct = resolveConstruct(value);
 
           if ('getConstructRef' in refConstruct) {
             resolvedClientConfig[key] = refConstruct.getConstructRef();
