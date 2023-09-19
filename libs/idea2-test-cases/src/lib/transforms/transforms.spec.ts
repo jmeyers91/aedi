@@ -138,6 +138,7 @@ describe('transforms', () => {
     const responses: { uuid: { staticUuid: string; dynamicUuid: string } }[] =
       [];
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     for (const _ of Array.from({ length: requestCount })) {
       const response = await apiFetch(`/nested-transform`);
       responses.push(await response.json());

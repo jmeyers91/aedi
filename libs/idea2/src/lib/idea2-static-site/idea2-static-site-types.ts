@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { GENERATED } from '../idea2-constants';
 import type {
   IResourceRef,

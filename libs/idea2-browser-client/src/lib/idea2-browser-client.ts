@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { ResolveStaticSiteClientConfig, StaticSiteRef } from '@sep6/idea2';
 
 let cachedClientConfig: any;

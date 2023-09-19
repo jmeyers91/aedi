@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Construct } from 'constructs';
 import { ILambdaDependency } from '../idea2-infra-types';
 import { StaticSiteConstructRef, StaticSiteRef } from '@sep6/idea2';

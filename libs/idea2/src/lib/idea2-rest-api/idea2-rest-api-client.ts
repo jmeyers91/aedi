@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { RestApiClientRef, RestApiRef } from './idea2-rest-api-types';
 import { mapRef } from '../idea2-resource-utils';
 

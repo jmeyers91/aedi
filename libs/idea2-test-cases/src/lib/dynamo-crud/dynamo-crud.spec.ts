@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { resolveConstructRef } from '@sep6/idea2-local';
 import { api as dynamoCrudApi } from './dynamo-crud';
 import { randomUUID } from 'crypto';

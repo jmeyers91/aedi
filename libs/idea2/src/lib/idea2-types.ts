@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { BucketTypeMap } from './idea2-bucket/idea2-bucket-types';
 import { ConstructTypeMap } from './idea2-construct';
 import type { DynamoTypeMap } from './idea2-dynamo/idea2-dynamo-types';

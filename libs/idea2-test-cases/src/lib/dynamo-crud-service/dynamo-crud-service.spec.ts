@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { loadConstructRef, resolveConstructRef } from '@sep6/idea2-local';
 import { Contact, service1, service2 } from './dynamo-crud-service';
 import { randomUUID } from 'crypto';

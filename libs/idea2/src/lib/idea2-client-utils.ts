@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { TransformedRef } from './idea2-lambda';
 import {
   type ClientRef,

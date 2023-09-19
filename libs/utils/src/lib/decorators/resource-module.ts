@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { DynamicModule, SetMetadata } from '@nestjs/common';
 import {
   BucketId,

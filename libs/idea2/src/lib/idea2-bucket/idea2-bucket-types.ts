@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { IResourceRef, IResourceTypeMap, RefType } from '../idea2-types';
 import { defaultBucketRefClientOptions } from './idea2-bucket-constants';
 

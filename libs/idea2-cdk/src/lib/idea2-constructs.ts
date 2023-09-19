@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { RefType } from '@sep6/idea2';
 import { Construct } from 'constructs';
 import { Idea2Bucket } from './resources/idea2-bucket-construct';

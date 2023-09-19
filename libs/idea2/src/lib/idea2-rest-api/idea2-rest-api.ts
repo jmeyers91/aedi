@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { APIGatewayEvent, Context } from 'aws-lambda';
 import type {
   LambdaDependencyGroup,

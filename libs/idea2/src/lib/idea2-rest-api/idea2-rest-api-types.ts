@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { LambdaRef } from '../idea2-lambda/idea2-lambda-types';
 import type { IResourceRef, IResourceTypeMap, RefType } from '../idea2-types';
 

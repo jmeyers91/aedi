@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { CognitoIdentityProviderClient } from '@aws-sdk/client-cognito-identity-provider';
 import { UserPoolClientRef, UserPoolRef } from './idea2-user-pool-types';
 import { mapRef } from '../idea2-resource-utils';

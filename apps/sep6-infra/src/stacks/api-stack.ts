@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { Duration, Environment, Stack, StackProps } from 'aws-cdk-lib';
 import c from 'ansi-colors';

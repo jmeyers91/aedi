@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { App, StackProps } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import {

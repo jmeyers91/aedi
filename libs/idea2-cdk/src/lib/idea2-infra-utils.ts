@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { App, Stack, StackProps } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { IResourceRef, Idea2App, RefType, ResourceRef } from '@sep6/idea2';

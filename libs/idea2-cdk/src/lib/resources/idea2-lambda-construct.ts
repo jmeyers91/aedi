@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Construct } from 'constructs';
 import { resolveConstruct, isLambdaDependency } from '../idea2-infra-utils';
 import { Stack, Duration } from 'aws-cdk-lib';

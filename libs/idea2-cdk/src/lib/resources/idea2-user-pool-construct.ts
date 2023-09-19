@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Construct } from 'constructs';
 import { UserPoolRef, UserPoolConstructRef } from '@sep6/idea2';
 import { RemovalPolicy, Stack } from 'aws-cdk-lib';

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { DynamicModule, Type } from '@nestjs/common';
 import {
   RequestMethodString,

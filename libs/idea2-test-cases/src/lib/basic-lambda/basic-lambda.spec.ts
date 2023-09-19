@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { LambdaInvokeClient } from '@sep6/idea2';
 import {
   echo as echoLambda,

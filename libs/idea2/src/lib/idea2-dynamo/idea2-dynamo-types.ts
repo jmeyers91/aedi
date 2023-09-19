@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { IResourceRef, IResourceTypeMap, RefType } from '../idea2-types';
 import type { defaultDynamoRefClientOptions } from './idea2-dynamo-constants';
 

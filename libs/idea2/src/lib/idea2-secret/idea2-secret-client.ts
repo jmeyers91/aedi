@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { mapRef } from '../idea2-resource-utils';
 import { SecretClientRef, SecretRef } from './idea2-secret-types';
 

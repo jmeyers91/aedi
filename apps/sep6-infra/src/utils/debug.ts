@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { existsSync, unlinkSync } from 'fs';
 import { appendFile } from 'fs/promises';
 
