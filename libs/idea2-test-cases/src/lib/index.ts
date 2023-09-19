@@ -1,5 +1,6 @@
 import './access-bucket-from-lambda';
 import './basic-lambda';
+import './cross-stack-resource-sharing';
 import './healthcheck';
 import './healthcheck-multi';
 import './dynamo-crud';
