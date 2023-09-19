@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { loadConstructRef } from '@sep6/idea2-local';
+import { loadConstructRef, resolveConstructRef } from '@sep6/idea2-local';
 import { Contact, service1, service2 } from './dynamo-crud-service';
 import { randomUUID } from 'crypto';
+import { FetchClient } from '@sep6/idea2';
 
 describe('dynamo CRUD service', () => {
   test('APIs should not be the same', async () => {
@@ -14,15 +15,15 @@ describe('dynamo CRUD service', () => {
 describe('dynamo CRUD service 1', () => {
   const userId = randomUUID();
   let contact: Contact;
-  let apiUrl: string;
+  let apiFetch: FetchClient;
 
   beforeAll(async () => {
-    apiUrl = (await loadConstructRef(service1.api)).url;
+    apiFetch = await resolveConstructRef(FetchClient(service1.api));
   });
 
   describe('getServiceName', () => {
     test('Should return service 1', async () => {
-      const response = await fetch(`${apiUrl}/service-name`);
+      const response = await apiFetch(`/service-name`);
 
       expect(await response.json()).toEqual({
         serviceName: 'Contact service 1',
@@ -32,7 +33,7 @@ describe('dynamo CRUD service 1', () => {
 
   describe('listContacts', () => {
     test('GET /contacts - success', async () => {
-      const response = await fetch(`${apiUrl}/contacts`, {
+      const response = await apiFetch(`/contacts`, {
         headers: {
           Authorization: randomUUID(),
         },
@@ -47,7 +48,7 @@ describe('dynamo CRUD service 1', () => {
     });
 
     test('GET /contacts - fail unauthorized', async () => {
-      const response = await fetch(`${apiUrl}/contacts`);
+      const response = await apiFetch(`/contacts`);
       expect(await response.json()).toEqual({ error: 'Unauthorized' });
       expect(response.status).toEqual(401);
     });
@@ -55,7 +56,7 @@ describe('dynamo CRUD service 1', () => {
 
   describe('createContact', () => {
     test('POST /contacts - success', async () => {
-      const response = await fetch(`${apiUrl}/contacts`, {
+      const response = await apiFetch(`/contacts`, {
         method: 'POST',
         headers: {
           Authorization: userId,
@@ -81,7 +82,7 @@ describe('dynamo CRUD service 1', () => {
     });
 
     test('POST /contacts - fail unauthorized', async () => {
-      const response = await fetch(`${apiUrl}/contacts`, { method: 'POST' });
+      const response = await apiFetch(`/contacts`, { method: 'POST' });
       expect(await response.json()).toEqual({ error: 'Unauthorized' });
       expect(response.status).toEqual(401);
     });
@@ -89,7 +90,7 @@ describe('dynamo CRUD service 1', () => {
 
   describe('getContact', () => {
     test('GET /contacts/{contactId} - success', async () => {
-      const response = await fetch(`${apiUrl}/contacts/${contact.contactId}`, {
+      const response = await apiFetch(`/contacts/${contact.contactId}`, {
         headers: {
           Authorization: userId,
         },
@@ -99,7 +100,7 @@ describe('dynamo CRUD service 1', () => {
     });
 
     test('GET /contacts/{contactId} - fail not found', async () => {
-      const response = await fetch(`${apiUrl}/contacts/${randomUUID()}`, {
+      const response = await apiFetch(`/contacts/${randomUUID()}`, {
         headers: {
           Authorization: randomUUID(),
         },
@@ -109,7 +110,7 @@ describe('dynamo CRUD service 1', () => {
     });
 
     test('GET /contacts/{contactId} - fail unauthorized', async () => {
-      const response = await fetch(`${apiUrl}/contacts/${randomUUID()}`);
+      const response = await apiFetch(`/contacts/${randomUUID()}`);
       expect(await response.json()).toEqual({ error: 'Unauthorized' });
       expect(response.status).toEqual(401);
     });
@@ -122,7 +123,7 @@ describe('dynamo CRUD service 1', () => {
         email: 'updated@example.com',
       };
 
-      const response = await fetch(`${apiUrl}/contacts/${contact.contactId}`, {
+      const response = await apiFetch(`/contacts/${contact.contactId}`, {
         method: 'PUT',
         headers: {
           Authorization: userId,
@@ -137,7 +138,7 @@ describe('dynamo CRUD service 1', () => {
 
   describe('deleteContact', () => {
     test('DELETE /contacts/{contactId} - success', async () => {
-      const response = await fetch(`${apiUrl}/contacts/${contact.contactId}`, {
+      const response = await apiFetch(`/contacts/${contact.contactId}`, {
         method: 'DELETE',
         headers: {
           Authorization: userId,
@@ -153,15 +154,15 @@ describe('dynamo CRUD service 1', () => {
 describe('dynamo CRUD service 2', () => {
   const userId = randomUUID();
   let contact: Contact;
-  let apiUrl: string;
+  let apiFetch: FetchClient;
 
   beforeAll(async () => {
-    apiUrl = (await loadConstructRef(service2.api)).url;
+    apiFetch = await resolveConstructRef(FetchClient(service2.api));
   });
 
   describe('getServiceName', () => {
     test('Should return service 2', async () => {
-      const response = await fetch(`${apiUrl}/service-name`);
+      const response = await apiFetch(`/service-name`);
 
       expect(await response.json()).toEqual({
         serviceName: 'Contact service 2',
@@ -171,7 +172,7 @@ describe('dynamo CRUD service 2', () => {
 
   describe('listContacts', () => {
     test('GET /contacts - success', async () => {
-      const response = await fetch(`${apiUrl}/contacts`, {
+      const response = await apiFetch(`/contacts`, {
         headers: {
           Authorization: randomUUID(),
         },
@@ -186,7 +187,7 @@ describe('dynamo CRUD service 2', () => {
     });
 
     test('GET /contacts - fail unauthorized', async () => {
-      const response = await fetch(`${apiUrl}/contacts`);
+      const response = await apiFetch(`/contacts`);
       expect(await response.json()).toEqual({ error: 'Unauthorized' });
       expect(response.status).toEqual(401);
     });
@@ -194,7 +195,7 @@ describe('dynamo CRUD service 2', () => {
 
   describe('createContact', () => {
     test('POST /contacts - success', async () => {
-      const response = await fetch(`${apiUrl}/contacts`, {
+      const response = await apiFetch(`/contacts`, {
         method: 'POST',
         headers: {
           Authorization: userId,
@@ -220,7 +221,7 @@ describe('dynamo CRUD service 2', () => {
     });
 
     test('POST /contacts - fail unauthorized', async () => {
-      const response = await fetch(`${apiUrl}/contacts`, { method: 'POST' });
+      const response = await apiFetch(`/contacts`, { method: 'POST' });
       expect(await response.json()).toEqual({ error: 'Unauthorized' });
       expect(response.status).toEqual(401);
     });
@@ -228,7 +229,7 @@ describe('dynamo CRUD service 2', () => {
 
   describe('getContact', () => {
     test('GET /contacts/{contactId} - success', async () => {
-      const response = await fetch(`${apiUrl}/contacts/${contact.contactId}`, {
+      const response = await apiFetch(`/contacts/${contact.contactId}`, {
         headers: {
           Authorization: userId,
         },
@@ -238,7 +239,7 @@ describe('dynamo CRUD service 2', () => {
     });
 
     test('GET /contacts/{contactId} - fail not found', async () => {
-      const response = await fetch(`${apiUrl}/contacts/${randomUUID()}`, {
+      const response = await apiFetch(`/contacts/${randomUUID()}`, {
         headers: {
           Authorization: randomUUID(),
         },
@@ -248,7 +249,7 @@ describe('dynamo CRUD service 2', () => {
     });
 
     test('GET /contacts/{contactId} - fail unauthorized', async () => {
-      const response = await fetch(`${apiUrl}/contacts/${randomUUID()}`);
+      const response = await apiFetch(`/contacts/${randomUUID()}`);
       expect(await response.json()).toEqual({ error: 'Unauthorized' });
       expect(response.status).toEqual(401);
     });
@@ -261,7 +262,7 @@ describe('dynamo CRUD service 2', () => {
         email: 'updated@example.com',
       };
 
-      const response = await fetch(`${apiUrl}/contacts/${contact.contactId}`, {
+      const response = await apiFetch(`/contacts/${contact.contactId}`, {
         method: 'PUT',
         headers: {
           Authorization: userId,
@@ -276,7 +277,7 @@ describe('dynamo CRUD service 2', () => {
 
   describe('deleteContact', () => {
     test('DELETE /contacts/{contactId} - success', async () => {
-      const response = await fetch(`${apiUrl}/contacts/${contact.contactId}`, {
+      const response = await apiFetch(`/contacts/${contact.contactId}`, {
         method: 'DELETE',
         headers: {
           Authorization: userId,

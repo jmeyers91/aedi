@@ -2,19 +2,20 @@
 import { resolveConstructRef } from '@sep6/idea2-local';
 import { api as dynamoCrudApi } from './dynamo-crud';
 import { randomUUID } from 'crypto';
+import { FetchClient } from '@sep6/idea2';
 
 describe('dynamo CRUD', () => {
   const userId = randomUUID();
   let contact: any;
-  let apiUrl: string;
+  let apiFetch: FetchClient;
 
   beforeAll(async () => {
-    apiUrl = (await resolveConstructRef(dynamoCrudApi)).constructRef.url;
+    apiFetch = await resolveConstructRef(FetchClient(dynamoCrudApi));
   });
 
   describe('reply', () => {
     test('GET /html - success - strings should be returned as HTML', async () => {
-      const response = await fetch(`${apiUrl}/html`);
+      const response = await apiFetch(`/html`);
 
       expect(response.status).toEqual(200);
       expect(await response.text()).toMatch(
@@ -26,7 +27,7 @@ describe('dynamo CRUD', () => {
     });
 
     test('GET /json - success - objects should be returned as JSON', async () => {
-      const response = await fetch(`${apiUrl}/json`);
+      const response = await apiFetch(`/json`);
 
       expect(response.status).toEqual(200);
       expect(await response.json()).toEqual({
@@ -39,7 +40,7 @@ describe('dynamo CRUD', () => {
     });
 
     test('GET /teapot - success - the reply function can be used to override default status/headers', async () => {
-      const response = await fetch(`${apiUrl}/teapot`);
+      const response = await apiFetch(`/teapot`);
 
       expect(response.status).toEqual(418);
       expect(await response.text()).toEqual("I'm a teapot");
@@ -49,7 +50,7 @@ describe('dynamo CRUD', () => {
 
   describe('listContacts', () => {
     test('GET /contacts - success', async () => {
-      const response = await fetch(`${apiUrl}/contacts`, {
+      const response = await apiFetch(`/contacts`, {
         headers: {
           Authorization: randomUUID(),
         },
@@ -64,7 +65,7 @@ describe('dynamo CRUD', () => {
     });
 
     test('GET /contacts - fail unauthorized', async () => {
-      const response = await fetch(`${apiUrl}/contacts`);
+      const response = await apiFetch(`/contacts`);
       expect(await response.json()).toEqual({ error: 'Unauthorized' });
       expect(response.status).toEqual(401);
     });
@@ -72,7 +73,7 @@ describe('dynamo CRUD', () => {
 
   describe('createContact', () => {
     test('POST /contacts - success', async () => {
-      const response = await fetch(`${apiUrl}/contacts`, {
+      const response = await apiFetch(`/contacts`, {
         method: 'POST',
         headers: {
           Authorization: userId,
@@ -98,7 +99,7 @@ describe('dynamo CRUD', () => {
     });
 
     test('POST /contacts - fail unauthorized', async () => {
-      const response = await fetch(`${apiUrl}/contacts`, { method: 'POST' });
+      const response = await apiFetch(`/contacts`, { method: 'POST' });
       expect(await response.json()).toEqual({ error: 'Unauthorized' });
       expect(response.status).toEqual(401);
     });
@@ -106,7 +107,7 @@ describe('dynamo CRUD', () => {
 
   describe('getContact', () => {
     test('GET /contacts/{contactId} - success', async () => {
-      const response = await fetch(`${apiUrl}/contacts/${contact.contactId}`, {
+      const response = await apiFetch(`/contacts/${contact.contactId}`, {
         headers: {
           Authorization: userId,
         },
@@ -116,7 +117,7 @@ describe('dynamo CRUD', () => {
     });
 
     test('GET /contacts/{contactId} - fail not found', async () => {
-      const response = await fetch(`${apiUrl}/contacts/${randomUUID()}`, {
+      const response = await apiFetch(`/contacts/${randomUUID()}`, {
         headers: {
           Authorization: randomUUID(),
         },
@@ -126,7 +127,7 @@ describe('dynamo CRUD', () => {
     });
 
     test('GET /contacts/{contactId} - fail unauthorized', async () => {
-      const response = await fetch(`${apiUrl}/contacts/${randomUUID()}`);
+      const response = await apiFetch(`/contacts/${randomUUID()}`);
       expect(await response.json()).toEqual({ error: 'Unauthorized' });
       expect(response.status).toEqual(401);
     });
@@ -139,7 +140,7 @@ describe('dynamo CRUD', () => {
         email: 'updated@example.com',
       };
 
-      const response = await fetch(`${apiUrl}/contacts/${contact.contactId}`, {
+      const response = await apiFetch(`/contacts/${contact.contactId}`, {
         method: 'PUT',
         headers: {
           Authorization: userId,
@@ -154,7 +155,7 @@ describe('dynamo CRUD', () => {
 
   describe('deleteContact', () => {
     test('DELETE /contacts/{contactId} - success', async () => {
-      const response = await fetch(`${apiUrl}/contacts/${contact.contactId}`, {
+      const response = await apiFetch(`/contacts/${contact.contactId}`, {
         method: 'DELETE',
         headers: {
           Authorization: userId,
@@ -168,7 +169,7 @@ describe('dynamo CRUD', () => {
 
   describe('exportContacts', () => {
     test('GET /contacts.csv - success', async () => {
-      const response = await fetch(`${apiUrl}/contacts.csv`, {
+      const response = await apiFetch(`/contacts.csv`, {
         headers: {
           Authorization: userId,
         },

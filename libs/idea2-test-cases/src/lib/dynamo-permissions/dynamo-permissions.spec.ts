@@ -1,27 +1,28 @@
-import { loadConstructRef } from '@sep6/idea2-local';
+import { resolveConstructRef } from '@sep6/idea2-local';
 import { api as dynamoCrudApi } from './dynamo-permissions';
+import { FetchClient } from '@sep6/idea2';
 
 describe('dynamo permissions', () => {
-  let apiUrl: string;
+  let apiFetch: FetchClient;
 
   beforeAll(async () => {
-    apiUrl = (await loadConstructRef(dynamoCrudApi)).url;
+    apiFetch = await resolveConstructRef(FetchClient(dynamoCrudApi));
   });
 
   test('GET /read-success - success', async () => {
-    const response = await fetch(`${apiUrl}/read-success`);
+    const response = await apiFetch(`/read-success`);
     expect(await response.json()).toEqual({ success: true });
     expect(response.status).toEqual(200);
   });
 
   test('GET /write-success - success', async () => {
-    const response = await fetch(`${apiUrl}/write-success`);
+    const response = await apiFetch(`/write-success`);
     expect(await response.json()).toEqual({ success: true });
     expect(response.status).toEqual(200);
   });
 
   test('GET /write-success - success', async () => {
-    const response = await fetch(`${apiUrl}/write-fail`);
+    const response = await apiFetch(`/write-fail`);
 
     expect(await response.json()).toEqual({
       success: false,
