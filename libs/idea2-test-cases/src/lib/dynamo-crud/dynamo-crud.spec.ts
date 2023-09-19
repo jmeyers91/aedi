@@ -1,5 +1,5 @@
 import { resolveConstructRef } from '@sep6/idea2-local';
-import { api as dynamoCrudApi } from './dynamo-crud';
+import { api } from './dynamo-crud';
 import { randomUUID } from 'crypto';
 import { FetchClient } from '@sep6/idea2';
 
@@ -9,7 +9,7 @@ describe('dynamo CRUD', () => {
   let apiFetch: FetchClient;
 
   beforeAll(async () => {
-    apiFetch = await resolveConstructRef(FetchClient(dynamoCrudApi));
+    apiFetch = await resolveConstructRef(FetchClient(api));
   });
 
   describe('reply', () => {

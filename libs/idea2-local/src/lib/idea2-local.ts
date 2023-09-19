@@ -28,7 +28,7 @@ export interface LocalConstructMap {
 /**
  * Loads a resource ref's construct ref from its stack's map bucket.
  */
-export async function loadConstructRef<R extends ResourceRef>(
+export function loadConstructRef<R extends ResourceRef>(
   ref: R
 ): Promise<LookupConstructRef<R['type']>> {
   if (!cache.has(ref)) {

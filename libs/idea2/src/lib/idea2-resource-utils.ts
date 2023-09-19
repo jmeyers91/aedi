@@ -18,6 +18,16 @@ import {
 import { Callback, Context } from 'aws-lambda';
 import { StackRef } from './idea2-stack';
 
+/**
+ * The base resource creation function used by all resource types. This function registers the
+ * new resource with the idea2 app which makes it available for resolution during CDK synthesis.
+ *
+ * Additionally, `callsites` is used to determine the filepath where the resource was created.
+ * Currently this functionality is only used by lambda resources.
+ *
+ * This function should not be called directly. Instead, call the individual resource functions
+ * such as `Bucket` or `Lambda`.
+ */
 export function createResource<R extends IResourceRef>(
   type: R['type'],
   scope: Scope,
@@ -41,6 +51,10 @@ export function createResource<R extends IResourceRef>(
   return resourceRef as R;
 }
 
+/**
+ * Searches up the resource ref tree until the root idea2 app is found.
+ * Once found, the app is returned.
+ */
 export function appOf(scope: Scope): IIdea2App {
   while (!('isIdea2App' in scope)) {
     scope = scope.getScope();
@@ -48,6 +62,10 @@ export function appOf(scope: Scope): IIdea2App {
   return scope;
 }
 
+/**
+ * Searches up the resource ref tree until a stack resource is found.
+ * Once found, the stack is returned.
+ */
 export function stackOf(resourceRef: ResourceRef): StackRef {
   while (resourceRef.type !== RefType.STACK) {
     resourceRef = resourceRef.getScope() as ResourceRef;
@@ -55,6 +73,9 @@ export function stackOf(resourceRef: ResourceRef): StackRef {
   return resourceRef;
 }
 
+/**
+ * Binds options to a resource or client ref.
+ */
 export function grant<
   R extends ResourceRef,
   const O extends Partial<LookupOptions<R['type']>>
@@ -70,6 +91,67 @@ export function grant<
   };
 }
 
+/**
+ * Transforms the resolved value of a ref. If the transform function is asynchronous, the return value will be
+ * resolved before being provided to the lambda. By default, transform refs are cached and are only invoked once
+ * at the beginning of a lambda execution context. Alternatively, you can pass `TransformedRefScope.INVOKE` as
+ * the 3rd argument to re-run the transform during each invoke. Invoke scoped transforms can access the lambda
+ * handler event and context.
+ *
+ * ## Examples
+ *
+ * ### Resolve an S3 bucket name from a bucket ref
+ *
+ * In this example, the resolved value of `bucketName` in the lambda handler is the name of the `profilePicBucket`
+ * S3 bucket.
+ *
+ * ```ts
+ * const profilePicBucket = Bucket(scope, 'my-bucket');
+ *
+ * export const getProfilePicBucketName = Lambda(
+ *   scope,
+ *   'getProfilePicBucketName',
+ *   {
+ *      bucketName: mapRef(profilePicBucket, ({ constructRef }) => constructRef.bucketName)
+ *   },
+ *   ({ bucketName }) => `The bucket name is ${bucketName}`
+ * )
+ * ```
+ *
+ * ### Use incoming event data in the transformation
+ *
+ * In this example, the resolved value of `bucket` in the lambda handler depends on the `userId` data in the
+ * incoming request.
+ *
+ * ```ts
+ * const profilePicBucket = Bucket(scope, 'my-bucket');
+ *
+ * export const getProfilePicBucketName = Lambda(
+ *   scope,
+ *   'getProfilePicBucketName',
+ *   {
+ *      bucket: mapRef(
+ *        profilePicBucket,
+ *        (resolved, event: { userId?: string }) => {
+ *          if (event.userId) {
+ *            return resolved;
+ *          }
+ *          return null;
+ *        },
+ *        TransformedRefScope.INVOKE
+ *      )
+ *   },
+ *   ({ bucket }) => {
+ *     if (bucket) {
+ *       return 'We have a bucket!';
+ *     } else {
+ *       return 'No bucket';
+ *     }
+ *   }
+ * )
+ * ```
+ *
+ */
 export function mapRef<
   R extends ResourceRef | ClientRef | TransformedRef<any, any>,
   T,
@@ -114,6 +196,9 @@ export function mapRef<
   } as any;
 }
 
+/**
+ * Ensures a function can only be called once. Repeated calls return a cached result.
+ */
 export function once<F extends (...args: any[]) => any>(fn: F): F {
   let result: any;
   let called = false;
@@ -130,6 +215,7 @@ export function once<F extends (...args: any[]) => any>(fn: F): F {
  * Returns the filepath of the current callsite that is at the root scope.
  */
 export function getRootCallsiteFilepath(): string {
+  // TODO: Disable in any env outside CDK synth
   if (process.env.NODE_ENV === 'test') {
     /**
      * For some reason callsites doesn't work correctly in jest, so for now we'll just stub the

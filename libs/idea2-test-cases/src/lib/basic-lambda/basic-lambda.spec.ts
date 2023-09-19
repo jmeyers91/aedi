@@ -1,25 +1,26 @@
+/**
+ * This test demonstrates calling a lambda function from another lambda function.
+ */
+
 import { LambdaInvokeClient } from '@sep6/idea2';
-import {
-  echo as echoLambda,
-  echoProxy as echoProxyLambda,
-} from './basic-lambda';
+import { echo, echoProxy } from './basic-lambda';
 import { resolveConstructRef } from '@sep6/idea2-local';
 
-describe('basic lambda', () => {
+describe('basic-lambda', () => {
   test('echo should return its input event', async () => {
-    const echo = await resolveConstructRef(LambdaInvokeClient(echoLambda));
+    const invokeEcho = await resolveConstructRef(LambdaInvokeClient(echo));
 
-    expect(await echo({ message: 'hello world' })).toEqual({
+    expect(await invokeEcho({ message: 'hello world' })).toEqual({
       message: 'hello world',
     });
   });
 
   test('echoProxy should return its input event', async () => {
-    const echoProxy = await resolveConstructRef(
-      LambdaInvokeClient(echoProxyLambda)
+    const invokeEchoProxy = await resolveConstructRef(
+      LambdaInvokeClient(echoProxy)
     );
 
-    expect(await echoProxy({ proxyMessage: 'hello world' })).toEqual({
+    expect(await invokeEchoProxy({ proxyMessage: 'hello world' })).toEqual({
       message: 'hello world',
     });
   });
