@@ -31,4 +31,14 @@ export default defineConfig({
     environment: 'jsdom',
     include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
   },
+
+  // https://github.com/aws-amplify/amplify-js/issues/11175#issuecomment-1500702662
+  define: {
+    global: {},
+  },
+  resolve: {
+    alias: {
+      './runtimeConfig': './runtimeConfig.browser',
+    },
+  },
 });
