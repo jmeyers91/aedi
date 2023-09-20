@@ -113,6 +113,7 @@ export async function uploadStaticSiteConfigScript<C>(
     })
   );
   console.log(`Client config was uploaded to ${bucketName}`);
+  return staticSiteConfig;
 }
 
 function isResourceRef(value: unknown): value is ResourceRef {

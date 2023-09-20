@@ -1,5 +1,3 @@
-import { resolveIdea2BrowserClient } from '@sep6/idea2-browser-client';
-import type { staticSite } from '@sep6/idea2-test-cases';
 import { useState } from 'react';
 import {
   AuthenticationDetails,
@@ -8,8 +6,8 @@ import {
   CognitoUserSession,
   ISignUpResult,
 } from 'amazon-cognito-identity-js';
+import { clientConfig } from './client-config';
 
-const clientConfig = resolveIdea2BrowserClient<typeof staticSite>(); // TODO: Add local dev config
 const userPool = new CognitoUserPool({
   UserPoolId: clientConfig?.userPool.userPoolId as string,
   ClientId: clientConfig?.userPool.userPoolClientId as string,
@@ -132,6 +130,26 @@ function RegisterForm({ onRegister }: { onRegister(user: CognitoUser): void }) {
         }
 
         // TODO: Add error handling
+        const { userConfirmationNecessary } = await new Promise<{
+          session: CognitoUserSession;
+          userConfirmationNecessary?: boolean;
+        }>((resolve, reject) =>
+          signUpResult.user.authenticateUser(
+            new AuthenticationDetails({
+              Username: username,
+              Password: password,
+            }),
+            {
+              onSuccess: (session, userConfirmationNecessary) =>
+                resolve({ session, userConfirmationNecessary }),
+              onFailure: reject,
+            }
+          )
+        );
+
+        if (userConfirmationNecessary) {
+          throw new Error('TODO: Add user confirmation');
+        }
 
         onRegister(signUpResult.user);
       }}
