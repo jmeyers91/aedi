@@ -1,0 +1,14 @@
+.AddContactPage {
+  display: flex;
+  flex-direction: column;
+}
+
+.AddContactPage form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.AddContactPage input {
+  margin-bottom: 0.5rem;
+}
