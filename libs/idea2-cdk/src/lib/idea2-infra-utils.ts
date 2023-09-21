@@ -23,6 +23,10 @@ export function getIdea2CdkAppContext(): Idea2CdkAppContext {
   return context;
 }
 
+export function getMode() {
+  return getIdea2CdkAppContext().mode;
+}
+
 /**
  * Used to create a long hopefully unique name for resources that must be named.
  */
@@ -100,6 +104,7 @@ export function isResourceRef(value: unknown): value is ResourceRef {
 }
 
 export interface Idea2CdkAppContext {
+  mode: 'development' | 'production';
   idea2App: Idea2App;
   cdkApp: App;
   defaultStackProps: StackProps;

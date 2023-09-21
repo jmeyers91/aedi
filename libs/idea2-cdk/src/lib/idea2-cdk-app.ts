@@ -9,6 +9,7 @@ import { IResourceRef, Idea2App } from '@sep6/idea2';
 import { Idea2Stack } from './resources/idea2-stack-construct';
 
 export class Idea2CdkApp implements Idea2CdkAppContext {
+  mode = 'development' as const;
   idea2App: Idea2App;
   cdkApp: App;
   resourceConstructCache = new Map<string, Construct>();

@@ -99,23 +99,6 @@ export async function loadStaticSiteConfig<C>(
   return resolvedConfig;
 }
 
-export async function uploadStaticSiteConfigScript<C>(
-  staticSite: StaticSiteRef<C>
-) {
-  const { bucketName, region } = await loadConstructRef(staticSite);
-  const staticSiteConfig = await loadStaticSiteConfig(staticSite);
-  const s3Client = new S3Client({ region });
-  await s3Client.send(
-    new PutObjectCommand({
-      Bucket: bucketName,
-      Key: 'client-config.js',
-      Body: `window.__clientConfig = ${JSON.stringify(staticSiteConfig)};`,
-    })
-  );
-  console.log(`Client config was uploaded to ${bucketName}`);
-  return staticSiteConfig;
-}
-
 function isResourceRef(value: unknown): value is ResourceRef {
   return !!(
     value &&

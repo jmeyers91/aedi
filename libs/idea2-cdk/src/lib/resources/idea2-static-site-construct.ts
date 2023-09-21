@@ -6,8 +6,9 @@ import {
   OriginAccessIdentity,
   Distribution,
   ViewerProtocolPolicy,
+  CachePolicy,
 } from 'aws-cdk-lib/aws-cloudfront';
-import { S3Origin } from 'aws-cdk-lib/aws-cloudfront-origins';
+import { RestApiOrigin, S3Origin } from 'aws-cdk-lib/aws-cloudfront-origins';
 import { Bucket } from 'aws-cdk-lib/aws-s3';
 import {
   BucketDeployment,
@@ -15,6 +16,9 @@ import {
   Source,
 } from 'aws-cdk-lib/aws-s3-deployment';
 import { Idea2BaseConstruct } from '../idea2-base-construct';
+import { Cors, LambdaIntegration, RestApi } from 'aws-cdk-lib/aws-apigateway';
+import { InlineCode, Runtime, Function } from 'aws-cdk-lib/aws-lambda';
+import { getMode, isResourceRef, resolveConstruct } from '../idea2-infra-utils';
 
 export class Idea2StaticSite
   extends Idea2BaseConstruct<RefType.STATIC_SITE>
@@ -60,6 +64,22 @@ export class Idea2StaticSite
       ],
     });
 
+    // Add the client config API to host the client config script
+    if (this.resourceRef.clientConfig) {
+      this.distribution.addBehavior(
+        '/idea2/client-config.js',
+        new RestApiOrigin(
+          new StaticSiteConfigApi(this, 'config-api', {
+            staticSiteRef,
+          }).restApi
+        ),
+        {
+          viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+          cachePolicy: CachePolicy.CACHING_DISABLED,
+        }
+      );
+    }
+
     const bucketDeploymentSources: ISource[] = [
       Source.asset(staticSiteRef.assetPath),
     ];
@@ -81,5 +101,83 @@ export class Idea2StaticSite
 
   grantLambdaAccess() {
     // No special permissions needed to grant lambda functions access to static sites
+  }
+}
+
+/**
+ * An API Gateway REST API that returns the client config script for a static site.
+ * This API is only created if the `clientConfig` option is used in the static site.
+ *
+ * Note: A lambda is used here because it is the only construct that can resolve cross-stack
+ * construct references. S3 asset sources can only reference constructs in their stack, so adding
+ * an additional source to the bucket doesn't work.
+ */
+class StaticSiteConfigApi extends Construct {
+  public readonly restApi;
+
+  constructor(
+    scope: Construct,
+    id: string,
+    { staticSiteRef }: { staticSiteRef: StaticSiteRef<any> }
+  ) {
+    super(scope, id);
+
+    const resolvedConfig: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(
+      staticSiteRef.clientConfig ?? {}
+    )) {
+      if (!isResourceRef(value)) {
+        resolvedConfig[key] = value;
+        continue;
+      }
+      const construct = resolveConstruct(value);
+      if ('getConstructRef' in construct) {
+        resolvedConfig[key] = construct.getConstructRef();
+      } else {
+        resolvedConfig[key] = {};
+      }
+    }
+
+    // This script is run in the static site
+    const clientConfigScript = `
+      window.__clientConfig = ${JSON.stringify(resolvedConfig)};
+      ${
+        getMode() === 'development'
+          ? `console.log("${staticSiteRef.uid} config", window.__clientConfig);`
+          : ''
+      }
+    `;
+
+    /**
+     * This lambda responds with a JS script that injects the resolved client config into the global scope
+     * of the static site. This makes the resolved client config available for access using the `idea2-browser-client` library.
+     */
+    const getClientConfigLambda = new Function(this, 'config-lambda', {
+      code: new InlineCode(
+        `"use strict";
+        module.exports.handler = async () => ({
+          statusCode: 200,
+          body: \`${clientConfigScript}\`,
+          headers: {
+            'Content-Type': 'application/javascript',
+          },
+         });`
+      ),
+      handler: 'index.handler',
+      runtime: Runtime.NODEJS_18_X,
+    });
+
+    const restApi = new RestApi(this, 'api', {
+      defaultCorsPreflightOptions: {
+        allowCredentials: true,
+        allowMethods: Cors.ALL_METHODS,
+        allowOrigins: Cors.ALL_ORIGINS,
+      },
+    });
+    this.restApi = restApi;
+
+    this.restApi.root
+      .addResource('{proxy+}')
+      .addMethod('GET', new LambdaIntegration(getClientConfigLambda));
   }
 }
