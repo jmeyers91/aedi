@@ -14,6 +14,7 @@ import {
   TransformedRef,
   ResolveRef,
   TransformedRefScope,
+  EventTransformRef,
 } from './idea2-lambda';
 import { Callback, Context } from 'aws-lambda';
 import { StackRef } from './idea2-stack';
@@ -194,6 +195,12 @@ export function mapRef<
      */
     transform: appliedScope === TransformedRefScope.STATIC ? once(fn) : fn,
   } as any;
+}
+
+export function mapEvent<E, C>(
+  fn: (event: E, context: Context) => C
+): EventTransformRef<E, C> {
+  return { transformEvent: fn };
 }
 
 /**

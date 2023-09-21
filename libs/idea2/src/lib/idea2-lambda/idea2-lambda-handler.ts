@@ -6,6 +6,7 @@ import type {
 } from '../idea2-types';
 import {
   AnyLambdaRef,
+  EventTransformRef,
   LambdaDependencyGroup,
   ResolveRef,
   TransformedRef,
@@ -69,7 +70,11 @@ async function resolveDependenies(
  * When a transform ref is passed, it is evaluated recursively and the result is passed into the lambda.
  */
 export async function resolveRef<
-  R extends ResourceRef | ClientRef | TransformedRef<any, any>
+  R extends
+    | ResourceRef
+    | ClientRef
+    | TransformedRef<any, any>
+    | EventTransformRef<any, any>
 >(
   constructUidMap: ConstructRefLookupMap,
   ref: R,
@@ -77,6 +82,10 @@ export async function resolveRef<
   context: Context,
   callback: Callback
 ): Promise<ResolveRef<R>> {
+  if ('transformEvent' in ref) {
+    return ref.transformEvent(event, context);
+  }
+
   if (!('transformedRef' in ref)) {
     const clientRef = getClientRefFromRef(ref);
     const resolvedRef = {

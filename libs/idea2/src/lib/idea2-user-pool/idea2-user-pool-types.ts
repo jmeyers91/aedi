@@ -143,3 +143,7 @@ export interface UserPoolTypeMap extends IResourceTypeMap {
   constructRef: UserPoolConstructRef;
   clientRef: UserPoolClientRef<UserPoolRef, any>;
 }
+
+export interface AuthorizerRef {
+  authorizedUserPool: UserPoolRef;
+}

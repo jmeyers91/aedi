@@ -45,6 +45,10 @@ export class Idea2LambdaFunction
     for (const contextValue of Object.values(
       lambdaRef.context as LambdaDependencyGroup
     )) {
+      // Ignore event transforms here - they're only relevant at runtime and require no additional permissions or construct refs
+      if ('transformEvent' in contextValue) {
+        continue;
+      }
       const clientRef = getClientRefFromRef(contextValue);
       const ref = clientRef.ref;
       const construct = resolveConstruct(ref);

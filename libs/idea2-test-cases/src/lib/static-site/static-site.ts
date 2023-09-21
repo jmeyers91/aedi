@@ -11,12 +11,13 @@ import {
   Table,
   TableClient,
   UserPool,
+  authorize,
   grant,
   reply,
 } from '@sep6/idea2';
 import { Scope } from '../idea';
 import { randomUUID } from 'crypto';
-import { PreSignUpTriggerEvent } from 'aws-lambda';
+import { APIGatewayEvent, PreSignUpTriggerEvent } from 'aws-lambda';
 
 const scope = Scope('static-site');
 
@@ -44,6 +45,7 @@ export const userPool = UserPool(scope, 'user-pool', {
     preSignUp: preSignUpTrigger,
   },
 });
+
 export interface Contact {
   userId: string;
   contactId: string;
@@ -91,10 +93,11 @@ export const listContacts = Get(
   api,
   'listContacts',
   '/contacts',
-  { contactsTable },
-  async ({ contactsTable }, event) => {
-    const { userId } = assertAuth(event);
-
+  {
+    auth: authorize(userPool),
+    contactsTable,
+  },
+  async ({ auth: { userId }, contactsTable }, event) => {
     return await contactsTable.query({
       KeyConditionExpression: `userId = :userId`,
       ExpressionAttributeValues: {
@@ -108,9 +111,8 @@ export const getContact = Get(
   api,
   'getContact',
   '/contacts/{contactId}',
-  { contactsTable },
-  async ({ contactsTable }, event) => {
-    const { userId } = assertAuth(event);
+  { auth: authorize(userPool), contactsTable },
+  async ({ auth: { userId }, contactsTable }, event) => {
     const { contactId } = event.pathParameters;
 
     const contact = await contactsTable.get({ userId, contactId });
@@ -127,9 +129,8 @@ export const createContact = Post(
   api,
   'createContact',
   '/contacts',
-  { contactsTable: writableContactsTable },
-  async ({ contactsTable }, event) => {
-    const { userId } = assertAuth(event);
+  { auth: authorize(userPool), contactsTable: writableContactsTable },
+  async ({ auth: { userId }, contactsTable }, event) => {
     const contactId = randomUUID();
     const {
       firstName = '',
@@ -157,9 +158,8 @@ export const updateContact = Put(
   api,
   'updateContact',
   '/contacts/{contactId}',
-  { contactsTable: writableContactsTable },
-  async ({ contactsTable }, event) => {
-    const { userId } = assertAuth(event);
+  { auth: authorize(userPool), contactsTable: writableContactsTable },
+  async ({ auth: { userId }, contactsTable }, event) => {
     const { contactId } = event.pathParameters;
     const { firstName, lastName, email, phone } = JSON.parse(
       event.body ?? '{}'
@@ -178,9 +178,8 @@ export const deleteContact = Delete(
   api,
   'deleteContact',
   '/contacts/{contactId}',
-  { contactsTable: writableContactsTable },
-  async ({ contactsTable }, event) => {
-    const { userId } = assertAuth(event);
+  { auth: authorize(userPool), contactsTable: writableContactsTable },
+  async ({ auth: { userId }, contactsTable }, event) => {
     const { contactId } = event.pathParameters;
 
     await contactsTable.delete({ Key: { userId, contactId } });
@@ -193,10 +192,8 @@ export const exportContacts = Get(
   api,
   'exportContacts',
   '/contacts.csv',
-  { contactsTable },
-  async ({ contactsTable }, event) => {
-    const { userId } = assertAuth(event);
-
+  { auth: authorize(userPool), contactsTable },
+  async ({ auth: { userId }, contactsTable }, event) => {
     const { Items: contacts = [] } = await contactsTable.query({
       KeyConditionExpression: `userId = :userId`,
       ExpressionAttributeValues: {
@@ -217,14 +214,6 @@ export const exportContacts = Get(
     });
   }
 );
-
-function assertAuth(event: RouteEvent): { userId: string } {
-  const userId = event.headers.Authorization;
-  if (!userId) {
-    throw badRequest('Unauthorized', 401);
-  }
-  return { userId };
-}
 
 function badRequest(
   message: string,

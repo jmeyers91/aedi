@@ -40,13 +40,20 @@ export type TransformedRef<
       ): C;
     };
 
+export type EventTransformRef<E, C> = {
+  transformEvent(event: E, context: Context): C;
+};
+
 export type UnwrapTransformedRef<T> = T extends TransformedRef<infer R, infer C>
   ? { ref: R; result: C; input: ResolveRef<R> }
   : unknown;
 
 export type LambdaDependencyGroup = Record<
   string,
-  ResourceRef | ClientRef | TransformedRef<any, any>
+  | ResourceRef
+  | ClientRef
+  | TransformedRef<any, any>
+  | EventTransformRef<any, any>
 >;
 
 export type ResolveSimpleRef<R> = R extends ClientRef
@@ -56,6 +63,8 @@ export type ResolveSimpleRef<R> = R extends ClientRef
   : R;
 
 export type ResolveRef<R> = R extends TransformedRef<any, infer C>
+  ? Awaited<C>
+  : R extends EventTransformRef<any, infer C>
   ? Awaited<C>
   : ResolveSimpleRef<R>;
 
