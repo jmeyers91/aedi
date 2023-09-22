@@ -3,7 +3,7 @@
  */
 
 import { Lambda, LambdaInvokeClient } from '@aedi/common';
-import { Scope } from '../idea';
+import { Scope } from '../app';
 
 const scope1 = Scope('cross-stack-resource-sharing-1');
 const scope2 = Scope('cross-stack-resource-sharing-2');

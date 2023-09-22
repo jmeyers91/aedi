@@ -1,5 +1,5 @@
 import { RestApi } from '@aedi/common';
-import { Scope } from '../idea';
+import { Scope } from '../app';
 
 export const scope = Scope('healthcheck-multi');
 

@@ -1,6 +1,6 @@
 import { LambdaInvokeClient } from '@aedi/common';
 import { echo, echoProxy } from './cross-stack-resource-sharing';
-import { resolveConstructRef } from '@aedi/idea2-local';
+import { resolveConstructRef } from '@aedi/local';
 
 describe('cross-stack-resource-sharing', () => {
   test('echo should return its input event', async () => {

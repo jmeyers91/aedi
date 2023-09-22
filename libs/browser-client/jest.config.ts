@@ -1,6 +1,6 @@
 /* eslint-disable */
 export default {
-  displayName: 'idea2-browser-client',
+  displayName: 'browser-client',
   preset: '../../jest.preset.js',
   testEnvironment: 'node',
   transform: {

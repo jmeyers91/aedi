@@ -1,5 +1,5 @@
 import { Bucket, BucketClient, Lambda } from '@aedi/common';
-import { Scope } from '../idea';
+import { Scope } from '../app';
 import { ListObjectsCommand } from '@aws-sdk/client-s3';
 
 const scope = Scope('access-bucket-from-lambda');

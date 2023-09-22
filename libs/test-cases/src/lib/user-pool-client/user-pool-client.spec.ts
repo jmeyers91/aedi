@@ -1,6 +1,6 @@
 import { LambdaInvokeClient, RefType } from '@aedi/common';
 import { getUserPoolInfo, listUserPoolUsers } from './user-pool-client';
-import { resolveConstructRef } from '@aedi/idea2-local';
+import { resolveConstructRef } from '@aedi/local';
 
 describe('user-pool-client', () => {
   test('Should be able to get the user pool construct ref', async () => {

@@ -1,14 +1,14 @@
 import { Lambda, Secret, SecretValue } from '@aedi/common';
-import { Scope } from '../idea';
+import { Scope } from '../app';
 
 const scope = Scope('secret-access');
 
 /**
- * Secret name: idea2-example-secret
+ * Secret name: aedi-example-secret
  * This secret is only used for testing.
  */
 export const secretArn =
-  'arn:aws:secretsmanager:us-west-2:664290008299:secret:idea2-example-secret-JTkxFp';
+  'arn:aws:secretsmanager:us-west-2:664290008299:secret:aedi-example-secret-lczQt1';
 
 const secret = Secret(scope, 'secret', {
   arn: secretArn,

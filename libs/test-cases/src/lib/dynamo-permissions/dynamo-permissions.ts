@@ -1,5 +1,5 @@
 import { Get, grant, Table, RestApi, TableClient } from '@aedi/common';
-import { Scope } from '../idea';
+import { Scope } from '../app';
 
 const scope = Scope('dynamo-permissions');
 

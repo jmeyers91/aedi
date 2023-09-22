@@ -1,6 +1,6 @@
 /* eslint-disable */
 export default {
-  displayName: 'idea2-local',
+  displayName: 'local',
   preset: '../../jest.preset.js',
   testEnvironment: 'node',
   transform: {

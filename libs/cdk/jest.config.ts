@@ -1,6 +1,6 @@
 /* eslint-disable */
 export default {
-  displayName: 'idea2-cdk',
+  displayName: 'cdk',
   preset: '../../jest.preset.js',
   testEnvironment: 'node',
   transform: {

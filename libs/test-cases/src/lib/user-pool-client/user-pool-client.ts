@@ -1,11 +1,11 @@
 import { Lambda, UserPool, UserPoolClient } from '@aedi/common';
-import { Scope } from '../idea';
+import { Scope } from '../app';
 import { ListUsersCommand } from '@aws-sdk/client-cognito-identity-provider';
 
 const scope = Scope('user-pool-client');
 
 const userPool = UserPool(scope, 'user-pool', {
-  domainPrefix: 'idea2-test-pool-1',
+  domainPrefix: 'aedi-test-pool-1',
   selfSignUpEnabled: false,
   signInAlias: { email: true },
 });

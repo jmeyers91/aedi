@@ -1,17 +1,17 @@
 // Resources
-export * from './lib/idea2-bucket';
-export * from './lib/idea2-construct';
-export * from './lib/idea2-dynamo';
-export * from './lib/idea2-lambda';
-export * from './lib/idea2-rest-api';
-export * from './lib/idea2-secret';
-export * from './lib/idea2-stack';
-export * from './lib/idea2-static-site';
-export * from './lib/idea2-user-pool';
+export * from './lib/aedi-bucket';
+export * from './lib/aedi-construct';
+export * from './lib/aedi-dynamo';
+export * from './lib/aedi-lambda';
+export * from './lib/aedi-rest-api';
+export * from './lib/aedi-secret';
+export * from './lib/aedi-stack';
+export * from './lib/aedi-static-site';
+export * from './lib/aedi-user-pool';
 
 // Utilities
-export * from './lib/idea2-app';
-export * from './lib/idea2-constants';
-export * from './lib/idea2-client-utils';
-export * from './lib/idea2-types';
-export * from './lib/idea2-resource-utils';
+export * from './lib/aedi-app';
+export * from './lib/aedi-constants';
+export * from './lib/aedi-client-utils';
+export * from './lib/aedi-types';
+export * from './lib/aedi-resource-utils';

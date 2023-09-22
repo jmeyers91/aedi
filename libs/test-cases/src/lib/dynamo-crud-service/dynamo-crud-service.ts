@@ -8,11 +8,11 @@ import {
   grant,
   RestApi,
   Table,
-  Scope as Idea2Scope,
+  Scope as AediScope,
   Construct,
   lambdaProxyHandler,
 } from '@aedi/common';
-import { Scope } from '../idea';
+import { Scope } from '../app';
 import { randomUUID } from 'crypto';
 
 const outerScope = Scope('dynamo-crud-service');
@@ -34,7 +34,7 @@ export interface Contact {
 }
 
 function ContactService(
-  parentScope: Idea2Scope,
+  parentScope: AediScope,
   id: string,
   { serviceName }: { serviceName: string },
 ) {

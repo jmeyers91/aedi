@@ -13,4 +13,4 @@ import './transforms';
 import './user-pool-client';
 
 export { staticSite } from './static-site';
-export * from './idea';
+export * from './app';

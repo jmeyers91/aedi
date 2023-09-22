@@ -1,5 +1,5 @@
 {
-  "app": "npx ts-node --project apps/idea2-test-cases-infra/tsconfig.app.json -r tsconfig-paths/register --prefer-ts-exts apps/idea2-test-cases-infra/src/main.ts",
+  "app": "npx ts-node --project apps/test-cases-infra/tsconfig.app.json -r tsconfig-paths/register --prefer-ts-exts apps/test-cases-infra/src/main.ts",
   "output": "./cdk.out",
   "watch": {
     "include": ["**"],

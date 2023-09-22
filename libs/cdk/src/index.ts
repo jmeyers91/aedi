@@ -1,1 +1,1 @@
-export * from './lib/idea2-cdk-app';
+export * from './lib/aedi-cdk-app';

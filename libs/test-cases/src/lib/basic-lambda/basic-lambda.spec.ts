@@ -4,7 +4,7 @@
 
 import { LambdaInvokeClient } from '@aedi/common';
 import { echo, echoProxy } from './basic-lambda';
-import { resolveConstructRef } from '@aedi/idea2-local';
+import { resolveConstructRef } from '@aedi/local';
 
 describe('basic-lambda', () => {
   test('echo should return its input event', async () => {

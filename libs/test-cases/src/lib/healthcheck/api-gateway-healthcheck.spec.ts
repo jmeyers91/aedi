@@ -1,4 +1,4 @@
-import { resolveConstructRef } from '@aedi/idea2-local';
+import { resolveConstructRef } from '@aedi/local';
 import { api } from './api-gateway-healthcheck';
 import { FetchClient } from '@aedi/common';
 

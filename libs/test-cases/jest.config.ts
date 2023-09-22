@@ -1,6 +1,6 @@
 /* eslint-disable */
 export default {
-  displayName: 'idea2-test-cases',
+  displayName: 'test-cases',
   preset: '../../jest.preset.js',
   testEnvironment: 'node',
   transform: {

@@ -10,7 +10,7 @@ import {
   TableClient,
   reply,
 } from '@aedi/common';
-import { Scope } from '../idea';
+import { Scope } from '../app';
 import { randomUUID } from 'crypto';
 
 const scope = Scope('dynamo-crud');

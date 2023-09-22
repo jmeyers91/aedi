@@ -24,7 +24,7 @@ import {
   reply,
   withRoutes,
 } from '@aedi/common';
-import { Scope } from '../idea';
+import { Scope } from '../app';
 import { randomUUID } from 'crypto';
 import { PreSignUpTriggerEvent } from 'aws-lambda';
 import { Type } from '@sinclair/typebox';
@@ -49,7 +49,7 @@ export const preSignUpTrigger = Lambda(
 );
 
 export const userPool = UserPool(scope, 'user-pool', {
-  domainPrefix: 'idea2-static-site-e2e',
+  domainPrefix: 'aedi-static-site-e2e',
   selfSignUpEnabled: true,
   triggers: {
     preSignUp: preSignUpTrigger,
@@ -238,7 +238,7 @@ export const apiRoutes = withRoutes('apiRoutes', api, {
 });
 
 export const staticSite = StaticSite(scope, 'site', {
-  assetPath: './dist/apps/idea2-static-site-test-app',
+  assetPath: './dist/apps/test-app',
   clientConfig: {
     api,
     apiClient: generateApiClient(apiRoutes),

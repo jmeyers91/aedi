@@ -8,7 +8,7 @@ import {
   grant,
   mapRef,
 } from '@aedi/common';
-import { Scope } from '../idea';
+import { Scope } from '../app';
 import { randomUUID } from 'crypto';
 
 const scope = Scope('transforms');

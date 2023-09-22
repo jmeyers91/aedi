@@ -1,6 +1,6 @@
 import { LambdaInvokeClient, RefType } from '@aedi/common';
 import { getBucketInfo, listBucket } from './access-bucket-from-lambda';
-import { resolveConstructRef } from '@aedi/idea2-local';
+import { resolveConstructRef } from '@aedi/local';
 
 describe('access-bucket-from-lambda', () => {
   test('Should be able to get the S3 construct ref', async () => {

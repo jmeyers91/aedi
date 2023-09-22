@@ -1,5 +1,5 @@
 import { Get, Post, RestApi, lambdaProxyHandler } from '@aedi/common';
-import { Scope } from '../idea';
+import { Scope } from '../app';
 
 const scope = Scope('lambda-handler-proxy-example');
 export const api = RestApi(scope, 'api');

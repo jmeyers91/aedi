@@ -1,5 +1,5 @@
 import { Lambda, LambdaInvokeClient } from '@aedi/common';
-import { Scope } from '../idea';
+import { Scope } from '../app';
 
 const scope = Scope('basic-lambda');
 

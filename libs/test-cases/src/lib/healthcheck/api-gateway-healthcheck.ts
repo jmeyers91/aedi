@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { Lambda, RestApi, RouteEvent, LambdaRoute, reply } from '@aedi/common';
-import { Scope } from '../idea';
+import { Scope } from '../app';
 
 const scope = Scope('healthcheck');
 

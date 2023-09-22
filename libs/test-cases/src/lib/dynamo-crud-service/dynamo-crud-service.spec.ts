@@ -1,4 +1,4 @@
-import { loadConstructRef, resolveConstructRef } from '@aedi/idea2-local';
+import { loadConstructRef, resolveConstructRef } from '@aedi/local';
 import { Contact, service1, service2 } from './dynamo-crud-service';
 import { randomUUID } from 'crypto';
 import { FetchClient } from '@aedi/common';
