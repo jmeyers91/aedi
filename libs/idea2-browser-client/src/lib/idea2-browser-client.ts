@@ -1,4 +1,4 @@
-import { ResolveStaticSiteClientConfig, StaticSiteRef } from '@sep6/idea2';
+import type { ResolveStaticSiteClientConfig, StaticSiteRef } from '@sep6/idea2';
 
 let cachedClientConfig: any;
 
