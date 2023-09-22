@@ -32,12 +32,7 @@ export type TransformedRef<
   | {
       transformedRefScope: TransformedRefScope.INVOKE;
       transformedRef: R;
-      transform(
-        ref: ResolveRef<R>,
-        event: any,
-        context: Context,
-        callback: Callback,
-      ): C;
+      transform(ref: ResolveRef<R>, event: any, context: Context): C;
     };
 
 export type EventTransformRef<E, C> = {

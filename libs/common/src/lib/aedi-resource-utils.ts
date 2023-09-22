@@ -92,6 +92,18 @@ export function grant<
   };
 }
 
+export class LambdaResultError extends Error {
+  public readonly errorMessage;
+  public readonly handlerResult;
+
+  constructor(message: string, handlerResult: unknown) {
+    super(message);
+
+    this.errorMessage = message;
+    this.handlerResult = handlerResult;
+  }
+}
+
 /**
  * Transforms the resolved value of a ref. If the transform function is asynchronous, the return value will be
  * resolved before being provided to the lambda. By default, transform refs are cached and are only invoked once

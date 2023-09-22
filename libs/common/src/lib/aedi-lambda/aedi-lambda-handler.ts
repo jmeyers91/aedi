@@ -11,31 +11,35 @@ import {
   ResolveRef,
   TransformedRef,
 } from './aedi-lambda-types';
-import type { Callback, Context, Handler } from 'aws-lambda';
+import type { Context, Handler } from 'aws-lambda';
 import {
   getClientRefFromRef,
   resolveLambdaRuntimeEnv,
 } from '../aedi-client-utils';
+import { LambdaResultError } from '../aedi-resource-utils';
 
 export const getLambdaRefHandler = (
   lambdaRef: Pick<AnyLambdaRef, 'uid' | 'context' | 'fn'>,
 ): Handler => {
-  return async (event, context, callback) => {
-    console.log(`Lambda handler for ${lambdaRef.uid}`);
+  return async (event, context) => {
     try {
-      const dependencies = await resolveDependenies(
-        lambdaRef,
-        event,
-        context,
-        callback,
-      );
+      console.log(`Lambda handler for ${lambdaRef.uid}`);
+      const dependencies = await resolveDependenies(lambdaRef, event, context);
 
       // TODO: Allow disabling this for use-cases that involve sending text directly to lambdas without using JSON
       const eventObject =
         typeof event === 'string' ? JSON.stringify(event) : event;
-      callback(null, await lambdaRef.fn(dependencies, eventObject, context));
-    } catch (error) {
-      callback(error as Error);
+
+      return await lambdaRef.fn(dependencies, eventObject, context);
+    } catch (err) {
+      console.error(err);
+
+      // Functions can use this special error to throw an error that is returned as a specific response
+      // This allows transform dependencies to throw errors other than 500 internal server errors.
+      if (err instanceof LambdaResultError) {
+        return err.handlerResult;
+      }
+      throw err;
     }
   };
 };
@@ -44,7 +48,6 @@ async function resolveDependenies(
   lambdaRef: Pick<AnyLambdaRef, 'uid' | 'context' | 'fn'>,
   event: any,
   context: Context,
-  callback: Callback,
 ) {
   const { AEDI_CONSTRUCT_UID_MAP: constructUidMap } = resolveLambdaRuntimeEnv();
 
@@ -54,7 +57,7 @@ async function resolveDependenies(
       Object.entries(lambdaRef.context as LambdaDependencyGroup).map(
         async ([key, value]) => [
           key,
-          await resolveRef(constructUidMap, value, event, context, callback),
+          await resolveRef(constructUidMap, value, event, context),
         ],
       ),
     ),
@@ -80,7 +83,6 @@ export async function resolveRef<
   ref: R,
   event: any,
   context: Context,
-  callback: Callback,
 ): Promise<ResolveRef<R>> {
   if ('transformEvent' in ref) {
     return ref.transformEvent(event, context);
@@ -102,16 +104,9 @@ export async function resolveRef<
    * the lambda, but because static refs wrap their callback in `once`, they will only be computed once.
    */
   return ref.transform(
-    await resolveRef(
-      constructUidMap,
-      ref.transformedRef,
-      event,
-      context,
-      callback,
-    ),
+    await resolveRef(constructUidMap, ref.transformedRef, event, context),
     event,
     context,
-    callback,
   );
 }
 

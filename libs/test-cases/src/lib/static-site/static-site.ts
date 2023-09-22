@@ -207,6 +207,9 @@ export const apiRoutes = withRoutes('apiRoutes', api, {
         Type.Object({
           foo: Type.String(),
           bar: Type.Optional(Type.String()),
+          open: Type.Optional(
+            Type.Union([Type.Literal('OPEN'), Type.Literal('CLOSED')]),
+          ),
         }),
       ),
     },

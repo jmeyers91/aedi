@@ -1,5 +1,6 @@
 import type { APIGatewayEvent, Context } from 'aws-lambda';
 import { Type, Static, TObject } from '@sinclair/typebox';
+import { TypeCompiler } from '@sinclair/typebox/compiler';
 import type {
   AnyLambdaRef,
   EventTransformRef,
@@ -14,7 +15,11 @@ import type {
   RestApiRefRoute,
 } from './aedi-rest-api-types';
 import { CreateResourceOptions, RefType, Scope } from '../aedi-types';
-import { createResource, mapEvent } from '../aedi-resource-utils';
+import {
+  LambdaResultError,
+  createResource,
+  mapEvent,
+} from '../aedi-resource-utils';
 import { Lambda, LambdaProxyHandler, lambdaProxyHandler } from '../aedi-lambda';
 
 const foo = Type.Object({
@@ -288,6 +293,15 @@ export function errorReply<T>(
   );
 }
 
+/**
+ * Adds body validation to a rest API route lambda.
+ * The body will be validated against your schema and passed into the lambda handler using
+ * the name specified in the lambda dependency object.
+ *
+ * Additionally, the API Gateway route will include body validation using the schema provided.
+ * API gateway's schema checking should cover all of our needs, so no additional checking is
+ * necessary in the lambda runtime.
+ */
 export function Body<T extends TObject<any>>(
   bodySchema: T,
 ): EventTransformRef<APIGatewayEvent, Static<T>> & {
@@ -302,15 +316,56 @@ export function Body<T extends TObject<any>>(
   );
 }
 
+/**
+ * Adds query parameter validation to a rest API route lambda.
+ * The query parameters will be validated against your schema and passed into the lambda handler using
+ * the name specified in the lambda dependency object.
+ *
+ * Additionally, the API Gateway route will include request parameter validation. Currently this functionality
+ * is limited to checking if parameters are set or not, but the lambda will also do full schema validation to
+ * fill in the missing functionality.
+ */
 export function QueryParams<T extends TObject<any>>(
   queryParamSchema: T,
 ): EventTransformRef<APIGatewayEvent, Static<T>> & {
   queryParamSchema: T;
   __queryParams?: Static<T>;
 } {
+  /**
+   * API Gateway only validates whether or not a query param is set. They don't do any
+   * schema validation on those query params. The logic below adds schema validation to
+   * the query params to fill in the missing functionality in the lambda.
+   */
+  const compiledSchema = TypeCompiler.Compile(queryParamSchema);
   return Object.assign(
     mapEvent((event: APIGatewayEvent) => {
-      return (event.queryStringParameters ?? {}) as T;
+      const queryStringParameters = event.queryStringParameters ?? {};
+
+      if (compiledSchema.Check(queryStringParameters)) {
+        return queryStringParameters;
+      }
+
+      const errors = compiledSchema.Errors(queryStringParameters);
+
+      const validationErrors = Array.from(errors)
+        .map((error) => `${error.path} - ${error.message}`)
+        .join(', ');
+
+      const errorMessage = `Invalid request parameters: ${validationErrors}`;
+
+      // Throw the error with an associated 400 bad request response
+      throw new LambdaResultError(
+        errorMessage,
+        // This reply matches the format of validation errors returned by our rest api
+        reply(
+          {
+            message: errorMessage,
+            statusCode: '400',
+            type: 'BAD_REQUEST_PARAMETERS',
+          },
+          400,
+        ),
+      );
     }),
     { queryParamSchema },
   );
