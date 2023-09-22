@@ -16,11 +16,11 @@
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "@aedi/idea2": ["libs/idea2/src/index.ts"],
-      "@aedi/idea2-browser-client": ["libs/idea2-browser-client/src/index.ts"],
-      "@aedi/idea2-cdk": ["libs/idea2-cdk/src/index.ts"],
-      "@aedi/idea2-local": ["libs/idea2-local/src/index.ts"],
-      "@aedi/idea2-test-cases": ["libs/idea2-test-cases/src/index.ts"]
+      "@aedi/cdk": ["libs/cdk/src/index.ts"],
+      "@aedi/common": ["libs/common/src/index.ts"],
+      "@aedi/browser-client": ["libs/browser-client/src/index.ts"],
+      "@aedi/test-cases": ["libs/test-cases/src/index.ts"],
+      "@aedi/local": ["libs/local/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]

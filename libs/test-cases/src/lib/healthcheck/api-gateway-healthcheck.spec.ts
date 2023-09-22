@@ -1,0 +1,29 @@
+import { resolveConstructRef } from '@aedi/idea2-local';
+import { api } from './api-gateway-healthcheck';
+import { FetchClient } from '@aedi/common';
+
+describe('api-gateway healthcheck', () => {
+  let apiFetch: FetchClient;
+
+  beforeAll(async () => {
+    apiFetch = await resolveConstructRef(FetchClient(api));
+  });
+
+  test('GET /healthcheck - success', async () => {
+    const response = await apiFetch('/healthcheck');
+    expect(response.status).toEqual(200);
+    expect(await response.json()).toEqual({
+      testName: 'healthcheck',
+      success: true,
+    });
+  });
+
+  test('POST /echo - success', async () => {
+    const response = await apiFetch('/echo', {
+      method: 'POST',
+      body: JSON.stringify({ cool: 'beans' }),
+    });
+    expect(response.status).toEqual(200);
+    expect(await response.json()).toEqual({ cool: 'beans' });
+  });
+});
