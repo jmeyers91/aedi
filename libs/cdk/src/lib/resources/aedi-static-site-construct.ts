@@ -263,7 +263,7 @@ function generateRestApiRouteClient(routeDef: RestApiRefRoute) {
   return `async (${
     inputKeys.length > 0 ? `{ ${inputKeys.join(', ')} }` : ''
   }) => {
-    const url = new URL(\`\${baseUrl}/${renderedPath}\`);
+    const url = new URL(\`\${baseUrl}${renderedPath}\`);
     ${queryParamInputKeys
       .map(
         (key) =>
@@ -286,12 +286,12 @@ function generateRestApiRouteClient(routeDef: RestApiRefRoute) {
   }`;
 }
 
-function findBodySchema(routeDef: RestApiRefRoute) {
+export function findBodySchema(routeDef: RestApiRefRoute) {
   return Object.values(routeDef.lambdaRef.context).find(isBodyDependency)
     ?.bodySchema;
 }
 
-function findQueryParamSchema(routeDef: RestApiRefRoute) {
+export function findQueryParamSchema(routeDef: RestApiRefRoute) {
   return Object.values(routeDef.lambdaRef.context).find(isQueryParamsDependency)
     ?.queryParamSchema;
 }

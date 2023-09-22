@@ -1,18 +1,13 @@
 import {
-  AnyLambdaRef,
   Body,
   Bucket,
   Delete,
   Get,
-  InferRestApiClient,
   Lambda,
-  LambdaProxyHandler,
   Post,
   Put,
   QueryParams,
-  RefType,
   RestApi,
-  RestApiRef,
   StaticSite,
   Table,
   TableClient,
@@ -20,7 +15,6 @@ import {
   authorize,
   generateApiClient,
   grant,
-  lambdaProxyHandler,
   reply,
   withRoutes,
 } from '@aedi/common';
@@ -202,6 +196,21 @@ export const apiRoutes = withRoutes('apiRoutes', api, {
 
       return { success: true };
     },
+  ),
+
+  doThing: Get(
+    api,
+    'doThing',
+    '/do-thing',
+    {
+      params: QueryParams(
+        Type.Object({
+          foo: Type.String(),
+          bar: Type.Optional(Type.String()),
+        }),
+      ),
+    },
+    ({ params }) => ({ params }),
   ),
 
   exportContacts: Get(

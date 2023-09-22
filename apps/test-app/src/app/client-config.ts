@@ -14,3 +14,5 @@ export const api = clientConfig.apiClient({
     return getUserAuthHeaders(userPool.getCurrentUser());
   },
 });
+
+(window as any).api = api;

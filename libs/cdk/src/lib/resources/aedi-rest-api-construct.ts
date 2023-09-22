@@ -11,13 +11,20 @@ import {
   AuthorizationType,
   CognitoUserPoolsAuthorizer,
   Cors,
+  JsonSchemaType,
   LambdaIntegration,
   MethodOptions,
+  Model,
+  RequestValidator,
   ResponseType,
   RestApi,
 } from 'aws-cdk-lib/aws-apigateway';
 import { ILambdaDependency } from '../aedi-infra-types';
 import { AediBaseConstruct } from '../aedi-base-construct';
+import {
+  findBodySchema,
+  findQueryParamSchema,
+} from './aedi-static-site-construct';
 
 export class AediRestApi
   extends AediBaseConstruct<RefType.REST_API>
@@ -41,6 +48,30 @@ export class AediRestApi
         allowCredentials: true,
         allowMethods: Cors.ALL_METHODS,
         allowOrigins: Cors.ALL_ORIGINS,
+      },
+    });
+
+    this.restApi.addGatewayResponse('bad-request-body-response', {
+      type: ResponseType.BAD_REQUEST_BODY,
+      statusCode: '400',
+      responseHeaders: {
+        'Access-Control-Allow-Origin': "'*'",
+      },
+      templates: {
+        'application/json':
+          '{ "message": "$context.error.validationErrorString", "statusCode": "400", "type": "$context.error.responseType" }',
+      },
+    });
+
+    this.restApi.addGatewayResponse('bad-request-params-response', {
+      type: ResponseType.BAD_REQUEST_PARAMETERS,
+      statusCode: '400',
+      responseHeaders: {
+        'Access-Control-Allow-Origin': "'*'",
+      },
+      templates: {
+        'application/json':
+          '{ "message": $context.error.messageString, "statusCode": "400", "type": "$context.error.responseType" }',
       },
     });
 
@@ -86,6 +117,46 @@ export class AediRestApi
           authorizers.map((it) => it.authorizedUserPool),
         );
         routeOptions.authorizationType = AuthorizationType.COGNITO;
+      }
+
+      const bodySchema = findBodySchema(route);
+      const paramSchema = findQueryParamSchema(route);
+      if (bodySchema || paramSchema) {
+        const bodyModel = bodySchema
+          ? new Model(this, `${route.lambdaRef.id}Body`, {
+              restApi: this.restApi,
+              modelName: `${route.lambdaRef.id}Body`,
+              schema: {
+                ...bodySchema,
+                type: bodySchema.type as JsonSchemaType,
+              },
+            })
+          : null;
+
+        routeOptions.requestValidator = new RequestValidator(
+          this,
+          `body-validator-${route.lambdaRef.id}`,
+          {
+            restApi: this.restApi,
+            requestValidatorName: `${route.lambdaRef.id}-validator`,
+            validateRequestBody: !!bodyModel,
+            validateRequestParameters: !!paramSchema,
+          },
+        );
+
+        if (paramSchema) {
+          routeOptions.requestParameters = {};
+          for (const key of Object.keys(paramSchema.properties)) {
+            const isRequired = !!paramSchema.required?.includes(key);
+            routeOptions.requestParameters[
+              `method.request.querystring.${key}`
+            ] = isRequired;
+          }
+        }
+
+        routeOptions.requestModels = {
+          ...(!!bodyModel && { 'application/json': bodyModel }),
+        };
       }
 
       apiGatewayResource.addMethod(
