@@ -24,7 +24,6 @@ export class Idea2CdkApp implements Idea2CdkAppContext {
   }: {
     idea2App: Idea2App;
     cdkApp: App;
-    resourceNamePrefix?: string;
     stackIdPrefix?: string;
     defaultStackProps?: StackProps;
 
