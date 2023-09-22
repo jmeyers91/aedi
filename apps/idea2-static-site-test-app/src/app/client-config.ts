@@ -1,13 +1,16 @@
 import { resolveIdea2BrowserClient } from '@sep6/idea2-browser-client';
 import type { staticSite } from '@sep6/idea2-test-cases';
-import localDevClientConfig from '../../local-client-config.json';
+import { getUserAuthHeaders, userPool } from '../utils/cognito-utils';
 
-export const clientConfig =
-  resolveIdea2BrowserClient<typeof staticSite>() ?? getDefaultConfig();
+export const clientConfig = resolveIdea2BrowserClient<typeof staticSite>();
 
-function getDefaultConfig() {
-  if (import.meta.env.MODE === 'development') {
-    return localDevClientConfig;
-  }
-  return undefined;
+if (!clientConfig) {
+  throw new Error(`Unable to load client config`);
 }
+
+export const api = clientConfig.apiClient({
+  baseUrl: clientConfig.api.url,
+  getHeaders() {
+    return getUserAuthHeaders(userPool.getCurrentUser());
+  },
+});

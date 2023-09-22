@@ -39,7 +39,7 @@ export class Idea2CdkApp implements Idea2CdkAppContext {
     this.stackIdPrefix = stackIdPrefix;
 
     const resourceConstructs = runWithIdea2CdkAppContext(this, () =>
-      idea2App.resourceRefs.map((resourceRef) => resolveConstruct(resourceRef))
+      idea2App.resourceRefs.map((resourceRef) => resolveConstruct(resourceRef)),
     );
 
     // Create map stack-specific map buckets once all the constructs are resolved
@@ -50,7 +50,9 @@ export class Idea2CdkApp implements Idea2CdkAppContext {
     }
   }
 
-  getCachedResource(resourceRef: IResourceRef): Construct | undefined {
+  getCachedResource(
+    resourceRef: Pick<IResourceRef, 'uid'>,
+  ): Construct | undefined {
     return this.resourceConstructCache.get(resourceRef.uid);
   }
 

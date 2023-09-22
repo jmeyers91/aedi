@@ -1,6 +1,17 @@
 import { Construct } from 'constructs';
+import * as synchronizedPrettier from '@prettier/sync';
 import { ILambdaDependency } from '../idea2-infra-types';
-import { RefType, StaticSiteConstructRef, StaticSiteRef } from '@sep6/idea2';
+import {
+  RefType,
+  RestApiRef,
+  RestApiRefRoute,
+  StaticSiteConstructRef,
+  StaticSiteRef,
+  isBodyDependency,
+  isQueryParamsDependency,
+  isStaticSiteApiClientGenerator,
+  resolveRef,
+} from '@sep6/idea2';
 import { RemovalPolicy, Stack } from 'aws-cdk-lib';
 import {
   OriginAccessIdentity,
@@ -31,7 +42,7 @@ export class Idea2StaticSite
   constructor(
     scope: Construct,
     id: string,
-    props: { resourceRef: StaticSiteRef<any> }
+    props: { resourceRef: StaticSiteRef<any> },
   ) {
     super(scope, id, props);
 
@@ -44,7 +55,7 @@ export class Idea2StaticSite
 
     const originAccessIdentity = new OriginAccessIdentity(
       this,
-      'access-identity'
+      'access-identity',
     );
 
     this.bucket.grantRead(originAccessIdentity);
@@ -71,12 +82,12 @@ export class Idea2StaticSite
         new RestApiOrigin(
           new StaticSiteConfigApi(this, 'config-api', {
             staticSiteRef,
-          }).restApi
+          }).restApi,
         ),
         {
           viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
           cachePolicy: CachePolicy.CACHING_DISABLED,
-        }
+        },
       );
     }
 
@@ -118,29 +129,46 @@ class StaticSiteConfigApi extends Construct {
   constructor(
     scope: Construct,
     id: string,
-    { staticSiteRef }: { staticSiteRef: StaticSiteRef<any> }
+    { staticSiteRef }: { staticSiteRef: StaticSiteRef<any> },
   ) {
     super(scope, id);
 
     const resolvedConfig: Record<string, unknown> = {};
+    const apiClients: { key: string; clientSrc: string }[] = [];
+
     for (const [key, value] of Object.entries(
-      staticSiteRef.clientConfig ?? {}
+      staticSiteRef.clientConfig ?? {},
     )) {
-      if (!isResourceRef(value)) {
-        resolvedConfig[key] = value;
-        continue;
-      }
-      const construct = resolveConstruct(value);
-      if ('getConstructRef' in construct) {
-        resolvedConfig[key] = construct.getConstructRef();
+      if (isResourceRef(value)) {
+        const construct = resolveConstruct(value);
+        if ('getConstructRef' in construct) {
+          resolvedConfig[key] = construct.getConstructRef();
+        } else {
+          resolvedConfig[key] = {};
+        }
+      } else if (isStaticSiteApiClientGenerator(value)) {
+        apiClients.push({
+          key,
+          clientSrc: generateRestApiClient(value.restApiRef),
+        });
       } else {
-        resolvedConfig[key] = {};
+        resolvedConfig[key] = value;
       }
     }
 
+    // TODO: Move all this shit out of this file
+    // Maybe a proper templating system for rendering clients for refs?
+
     // This script is run in the static site
     const clientConfigScript = `
-      window.__clientConfig = ${JSON.stringify(resolvedConfig)};
+      window.__clientConfig = {
+        ...___RESOLVED_CONFIG___,
+
+        ${apiClients
+          .map(({ key, clientSrc }) => `${key}: ${clientSrc}`)
+          .join(',\n\n')}
+      };
+
       ${
         getMode() === 'development'
           ? `console.log("${staticSiteRef.uid} config", window.__clientConfig);`
@@ -148,21 +176,29 @@ class StaticSiteConfigApi extends Construct {
       }
     `;
 
+    const lambdaSrc = `"use strict";
+    module.exports.handler = async () => ({
+      statusCode: 200,
+      body: \`${synchronizedPrettier
+        .format(clientConfigScript, {
+          parser: 'babel',
+        })
+        .replace(/(\`|(?:\$\{))/gm, '\\$1') // Escape back-ticks and "${" because this code is wrapped in a string.
+        .replace(
+          '___RESOLVED_CONFIG___',
+          JSON.stringify(resolvedConfig, null, 2).replace(/\n/g, '\n  '),
+        )}\`,
+      headers: {
+        'Content-Type': 'application/javascript',
+      },
+     });`;
+
     /**
      * This lambda responds with a JS script that injects the resolved client config into the global scope
      * of the static site. This makes the resolved client config available for access using the `idea2-browser-client` library.
      */
     const getClientConfigLambda = new Function(this, 'config-lambda', {
-      code: new InlineCode(
-        `"use strict";
-        module.exports.handler = async () => ({
-          statusCode: 200,
-          body: \`${clientConfigScript}\`,
-          headers: {
-            'Content-Type': 'application/javascript',
-          },
-         });`
-      ),
+      code: new InlineCode(lambdaSrc),
       handler: 'index.handler',
       runtime: Runtime.NODEJS_18_X,
     });
@@ -180,4 +216,83 @@ class StaticSiteConfigApi extends Construct {
       .addResource('{proxy+}')
       .addMethod('GET', new LambdaIntegration(getClientConfigLambda));
   }
+}
+
+function generateRestApiClient(restApi: RestApiRef): string {
+  resolveConstruct;
+  return `({ baseUrl, getHeaders }) => ({
+    ${restApi.routes
+      .map(
+        (routeDef) =>
+          `${routeDef.lambdaRef.id}: ${generateRestApiRouteClient(routeDef)}`,
+      )
+      .join(',\n\n')}
+  })`;
+}
+
+function generateRestApiRouteClient(routeDef: RestApiRefRoute) {
+  const bodySchema = findBodySchema(routeDef);
+  const queryParamSchema = findQueryParamSchema(routeDef);
+
+  let pathInputKeys: string[] = [];
+  const renderedPath = routeDef.path
+    .split('/')
+    .filter((it) => it.length > 0)
+    .map((part) => {
+      let variableMatch = part.match(/\{(.+?)\+?\}/);
+
+      if (variableMatch) {
+        const pathInputKey = variableMatch[1];
+        pathInputKeys.push(pathInputKey);
+        return `\${${pathInputKey}}`;
+      }
+
+      return part;
+    })
+    .join('/');
+
+  const bodyInputKeys = bodySchema?.properties
+    ? Object.keys(bodySchema.properties)
+    : [];
+  const queryParamInputKeys = queryParamSchema?.properties
+    ? Object.keys(queryParamSchema.properties)
+    : [];
+  const inputKeys = Array.from(
+    new Set([...pathInputKeys, ...bodyInputKeys, ...queryParamInputKeys]),
+  );
+
+  return `async (${
+    inputKeys.length > 0 ? `{ ${inputKeys.join(', ')} }` : ''
+  }) => {
+    const url = new URL(\`\${baseUrl}/${renderedPath}\`);
+    ${queryParamInputKeys
+      .map(
+        (key) =>
+          `if (${key} !== undefined) { url.searchParams.append("${key}", ${key}); }`,
+      )
+      .join('\n')}
+    const response = await fetch(url, {
+      method: "${routeDef.method}",
+      headers: {
+        "Content-Type": "application/json",
+        ...(await getHeaders?.()),
+      },
+      ${
+        bodyInputKeys.length > 0
+          ? `body: JSON.stringify({ ${bodyInputKeys.join(', ')} }),`
+          : ''
+      }
+    });
+    return response.json();
+  }`;
+}
+
+function findBodySchema(routeDef: RestApiRefRoute) {
+  return Object.values(routeDef.lambdaRef.context).find(isBodyDependency)
+    ?.bodySchema;
+}
+
+function findQueryParamSchema(routeDef: RestApiRefRoute) {
+  return Object.values(routeDef.lambdaRef.context).find(isQueryParamsDependency)
+    ?.queryParamSchema;
 }

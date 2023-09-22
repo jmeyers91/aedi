@@ -11,7 +11,7 @@ export const userPool = new CognitoUserPool({
 });
 
 export async function getUserAuthHeaders(
-  user: CognitoUser | null | undefined
+  user: CognitoUser | null | undefined,
 ): Promise<{ Authorization: string } | {}> {
   const session = await new Promise<CognitoUserSession | null>(
     (resolve, reject) => {
@@ -22,9 +22,9 @@ export async function getUserAuthHeaders(
           } else {
             resolve(session);
           }
-        }
+        },
       );
-    }
+    },
   );
 
   if (!session) {

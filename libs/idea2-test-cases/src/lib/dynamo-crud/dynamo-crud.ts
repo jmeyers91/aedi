@@ -38,12 +38,12 @@ const contactsTableResource = Table<Contact, 'userId' | 'contactId'>(
       name: 'contactId',
       type: 'STRING',
     },
-  }
+  },
 );
 
 const contactsTable = TableClient(contactsTableResource);
 const writableContactsTable = TableClient(
-  grant(contactsTableResource, { write: true })
+  grant(contactsTableResource, { write: true }),
 );
 
 export const listContacts = Get(
@@ -60,7 +60,7 @@ export const listContacts = Get(
         ':userId': userId,
       },
     });
-  }
+  },
 );
 
 export const getContact = Get(
@@ -79,7 +79,7 @@ export const getContact = Get(
     }
 
     return contact;
-  }
+  },
 );
 
 export const createContact = Post(
@@ -109,7 +109,7 @@ export const createContact = Post(
     await contactsTable.put({ Item: contact });
 
     return contact;
-  }
+  },
 );
 
 export const updateContact = Put(
@@ -121,16 +121,16 @@ export const updateContact = Put(
     const { userId } = assertAuth(event);
     const { contactId } = event.pathParameters;
     const { firstName, lastName, email, phone } = JSON.parse(
-      event.body ?? '{}'
+      event.body ?? '{}',
     );
 
     const updatedContact = await contactsTable.patch(
       { userId, contactId },
-      { firstName, lastName, email, phone }
+      { firstName, lastName, email, phone },
     );
 
     return updatedContact;
-  }
+  },
 );
 
 export const deleteContact = Delete(
@@ -145,7 +145,7 @@ export const deleteContact = Delete(
     await contactsTable.delete({ Key: { userId, contactId } });
 
     return { success: true };
-  }
+  },
 );
 
 export const exportContacts = Get(
@@ -156,7 +156,7 @@ export const exportContacts = Get(
   async ({ contactsTable }, event) => {
     const { userId } = assertAuth(event);
 
-    const { Items: contacts = [] } = await contactsTable.query({
+    const { items: contacts = [] } = await contactsTable.query({
       KeyConditionExpression: `userId = :userId`,
       ExpressionAttributeValues: {
         ':userId': userId,
@@ -174,7 +174,7 @@ export const exportContacts = Get(
     return reply(csv, 200, {
       'Content-Type': 'text/csv',
     });
-  }
+  },
 );
 
 // Used to test responding with strings as HTML
@@ -207,7 +207,7 @@ function assertAuth(event: RouteEvent): { userId: string } {
 
 function badRequest(
   message: string,
-  statusCode = 400
+  statusCode = 400,
 ): Error & { statusCode: number } {
   return Object.assign(new Error(message), { statusCode });
 }

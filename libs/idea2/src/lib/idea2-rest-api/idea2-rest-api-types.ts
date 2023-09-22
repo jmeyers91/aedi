@@ -33,3 +33,39 @@ export interface RestApiTypeMap extends IResourceTypeMap {
   constructRef: RestApiConstructRef;
   clientRef: RestApiClientRef<RestApiRef, any>;
 }
+
+export type InferRestApiClient<A> = A extends { __routes?: infer R }
+  ? (options: {
+      baseUrl: string;
+      getHeaders?(): Record<string, string> | Promise<Record<string, string>>;
+    }) => {
+      [K in keyof R]: InferRestApiRouteClient<R[K]>;
+    }
+  : never;
+
+export type InferRestApiRouteClient<R> = R extends {
+  __route?: {
+    inputs: infer I;
+    result: infer R;
+  };
+}
+  ? I[keyof I] extends never
+    ? () => Promise<Awaited<R>>
+    : (inputs: I) => Promise<Awaited<R>>
+  : never;
+
+export type InferRequestBody<C> = Extract<
+  C[keyof C],
+  { __body?: any }
+> extends {
+  __body?: infer Q;
+}
+  ? Q
+  : never;
+
+export type InferRequestQueryParams<C> = Extract<
+  C[keyof C],
+  { __queryParams?: any }
+> extends { __queryParams?: infer Q }
+  ? Q
+  : never;

@@ -33,26 +33,26 @@ import { once } from '../idea2-resource-utils';
 export interface IReadableDynamoTable<T, PK extends keyof T> {
   get(key: { [Key in PK]: T[Key] }): Promise<T | undefined>;
   query(
-    input: Omit<QueryCommandInput, 'TableName'>
-  ): Promise<{ Items?: T[] } & QueryCommandOutput>;
+    input: Omit<QueryCommandInput, 'TableName'>,
+  ): Promise<{ items?: T[] } & QueryCommandOutput>;
 
   scan(
-    input: Omit<ScanCommandInput, 'TableName'>
-  ): Promise<{ Items?: T[] } & ScanCommandOutput>;
+    input: Omit<ScanCommandInput, 'TableName'>,
+  ): Promise<{ items?: T[] } & ScanCommandOutput>;
 }
 
 export interface IWritableDynamoTable<T, PK extends keyof T> {
   put(
-    input: Omit<PutCommandInput, 'TableName' | 'Item'> & { Item: T }
+    input: Omit<PutCommandInput, 'TableName' | 'Item'> & { Item: T },
   ): Promise<Partial<T>>;
   update(
     input: Omit<UpdateCommandInput, 'TableName' | 'Key'> & {
       Key: { [Key in PK]: T[Key] };
-    }
+    },
   ): Promise<any>;
   patch(key: { [Key in PK]: T[Key] }, patch: Partial<T>): Promise<T>;
   delete(
-    input: Omit<DeleteCommandInput, 'TableName'>
+    input: Omit<DeleteCommandInput, 'TableName'>,
   ): Promise<DeleteCommandOutput>;
 }
 
@@ -93,9 +93,9 @@ export type DynamoClientOptions<R> = R extends DynamoClientRef<any, infer O>
 export function TableClient<
   const R extends
     | DynamoRef<any, any>
-    | DynamoClientRef<DynamoRef<any, any>, any>
+    | DynamoClientRef<DynamoRef<any, any>, any>,
 >(
-  ref: R
+  ref: R,
 ): TransformedRef<
   R,
   IDynamoTable<DynamoEntityType<R>, DynamoEntityPk<R>, DynamoClientOptions<R>>
@@ -105,7 +105,7 @@ export function TableClient<
     transformedRef: ref,
     transform: once(
       ({ constructRef }) =>
-        new DynamoTable(constructRef.tableName, constructRef.region)
+        new DynamoTable(constructRef.tableName, constructRef.region),
     ),
   };
 }
@@ -136,7 +136,7 @@ export class DynamoDb extends DynamoDBDocumentClient {
 
   async query<T>(input: QueryCommandInput) {
     const { Items, Count, LastEvaluatedKey, ...rest } = await this.send(
-      new QueryCommand(input)
+      new QueryCommand(input),
     );
     return {
       ...rest,
@@ -148,7 +148,7 @@ export class DynamoDb extends DynamoDBDocumentClient {
 
   async scan<T>(input: ScanCommandInput) {
     const { Items, Count, LastEvaluatedKey, ...rest } = await this.send(
-      new ScanCommand(input)
+      new ScanCommand(input),
     );
     return {
       ...rest,
@@ -168,7 +168,10 @@ export class DynamoTable<T, K extends keyof T>
 {
   private readonly dynamoDb: DynamoDb;
 
-  constructor(private readonly tableName: string, region: string) {
+  constructor(
+    private readonly tableName: string,
+    region: string,
+  ) {
     this.dynamoDb = new DynamoDb({
       region,
     });
@@ -206,7 +209,7 @@ export class DynamoTable<T, K extends keyof T>
   async update(
     input: Omit<UpdateCommandInput, 'TableName' | 'Key'> & {
       Key: { [Key in K]: T[Key] };
-    }
+    },
   ) {
     return this.dynamoDb.update<T>({
       ...input,
@@ -245,7 +248,7 @@ export class DynamoTable<T, K extends keyof T>
           ExpressionAttributeNames: {},
           ExpressionAttributeValues: {},
           ReturnValues: 'ALL_NEW',
-        } as Omit<UpdateCommandInput, 'TableName'>
+        } as Omit<UpdateCommandInput, 'TableName'>,
       );
 
     const result = await this.update(updateInput as any);
