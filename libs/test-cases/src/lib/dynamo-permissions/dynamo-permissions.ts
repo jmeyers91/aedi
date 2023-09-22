@@ -1,4 +1,4 @@
-import { Get, grant, Table, RestApi, TableClient } from '@aedi/common';
+import { Grant, Table, RestApi, TableClient, GetLambda } from '@aedi/common';
 import { Scope } from '../app';
 
 const scope = Scope('dynamo-permissions');
@@ -17,7 +17,7 @@ const counterTable = Table<
   },
 });
 
-export const hasReadPermissionsSuccess = Get(
+export const hasReadPermissionsSuccess = GetLambda(
   api,
   'hasReadPermissionsSuccess',
   '/read-success',
@@ -29,11 +29,11 @@ export const hasReadPermissionsSuccess = Get(
   },
 );
 
-export const hasWritePermissionsSuccess = Get(
+export const hasWritePermissionsSuccess = GetLambda(
   api,
   'hasWritePermissionsSuccess',
   '/write-success',
-  { table: TableClient(grant(counterTable, { write: true })) },
+  { table: TableClient(Grant(counterTable, { write: true })) },
   async ({ table }) => {
     await table.put({ Item: { counterId: 'test' } });
 
@@ -41,7 +41,7 @@ export const hasWritePermissionsSuccess = Get(
   },
 );
 
-export const hasWritePermissionsFail = Get(
+export const hasWritePermissionsFail = GetLambda(
   api,
   'hasWritePermissionsFail',
   '/write-fail',

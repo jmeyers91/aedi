@@ -1,11 +1,11 @@
 import {
   RouteEvent,
   TableClient,
-  Get,
-  Post,
-  Put,
-  Delete,
-  grant,
+  GetLambda,
+  PostLambda,
+  PutLambda,
+  DeleteLambda,
+  Grant,
   RestApi,
   Table,
   Scope as AediScope,
@@ -56,18 +56,24 @@ function ContactService(
   );
 
   const readableContactsTable = TableClient(
-    grant(contactsTable, { read: true }),
+    Grant(contactsTable, { read: true }),
   );
   const writableContactsTable = TableClient(
-    grant(contactsTable, { write: true }),
+    Grant(contactsTable, { write: true }),
   );
 
   const handler = lambdaProxyHandler(id, [
-    Get(api, 'getServiceName', '/service-name', { contactsTable }, async () => {
-      return { serviceName };
-    }),
+    GetLambda(
+      api,
+      'getServiceName',
+      '/service-name',
+      { contactsTable },
+      async () => {
+        return { serviceName };
+      },
+    ),
 
-    Get(
+    GetLambda(
       api,
       'listContacts',
       '/contacts',
@@ -84,7 +90,7 @@ function ContactService(
       },
     ),
 
-    Get(
+    GetLambda(
       api,
       'getContact',
       '/contacts/{contactId}',
@@ -103,7 +109,7 @@ function ContactService(
       },
     ),
 
-    Post(
+    PostLambda(
       api,
       'createContact',
       '/contacts',
@@ -135,7 +141,7 @@ function ContactService(
       },
     ),
 
-    Put(
+    PutLambda(
       api,
       'updateContact',
       '/contacts/{contactId}',
@@ -156,7 +162,7 @@ function ContactService(
       },
     ),
 
-    Delete(
+    DeleteLambda(
       api,
       'deleteContact',
       '/contacts/{contactId}',

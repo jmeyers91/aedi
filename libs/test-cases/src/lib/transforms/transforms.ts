@@ -1,11 +1,11 @@
 import {
-  Get,
-  Post,
+  GetLambda,
+  PostLambda,
   RestApi,
   Table,
   TableClient,
   TransformedRefScope,
-  grant,
+  Grant,
   mapRef,
 } from '@aedi/common';
 import { Scope } from '../app';
@@ -60,11 +60,11 @@ const countStatic = provideStaticCount('test');
 const countDynamic = provideDynamicCount('test-dynamic');
 const countRequest = provideParamCount();
 
-export const incrementCount = Post(
+export const incrementCount = PostLambda(
   api,
   'incrementCount',
   '/counter/{counterId}',
-  { counterTable: TableClient(grant(counterTable, { write: true })) },
+  { counterTable: TableClient(Grant(counterTable, { write: true })) },
   async ({ counterTable }, event) => {
     const { counterId } = event.pathParameters;
     const counter = await counterTable.get({
@@ -79,7 +79,7 @@ export const incrementCount = Post(
   },
 );
 
-export const getCount = Get(
+export const getCount = GetLambda(
   api,
   'getCount',
   '/counter/{counterId}',
@@ -87,7 +87,7 @@ export const getCount = Get(
   ({ count }) => ({ count }),
 );
 
-export const getTestCount = Get(
+export const getTestCount = GetLambda(
   api,
   'getTestCount',
   '/test-count',
@@ -95,7 +95,7 @@ export const getTestCount = Get(
   ({ count }) => ({ count }),
 );
 
-export const getTestCountDynamic = Get(
+export const getTestCountDynamic = GetLambda(
   api,
   'getTestCountDynamic',
   '/test-count-dynamic',
@@ -108,7 +108,7 @@ let staticInvokeCount = 0;
 /**
  * These static transform checks are used to ensure static transforms are cached between executions.
  */
-export const staticTransformCheck = Get(
+export const staticTransformCheck = GetLambda(
   api,
   'staticTransformCheck',
   '/static-transform',
@@ -123,7 +123,7 @@ export const staticTransformCheck = Get(
   },
 );
 
-export const staticTransformCheck2 = Get(
+export const staticTransformCheck2 = GetLambda(
   api,
   'staticTransformCheck2',
   '/static-transform-2',
@@ -137,7 +137,7 @@ export const staticTransformCheck2 = Get(
   },
 );
 
-export const invokeTransformCheck = Get(
+export const invokeTransformCheck = GetLambda(
   api,
   'invokeTransformCheck',
   '/invoke-transform',
@@ -174,7 +174,7 @@ const dynamicUuid = mapRef(
   TransformedRefScope.INVOKE,
 );
 
-export const nestedTransformCheck = Get(
+export const nestedTransformCheck = GetLambda(
   api,
   'nestedTransformCheck',
   '/nested-transform',

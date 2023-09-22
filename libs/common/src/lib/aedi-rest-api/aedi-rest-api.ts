@@ -77,7 +77,7 @@ export function LambdaRoute<L extends RouteLambdaRef>(
   return lambdaRef;
 }
 
-export function Route<
+export function FullRoute<
   P extends string,
   L extends string,
   C extends LambdaDependencyGroup,
@@ -135,7 +135,39 @@ export function Route<
   return LambdaRoute(restApiRef, method, path, lambda) as any;
 }
 
-export function Get<
+export function Route<
+  P extends string,
+  L extends string,
+  C extends LambdaDependencyGroup,
+  R,
+>(
+  method: string,
+  path: P,
+  lambdaContext: C,
+  fn: LambdaRefFnWithEvent<
+    C,
+    RouteEvent & { pathParameters: PathParameters<P> },
+    R
+  >,
+): ((
+  restApiRef: RestApiRef,
+  lambdaId: L,
+) => LambdaRef<C, RouteEvent, RouteResponse<R>>) & {
+  __route?: {
+    path: P;
+    operationName: L;
+    inputs: PathParameters<P> &
+      InferRequestBody<C> &
+      InferRequestQueryParams<C>;
+    result: R;
+    lambdaContext: C;
+  };
+} {
+  return (restApiRef: RestApiRef, lambdaId: L) =>
+    FullRoute(restApiRef, lambdaId, method, path, lambdaContext, fn);
+}
+
+export function GetLambda<
   P extends string,
   L extends string,
   C extends LambdaDependencyGroup,
@@ -151,7 +183,100 @@ export function Get<
     R
   >,
 ) {
-  return Route(restApiRef, lambdaId, 'GET', path, lambdaContext, fn);
+  return FullRoute(restApiRef, lambdaId, 'GET', path, lambdaContext, fn);
+}
+
+export function PostLambda<
+  P extends string,
+  L extends string,
+  C extends LambdaDependencyGroup,
+  R,
+>(
+  restApiRef: RestApiRef,
+  lambdaId: L,
+  path: P,
+  lambdaContext: C,
+  fn: LambdaRefFnWithEvent<
+    C,
+    RouteEvent & { pathParameters: PathParameters<P> },
+    R
+  >,
+) {
+  return FullRoute(restApiRef, lambdaId, 'POST', path, lambdaContext, fn);
+}
+
+export function PutLambda<
+  P extends string,
+  L extends string,
+  C extends LambdaDependencyGroup,
+  R,
+>(
+  restApiRef: RestApiRef,
+  lambdaId: L,
+  path: P,
+  lambdaContext: C,
+  fn: LambdaRefFnWithEvent<
+    C,
+    RouteEvent & { pathParameters: PathParameters<P> },
+    R
+  >,
+) {
+  return FullRoute(restApiRef, lambdaId, 'PUT', path, lambdaContext, fn);
+}
+
+export function PatchLambda<
+  P extends string,
+  L extends string,
+  C extends LambdaDependencyGroup,
+  R,
+>(
+  restApiRef: RestApiRef,
+  lambdaId: L,
+  path: P,
+  lambdaContext: C,
+  fn: LambdaRefFnWithEvent<
+    C,
+    RouteEvent & { pathParameters: PathParameters<P> },
+    R
+  >,
+) {
+  return FullRoute(restApiRef, lambdaId, 'PATCH', path, lambdaContext, fn);
+}
+
+export function DeleteLambda<
+  P extends string,
+  L extends string,
+  C extends LambdaDependencyGroup,
+  R,
+>(
+  restApiRef: RestApiRef,
+  lambdaId: L,
+  path: P,
+  lambdaContext: C,
+  fn: LambdaRefFnWithEvent<
+    C,
+    RouteEvent & { pathParameters: PathParameters<P> },
+    R
+  >,
+) {
+  return FullRoute(restApiRef, lambdaId, 'DELETE', path, lambdaContext, fn);
+}
+
+export function Get<
+  P extends string,
+  L extends string,
+  C extends LambdaDependencyGroup,
+  R,
+>(
+  path: P,
+  lambdaContext: C,
+  fn: LambdaRefFnWithEvent<
+    C,
+    RouteEvent & { pathParameters: PathParameters<P> },
+    R
+  >,
+) {
+  return Route<P, L, C, R>('GET', path, lambdaContext, fn);
 }
 
 export function Post<
@@ -160,8 +285,6 @@ export function Post<
   C extends LambdaDependencyGroup,
   R,
 >(
-  restApiRef: RestApiRef,
-  lambdaId: L,
   path: P,
   lambdaContext: C,
   fn: LambdaRefFnWithEvent<
@@ -170,7 +293,7 @@ export function Post<
     R
   >,
 ) {
-  return Route(restApiRef, lambdaId, 'POST', path, lambdaContext, fn);
+  return Route<P, L, C, R>('POST', path, lambdaContext, fn);
 }
 
 export function Put<
@@ -179,8 +302,6 @@ export function Put<
   C extends LambdaDependencyGroup,
   R,
 >(
-  restApiRef: RestApiRef,
-  lambdaId: L,
   path: P,
   lambdaContext: C,
   fn: LambdaRefFnWithEvent<
@@ -189,7 +310,7 @@ export function Put<
     R
   >,
 ) {
-  return Route(restApiRef, lambdaId, 'PUT', path, lambdaContext, fn);
+  return Route<P, L, C, R>('PUT', path, lambdaContext, fn);
 }
 
 export function Patch<
@@ -198,8 +319,6 @@ export function Patch<
   C extends LambdaDependencyGroup,
   R,
 >(
-  restApiRef: RestApiRef,
-  lambdaId: L,
   path: P,
   lambdaContext: C,
   fn: LambdaRefFnWithEvent<
@@ -208,7 +327,7 @@ export function Patch<
     R
   >,
 ) {
-  return Route(restApiRef, lambdaId, 'PATCH', path, lambdaContext, fn);
+  return Route<P, L, C, R>('PATCH', path, lambdaContext, fn);
 }
 
 export function Delete<
@@ -217,8 +336,6 @@ export function Delete<
   C extends LambdaDependencyGroup,
   R,
 >(
-  restApiRef: RestApiRef,
-  lambdaId: L,
   path: P,
   lambdaContext: C,
   fn: LambdaRefFnWithEvent<
@@ -227,7 +344,7 @@ export function Delete<
     R
   >,
 ) {
-  return Route(restApiRef, lambdaId, 'DELETE', path, lambdaContext, fn);
+  return Route<P, L, C, R>('DELETE', path, lambdaContext, fn);
 }
 
 export class Reply<T> implements RouteResponse<T> {
@@ -325,7 +442,7 @@ export function Body<T extends TObject<any>>(
  * is limited to checking if parameters are set or not, but the lambda will also do full schema validation to
  * fill in the missing functionality.
  */
-export function QueryParams<T extends TObject<any>>(
+export function Params<T extends TObject<any>>(
   queryParamSchema: T,
 ): EventTransformRef<APIGatewayEvent, Static<T>> & {
   queryParamSchema: T;
@@ -398,4 +515,46 @@ export function withRoutes<R extends object>(
       ),
     ),
   );
+}
+
+export function Api<R extends object>(
+  scope: Scope,
+  id: string,
+  routes: R,
+  restApiOptions: Parameters<typeof RestApi>[2] = {},
+) {
+  const restApi = RestApi(scope, id, restApiOptions);
+  const resolvedRoutes: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(routes)) {
+    if (typeof value === 'function') {
+      resolvedRoutes[key] = value(restApi, key);
+    } else {
+      resolvedRoutes[key] = value;
+    }
+  }
+  return withRoutes(id, restApi, resolvedRoutes) as RestApiRef &
+    LambdaProxyHandler & {
+      __routes?: R;
+    };
+}
+
+export function VirtualApi<R extends object>(
+  scope: Scope,
+  id: string,
+  routes: R,
+  restApiOptions: Parameters<typeof RestApi>[2] = {},
+) {
+  // const restApi = RestApi(scope, id, restApiOptions);
+  // const resolvedRoutes: Record<string, unknown> = {};
+  // for (const [key, value] of Object.entries(routes)) {
+  //   if (typeof value === 'function') {
+  //     resolvedRoutes[key] = value(restApi, key);
+  //   } else {
+  //     resolvedRoutes[key] = value;
+  //   }
+  // }
+  // return withRoutes(id, restApi, resolvedRoutes) as RestApiRef &
+  //   LambdaProxyHandler & {
+  //     __routes?: R;
+  //   };
 }

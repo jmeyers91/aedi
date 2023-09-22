@@ -1,10 +1,10 @@
 import {
   RouteEvent,
-  Get,
-  Post,
-  Put,
-  Delete,
-  grant,
+  GetLambda,
+  PostLambda,
+  PutLambda,
+  DeleteLambda,
+  Grant,
   RestApi,
   Table,
   TableClient,
@@ -43,10 +43,10 @@ const contactsTableResource = Table<Contact, 'userId' | 'contactId'>(
 
 const contactsTable = TableClient(contactsTableResource);
 const writableContactsTable = TableClient(
-  grant(contactsTableResource, { write: true }),
+  Grant(contactsTableResource, { write: true }),
 );
 
-export const listContacts = Get(
+export const listContacts = GetLambda(
   api,
   'listContacts',
   '/contacts',
@@ -63,7 +63,7 @@ export const listContacts = Get(
   },
 );
 
-export const getContact = Get(
+export const getContact = GetLambda(
   api,
   'getContact',
   '/contacts/{contactId}',
@@ -82,7 +82,7 @@ export const getContact = Get(
   },
 );
 
-export const createContact = Post(
+export const createContact = PostLambda(
   api,
   'createContact',
   '/contacts',
@@ -112,7 +112,7 @@ export const createContact = Post(
   },
 );
 
-export const updateContact = Put(
+export const updateContact = PutLambda(
   api,
   'updateContact',
   '/contacts/{contactId}',
@@ -133,7 +133,7 @@ export const updateContact = Put(
   },
 );
 
-export const deleteContact = Delete(
+export const deleteContact = DeleteLambda(
   api,
   'deleteContact',
   '/contacts/{contactId}',
@@ -148,7 +148,7 @@ export const deleteContact = Delete(
   },
 );
 
-export const exportContacts = Get(
+export const exportContacts = GetLambda(
   api,
   'exportContacts',
   '/contacts.csv',
@@ -178,12 +178,12 @@ export const exportContacts = Get(
 );
 
 // Used to test responding with strings as HTML
-export const getHtml = Get(api, 'getHtml', '/html', {}, async () => {
+export const getHtml = GetLambda(api, 'getHtml', '/html', {}, async () => {
   return 'This text is assumed to be HTML and is returned as-is';
 });
 
 // Used to test responding with objects as JSON
-export const getJSON = Get(api, 'getJSON', '/json', {}, async () => {
+export const getJSON = GetLambda(api, 'getJSON', '/json', {}, async () => {
   return {
     message:
       'This object is assumed to be JSON and is stringified before being returned',
@@ -191,11 +191,17 @@ export const getJSON = Get(api, 'getJSON', '/json', {}, async () => {
 });
 
 // Used to test custom responses
-export const getTeapot = Get(api, 'getTeapot', '/teapot', {}, async () => {
-  return reply("I'm a teapot", 418, {
-    'Content-Type': 'piping-hot/tea',
-  });
-});
+export const getTeapot = GetLambda(
+  api,
+  'getTeapot',
+  '/teapot',
+  {},
+  async () => {
+    return reply("I'm a teapot", 418, {
+      'Content-Type': 'piping-hot/tea',
+    });
+  },
+);
 
 function assertAuth(event: RouteEvent): { userId: string } {
   const userId = event.headers.Authorization;

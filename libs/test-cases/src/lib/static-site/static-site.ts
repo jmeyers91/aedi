@@ -1,22 +1,21 @@
 import {
   Body,
   Bucket,
-  Delete,
-  Get,
   Lambda,
-  Post,
-  Put,
-  QueryParams,
-  RestApi,
+  Params,
   StaticSite,
   Table,
   TableClient,
   UserPool,
-  authorize,
+  Authorize,
   generateApiClient,
-  grant,
+  Grant,
   reply,
-  withRoutes,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Api,
 } from '@aedi/common';
 import { Scope } from '../app';
 import { randomUUID } from 'crypto';
@@ -28,8 +27,6 @@ const scope = Scope('static-site');
 const resourceScope = Scope('static-site-resources');
 
 const exampleBucket = Bucket(resourceScope, 'example-bucket');
-
-export const api = RestApi(scope, 'api');
 
 // Auto-confirm users to avoid dealing with email/sms codes in tests
 export const preSignUpTrigger = Lambda(
@@ -76,21 +73,33 @@ export const contactsTableResource = Table<Contact, 'userId' | 'contactId'>(
 
 const contactsTable = TableClient(contactsTableResource);
 const writableContactsTable = TableClient(
-  grant(contactsTableResource, { write: true }),
+  Grant(contactsTableResource, { write: true }),
 );
 
-export const apiRoutes = withRoutes('apiRoutes', api, {
-  healthcheck: Get(api, 'healthcheck', '/healthcheck', {}, () => ({
+export const api = Api(scope, 'api', {
+  healthcheck: Get('/healthcheck', {}, (event, context) => ({
     healthy: true,
+    cool: 'beans oh yeah',
+    event,
+    context,
   })),
 
+  healthcheckWithParam: Get(
+    '/healthcheck/{param}',
+    {},
+    (_, event, context) => ({
+      healthy: true,
+      cool: `beans oh yeah: ${event.pathParameters.param}`,
+      event,
+      context,
+    }),
+  ),
+
   listContacts: Get(
-    api,
-    'listContacts',
     '/contacts',
     {
-      auth: authorize(userPool),
-      params: QueryParams(
+      auth: Authorize(userPool),
+      params: Params(
         Type.Object({
           page: Type.Optional(Type.String({ default: '0' })),
         }),
@@ -109,10 +118,8 @@ export const apiRoutes = withRoutes('apiRoutes', api, {
   ),
 
   getContact: Get(
-    api,
-    'getContact',
     '/contacts/{contactId}',
-    { auth: authorize(userPool), contactsTable },
+    { auth: Authorize(userPool), contactsTable },
     async ({ auth: { userId }, contactsTable }, event) => {
       const { contactId } = event.pathParameters;
 
@@ -127,11 +134,9 @@ export const apiRoutes = withRoutes('apiRoutes', api, {
   ),
 
   createContact: Post(
-    api,
-    'createContact',
     '/contacts',
     {
-      auth: authorize(userPool),
+      auth: Authorize(userPool),
       contactsTable: writableContactsTable,
       body: Body(
         Type.Object({
@@ -165,10 +170,8 @@ export const apiRoutes = withRoutes('apiRoutes', api, {
   ),
 
   updateContact: Put(
-    api,
-    'updateContact',
     '/contacts/{contactId}',
-    { auth: authorize(userPool), contactsTable: writableContactsTable },
+    { auth: Authorize(userPool), contactsTable: writableContactsTable },
     async ({ auth: { userId }, contactsTable }, event) => {
       const { contactId } = event.pathParameters;
       const { firstName, lastName, email, phone } = JSON.parse(
@@ -185,10 +188,8 @@ export const apiRoutes = withRoutes('apiRoutes', api, {
   ),
 
   deleteContact: Delete(
-    api,
-    'deleteContact',
     '/contacts/{contactId}',
-    { auth: authorize(userPool), contactsTable: writableContactsTable },
+    { auth: Authorize(userPool), contactsTable: writableContactsTable },
     async ({ auth: { userId }, contactsTable }, event) => {
       const { contactId } = event.pathParameters;
 
@@ -199,11 +200,9 @@ export const apiRoutes = withRoutes('apiRoutes', api, {
   ),
 
   doThing: Get(
-    api,
-    'doThing',
     '/do-thing',
     {
-      params: QueryParams(
+      params: Params(
         Type.Object({
           foo: Type.String(),
           bar: Type.Optional(Type.String()),
@@ -217,10 +216,8 @@ export const apiRoutes = withRoutes('apiRoutes', api, {
   ),
 
   exportContacts: Get(
-    api,
-    'exportContacts',
     '/contacts.csv',
-    { auth: authorize(userPool), contactsTable },
+    { auth: Authorize(userPool), contactsTable },
     async ({ auth: { userId }, contactsTable }, event) => {
       const { Items: contacts = [] } = await contactsTable.query({
         KeyConditionExpression: `userId = :userId`,
@@ -253,7 +250,7 @@ export const staticSite = StaticSite(scope, 'site', {
   assetPath: './dist/apps/test-app',
   clientConfig: {
     api,
-    apiClient: generateApiClient(apiRoutes),
+    apiClient: generateApiClient(api),
     userPool,
     exampleBucket,
     title: 'client config title',

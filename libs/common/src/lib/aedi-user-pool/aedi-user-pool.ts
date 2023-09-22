@@ -15,7 +15,7 @@ export function UserPool(
   return createResource(RefType.USER_POOL, scope, id, options);
 }
 
-export function authorize(
+export function Authorize(
   userPool: UserPoolRef,
 ): AuthorizerRef &
   EventTransformRef<

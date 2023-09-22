@@ -77,7 +77,7 @@ export function stackOf(resourceRef: ResourceRef): StackRef {
 /**
  * Binds options to a resource or client ref.
  */
-export function grant<
+export function Grant<
   R extends ResourceRef,
   const O extends Partial<LookupOptions<R['type']>>,
 >(ref: R, options: O) {
