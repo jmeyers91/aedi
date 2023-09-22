@@ -1,4 +1,4 @@
-import { Bucket, BucketClient, Lambda } from '@sep6/idea2';
+import { Bucket, BucketClient, Lambda } from '@aedi/idea2';
 import { Scope } from '../idea';
 import { ListObjectsCommand } from '@aws-sdk/client-s3';
 
@@ -14,7 +14,7 @@ export const getBucketInfo = Lambda(
   { bucket },
   ({ bucket }) => {
     return bucket;
-  }
+  },
 );
 
 export const listBucket = Lambda(
@@ -25,7 +25,7 @@ export const listBucket = Lambda(
     return bucketClient.client.send(
       new ListObjectsCommand({
         Bucket: bucketClient.bucketName,
-      })
+      }),
     );
-  }
+  },
 );

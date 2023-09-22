@@ -11,7 +11,7 @@ import {
   Scope as Idea2Scope,
   Construct,
   lambdaProxyHandler,
-} from '@sep6/idea2';
+} from '@aedi/idea2';
 import { Scope } from '../idea';
 import { randomUUID } from 'crypto';
 
@@ -36,7 +36,7 @@ export interface Contact {
 function ContactService(
   parentScope: Idea2Scope,
   id: string,
-  { serviceName }: { serviceName: string }
+  { serviceName }: { serviceName: string },
 ) {
   const scope = Construct(parentScope, id);
   const api = RestApi(scope, 'api');
@@ -52,14 +52,14 @@ function ContactService(
         name: 'contactId',
         type: 'STRING',
       },
-    }
+    },
   );
 
   const readableContactsTable = TableClient(
-    grant(contactsTable, { read: true })
+    grant(contactsTable, { read: true }),
   );
   const writableContactsTable = TableClient(
-    grant(contactsTable, { write: true })
+    grant(contactsTable, { write: true }),
   );
 
   const handler = lambdaProxyHandler(id, [
@@ -81,7 +81,7 @@ function ContactService(
             ':userId': userId,
           },
         });
-      }
+      },
     ),
 
     Get(
@@ -100,7 +100,7 @@ function ContactService(
         }
 
         return contact;
-      }
+      },
     ),
 
     Post(
@@ -132,7 +132,7 @@ function ContactService(
         await contactsTable.put({ Item: contact });
 
         return contact;
-      }
+      },
     ),
 
     Put(
@@ -144,16 +144,16 @@ function ContactService(
         const { userId } = assertAuth(event);
         const { contactId } = event.pathParameters;
         const { firstName, lastName, email, phone } = JSON.parse(
-          event.body ?? '{}'
+          event.body ?? '{}',
         );
 
         const updatedContact = await contactsTable.patch(
           { userId, contactId },
-          { firstName, lastName, email, phone }
+          { firstName, lastName, email, phone },
         );
 
         return updatedContact;
-      }
+      },
     ),
 
     Delete(
@@ -168,7 +168,7 @@ function ContactService(
         await contactsTable.delete({ Key: { userId, contactId } });
 
         return { success: true };
-      }
+      },
     ),
   ]);
 
@@ -185,7 +185,7 @@ function assertAuth(event: RouteEvent): { userId: string } {
 
 function badRequest(
   message: string,
-  statusCode = 400
+  statusCode = 400,
 ): Error & { statusCode: number } {
   return Object.assign(new Error(message), { statusCode });
 }

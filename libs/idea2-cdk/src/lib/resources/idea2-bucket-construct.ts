@@ -2,7 +2,7 @@ import { RemovalPolicy, Stack } from 'aws-cdk-lib';
 import { Bucket } from 'aws-cdk-lib/aws-s3';
 import { BucketDeployment, Source } from 'aws-cdk-lib/aws-s3-deployment';
 import { Construct } from 'constructs';
-import { BucketConstructRef, BucketRef, RefType } from '@sep6/idea2';
+import { BucketConstructRef, BucketRef, RefType } from '@aedi/idea2';
 import { ILambdaDependency } from '../idea2-infra-types';
 import { Idea2LambdaFunction } from './idea2-lambda-construct';
 import { Idea2BaseConstruct } from '../idea2-base-construct';

@@ -1,5 +1,5 @@
-import { resolveIdea2BrowserClient } from '@sep6/idea2-browser-client';
-import type { staticSite } from '@sep6/idea2-test-cases';
+import { resolveIdea2BrowserClient } from '@aedi/idea2-browser-client';
+import type { staticSite } from '@aedi/idea2-test-cases';
 import { getUserAuthHeaders, userPool } from '../utils/cognito-utils';
 
 export const clientConfig = resolveIdea2BrowserClient<typeof staticSite>();

@@ -1,7 +1,7 @@
-import { resolveConstructRef } from '@sep6/idea2-local';
+import { resolveConstructRef } from '@aedi/idea2-local';
 import { api } from './dynamo-crud';
 import { randomUUID } from 'crypto';
-import { FetchClient } from '@sep6/idea2';
+import { FetchClient } from '@aedi/idea2';
 
 describe('dynamo CRUD', () => {
   const userId = randomUUID();
@@ -18,10 +18,10 @@ describe('dynamo CRUD', () => {
 
       expect(response.status).toEqual(200);
       expect(await response.text()).toMatch(
-        'This text is assumed to be HTML and is returned as-is'
+        'This text is assumed to be HTML and is returned as-is',
       );
       expect(response.headers.get('Content-Type')).toBe(
-        'text/html; charset=utf-8'
+        'text/html; charset=utf-8',
       );
     });
 
@@ -34,7 +34,7 @@ describe('dynamo CRUD', () => {
           'This object is assumed to be JSON and is stringified before being returned',
       });
       expect(response.headers.get('Content-Type')).toBe(
-        'application/json; charset=utf-8'
+        'application/json; charset=utf-8',
       );
     });
 
@@ -176,7 +176,7 @@ describe('dynamo CRUD', () => {
 
       expect(response.status).toEqual(200);
       expect(await response.text()).toMatch(
-        /firstName, lastName, email, phone/
+        /firstName, lastName, email, phone/,
       );
       expect(response.headers.get('Content-Type')).toBe('text/csv');
     });

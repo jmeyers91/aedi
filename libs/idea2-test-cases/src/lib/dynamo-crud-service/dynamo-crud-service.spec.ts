@@ -1,12 +1,12 @@
-import { loadConstructRef, resolveConstructRef } from '@sep6/idea2-local';
+import { loadConstructRef, resolveConstructRef } from '@aedi/idea2-local';
 import { Contact, service1, service2 } from './dynamo-crud-service';
 import { randomUUID } from 'crypto';
-import { FetchClient } from '@sep6/idea2';
+import { FetchClient } from '@aedi/idea2';
 
 describe('dynamo CRUD service', () => {
   test('APIs should not be the same', async () => {
     expect((await loadConstructRef(service1.api)).url).not.toEqual(
-      (await loadConstructRef(service2.api)).url
+      (await loadConstructRef(service2.api)).url,
     );
   });
 });

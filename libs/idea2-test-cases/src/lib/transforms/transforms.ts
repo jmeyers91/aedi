@@ -7,7 +7,7 @@ import {
   TransformedRefScope,
   grant,
   mapRef,
-} from '@sep6/idea2';
+} from '@aedi/idea2';
 import { Scope } from '../idea';
 import { randomUUID } from 'crypto';
 
@@ -40,7 +40,7 @@ function provideDynamicCount(counterId: string) {
       const { count = 0 } = (await counterTable.get({ counterId })) ?? {};
       return count;
     },
-    TransformedRefScope.INVOKE
+    TransformedRefScope.INVOKE,
   );
 }
 
@@ -52,7 +52,7 @@ function provideParamCount() {
       const { count = 0 } = (await counterTable.get({ counterId })) ?? {};
       return count;
     },
-    TransformedRefScope.INVOKE
+    TransformedRefScope.INVOKE,
   );
 }
 
@@ -76,7 +76,7 @@ export const incrementCount = Post(
     });
 
     return { count };
-  }
+  },
 );
 
 export const getCount = Get(
@@ -84,7 +84,7 @@ export const getCount = Get(
   'getCount',
   '/counter/{counterId}',
   { count: countRequest },
-  ({ count }) => ({ count })
+  ({ count }) => ({ count }),
 );
 
 export const getTestCount = Get(
@@ -92,7 +92,7 @@ export const getTestCount = Get(
   'getTestCount',
   '/test-count',
   { count: countStatic },
-  ({ count }) => ({ count })
+  ({ count }) => ({ count }),
 );
 
 export const getTestCountDynamic = Get(
@@ -100,7 +100,7 @@ export const getTestCountDynamic = Get(
   'getTestCountDynamic',
   '/test-count-dynamic',
   { count: countDynamic },
-  ({ count }) => ({ count })
+  ({ count }) => ({ count }),
 );
 
 let staticInvokeCount = 0;
@@ -120,7 +120,7 @@ export const staticTransformCheck = Get(
   },
   ({ runCount }) => {
     return { runCount, staticInvokeCount };
-  }
+  },
 );
 
 export const staticTransformCheck2 = Get(
@@ -134,7 +134,7 @@ export const staticTransformCheck2 = Get(
   },
   ({ uuid }) => {
     return { uuid };
-  }
+  },
 );
 
 export const invokeTransformCheck = Get(
@@ -147,12 +147,12 @@ export const invokeTransformCheck = Get(
       () => {
         return randomUUID();
       },
-      TransformedRefScope.INVOKE
+      TransformedRefScope.INVOKE,
     ),
   },
   ({ uuid }) => {
     return { uuid };
-  }
+  },
 );
 
 const rootUuid = randomUUID(); // this should be the same across all requests if they're hitting the same execution context
@@ -171,7 +171,7 @@ const staticUuid = mapRef(counterTable, async () => {
 const dynamicUuid = mapRef(
   staticUuid,
   (staticUuid) => ({ staticUuid, dynamicUuid: randomUUID() }),
-  TransformedRefScope.INVOKE
+  TransformedRefScope.INVOKE,
 );
 
 export const nestedTransformCheck = Get(
@@ -181,5 +181,5 @@ export const nestedTransformCheck = Get(
   {
     uuid: dynamicUuid,
   },
-  ({ uuid }) => ({ uuid })
+  ({ uuid }) => ({ uuid }),
 );

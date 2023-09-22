@@ -12,7 +12,7 @@ import {
   Idea2App,
   RefType,
   StaticSiteRef,
-} from '@sep6/idea2';
+} from '@aedi/idea2';
 import {
   GetObjectCommand,
   PutObjectCommand,
@@ -36,7 +36,7 @@ export interface LocalConstructMap {
  * Loads a resource ref's construct ref from its stack's map bucket.
  */
 export function loadConstructRef<R extends ResourceRef>(
-  ref: R
+  ref: R,
 ): Promise<LookupConstructRef<R['type']>> {
   if (!cache.has(ref)) {
     cache.set(ref, load());
@@ -53,7 +53,7 @@ export function loadConstructRef<R extends ResourceRef>(
       new GetObjectCommand({
         Bucket: bucketName,
         Key: `${ref.uid}.json`,
-      })
+      }),
     );
     if (!response.Body) {
       throw new Error(`Empty response from S3.`);
@@ -66,12 +66,12 @@ export function loadConstructRef<R extends ResourceRef>(
 }
 
 export async function resolveConstructRef<
-  R extends ResourceRef | ClientRef | TransformedRef<any, any>
+  R extends ResourceRef | ClientRef | TransformedRef<any, any>,
 >(
   ref: R,
   mockEvent?: any,
   mockContext?: any,
-  mockCallback?: any
+  mockCallback?: any,
 ): Promise<ResolveRef<R>> {
   const resourceRef = getClientRefFromRef(ref).ref;
 
@@ -81,12 +81,12 @@ export async function resolveConstructRef<
     // Fake lambda handler props for invoke scoped refs
     mockEvent,
     mockContext,
-    mockCallback
+    mockCallback,
   );
 }
 
 export async function loadStaticSiteConfig<C>(
-  staticSite: StaticSiteRef<C>
+  staticSite: StaticSiteRef<C>,
 ): Promise<Record<string, unknown>> {
   const resolvedConfig: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(staticSite.clientConfig ?? {})) {

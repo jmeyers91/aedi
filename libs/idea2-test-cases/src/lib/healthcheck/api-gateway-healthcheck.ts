@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { Lambda, RestApi, RouteEvent, LambdaRoute, reply } from '@sep6/idea2';
+import { Lambda, RestApi, RouteEvent, LambdaRoute, reply } from '@aedi/idea2';
 import { Scope } from '../idea';
 
 const scope = Scope('healthcheck');
@@ -12,7 +12,7 @@ export const healthcheck = LambdaRoute(
   '/healthcheck',
   Lambda(scope, 'healthcheck', {}, (_, event: RouteEvent) => {
     return reply({ testName: 'healthcheck', success: true });
-  })
+  }),
 );
 
 export const echo = LambdaRoute(
@@ -21,5 +21,5 @@ export const echo = LambdaRoute(
   '/echo',
   Lambda(scope, 'echo', {}, (_, event: RouteEvent) => {
     return reply(JSON.parse(event.body as string));
-  })
+  }),
 );

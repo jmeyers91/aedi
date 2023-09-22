@@ -1,11 +1,11 @@
-import { LambdaInvokeClient, RefType } from '@sep6/idea2';
+import { LambdaInvokeClient, RefType } from '@aedi/idea2';
 import { getUserPoolInfo, listUserPoolUsers } from './user-pool-client';
-import { resolveConstructRef } from '@sep6/idea2-local';
+import { resolveConstructRef } from '@aedi/idea2-local';
 
 describe('user-pool-client', () => {
   test('Should be able to get the user pool construct ref', async () => {
     const invoke = await resolveConstructRef(
-      LambdaInvokeClient(getUserPoolInfo)
+      LambdaInvokeClient(getUserPoolInfo),
     );
 
     const result = await invoke({});
@@ -24,7 +24,7 @@ describe('user-pool-client', () => {
 
   test('Should be able to list users in the user pool', async () => {
     const invoke = await resolveConstructRef(
-      LambdaInvokeClient(listUserPoolUsers)
+      LambdaInvokeClient(listUserPoolUsers),
     );
 
     const result = await invoke({});

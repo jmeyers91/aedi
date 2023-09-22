@@ -1,7 +1,7 @@
 import { App, Environment } from 'aws-cdk-lib';
 
-import { Idea2CdkApp } from '@sep6/idea2-cdk';
-import { idea as testCaseIdea } from '@sep6/idea2-test-cases';
+import { Idea2CdkApp } from '@aedi/idea2-cdk';
+import { idea as testCaseIdea } from '@aedi/idea2-test-cases';
 
 const app = new App();
 const env: Environment = {

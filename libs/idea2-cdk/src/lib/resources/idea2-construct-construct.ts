@@ -1,4 +1,4 @@
-import { ConstructConstructRef, ConstructRef, RefType } from '@sep6/idea2';
+import { ConstructConstructRef, ConstructRef, RefType } from '@aedi/idea2';
 import { Construct } from 'constructs';
 import { ILambdaDependency } from '../idea2-infra-types';
 import { Idea2BaseConstruct } from '../idea2-base-construct';
@@ -12,7 +12,7 @@ export class Idea2Construct
   constructor(
     scope: Construct,
     id: string,
-    props: { resourceRef: ConstructRef }
+    props: { resourceRef: ConstructRef },
   ) {
     super(scope, id, props);
 

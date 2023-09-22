@@ -1,5 +1,5 @@
 import { Construct } from 'constructs';
-import { UserPoolRef, UserPoolConstructRef, RefType } from '@sep6/idea2';
+import { UserPoolRef, UserPoolConstructRef, RefType } from '@aedi/idea2';
 import { RemovalPolicy, Stack } from 'aws-cdk-lib';
 import {
   CfnIdentityPool,
@@ -25,7 +25,7 @@ export class Idea2UserPool
   constructor(
     scope: Construct,
     id: string,
-    props: { resourceRef: UserPoolRef }
+    props: { resourceRef: UserPoolRef },
   ) {
     super(scope, id, props);
 
@@ -34,7 +34,7 @@ export class Idea2UserPool
     const lambdaTriggers: UserPoolTriggers = {};
 
     for (const [triggerName, triggerLambdaRef] of Object.entries(
-      userPoolRef.triggers ?? {}
+      userPoolRef.triggers ?? {},
     )) {
       lambdaTriggers[triggerName] =
         resolveConstruct(triggerLambdaRef).lambdaFunction;
@@ -105,7 +105,7 @@ export class Idea2UserPool
             }`,
           },
         },
-      }
+      },
     );
 
     this.userPool.addDomain('domain', {

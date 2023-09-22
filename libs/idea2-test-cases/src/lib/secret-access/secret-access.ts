@@ -1,4 +1,4 @@
-import { Lambda, Secret, SecretValue } from '@sep6/idea2';
+import { Lambda, Secret, SecretValue } from '@aedi/idea2';
 import { Scope } from '../idea';
 
 const scope = Scope('secret-access');
@@ -18,12 +18,12 @@ export const getSecretArn = Lambda(
   scope,
   'getSecretArn',
   { secret },
-  ({ secret }) => secret.constructRef.secretName
+  ({ secret }) => secret.constructRef.secretName,
 );
 
 export const getSecretValue = Lambda(
   scope,
   'getSecretValue',
   { secret: SecretValue(secret) },
-  ({ secret }) => secret
+  ({ secret }) => secret,
 );

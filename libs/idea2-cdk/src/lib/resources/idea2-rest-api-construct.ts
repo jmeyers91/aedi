@@ -5,7 +5,7 @@ import {
   RefType,
   AuthorizerRef,
   UserPoolRef,
-} from '@sep6/idea2';
+} from '@aedi/idea2';
 import { createConstructName, resolveConstruct } from '../idea2-infra-utils';
 import {
   AuthorizationType,
@@ -29,7 +29,7 @@ export class Idea2RestApi
   constructor(
     scope: Construct,
     id: string,
-    props: { resourceRef: RestApiRef }
+    props: { resourceRef: RestApiRef },
   ) {
     super(scope, id, props);
 
@@ -64,7 +64,7 @@ export class Idea2RestApi
       const apiGatewayResource = apiGatewayPath.reduce(
         (resource, pathPart) =>
           resource.getResource(pathPart) ?? resource.addResource(pathPart),
-        this.restApi.root
+        this.restApi.root,
       );
 
       const routeOptions: {
@@ -77,13 +77,13 @@ export class Idea2RestApi
             value &&
             typeof value === 'object' &&
             'authorizedUserPool' in value
-          )
+          ),
       );
 
       // Add the cognito authorizer
       if (authorizers.length > 0) {
         routeOptions.authorizer = this.resolveAuthorizer(
-          authorizers.map((it) => it.authorizedUserPool)
+          authorizers.map((it) => it.authorizedUserPool),
         );
         routeOptions.authorizationType = AuthorizationType.COGNITO;
       }
@@ -91,7 +91,7 @@ export class Idea2RestApi
       apiGatewayResource.addMethod(
         route.method,
         new LambdaIntegration(resolveConstruct(route.lambdaRef).lambdaFunction),
-        routeOptions
+        routeOptions,
       );
     }
   }
@@ -112,9 +112,9 @@ export class Idea2RestApi
         `cognito-authorizer-${userPools.map((pool) => pool.id).join('-')}`,
         {
           cognitoUserPools: userPools.map(
-            (ref) => resolveConstruct(ref).userPool
+            (ref) => resolveConstruct(ref).userPool,
           ),
-        }
+        },
       );
       this.authorizers.set(key, authorizer);
     }

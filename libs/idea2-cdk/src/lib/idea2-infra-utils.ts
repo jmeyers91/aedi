@@ -1,6 +1,6 @@
 import { App, Stack, StackProps } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-import { IResourceRef, Idea2App, RefType, ResourceRef } from '@sep6/idea2';
+import { IResourceRef, Idea2App, RefType, ResourceRef } from '@aedi/idea2';
 import { Idea2Constructs, idea2Constructs } from './idea2-constructs';
 import { ILambdaDependency } from './idea2-infra-types';
 import { AsyncLocalStorage } from 'async_hooks';
@@ -10,7 +10,7 @@ const idea2CdkAppContextStore = new AsyncLocalStorage<Idea2CdkAppContext>();
 
 export function runWithIdea2CdkAppContext<T>(
   context: Idea2CdkAppContext,
-  fn: () => T
+  fn: () => T,
 ): T {
   return idea2CdkAppContextStore.run(context, fn);
 }
@@ -35,13 +35,13 @@ export function createConstructName(resourceRef: IResourceRef): string {
 }
 
 export function isLambdaDependency(
-  construct: object
+  construct: object,
 ): construct is ILambdaDependency<any> {
   return 'grantLambdaAccess' in construct;
 }
 
 export function resolveConstruct<R extends ResourceRef>(
-  resourceRef: R
+  resourceRef: R,
 ): InstanceType<Idea2Constructs[R['type']]> {
   const idea2StackContext = getIdea2CdkAppContext();
 
@@ -68,7 +68,7 @@ export function resolveConstruct<R extends ResourceRef>(
     resourceRef.id,
     {
       resourceRef,
-    }
+    },
   );
 
   // Register all constructs with their stack for mapping
@@ -89,7 +89,7 @@ function isIdea2App(value: unknown): value is Idea2App {
 }
 
 export function getIdea2ConstructClass<T extends RefType>(
-  refType: T
+  refType: T,
 ): (typeof idea2Constructs)[T] {
   return idea2Constructs[refType];
 }

@@ -1,4 +1,4 @@
-import { ResourceRef, StackRef } from '@sep6/idea2';
+import { ResourceRef, StackRef } from '@aedi/idea2';
 import { RemovalPolicy, Stack } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { getIdea2CdkAppContext } from '../idea2-infra-utils';
@@ -16,7 +16,7 @@ export class Idea2Stack extends Stack {
   constructor(
     scope: Construct,
     id: string,
-    { resourceRef: stackRef }: { resourceRef: StackRef }
+    { resourceRef: stackRef }: { resourceRef: StackRef },
   ) {
     super(scope, id, {
       ...getIdea2CdkAppContext().defaultStackProps,
@@ -37,8 +37,8 @@ export class Idea2Stack extends Stack {
       sources: this.resourceConstructs.map(({ construct, resourceRef }) =>
         Source.jsonData(
           `${resourceRef.uid}.json`,
-          (construct as any).getConstructRef?.() ?? {}
-        )
+          (construct as any).getConstructRef?.() ?? {},
+        ),
       ),
       destinationBucket: new Bucket(this, 'idea2-map-bucket', {
         bucketName: this.stackRef.mapBucketName,

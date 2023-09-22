@@ -5,7 +5,7 @@ import {
   DynamoRefClientOptions,
   RefType,
   defaultDynamoRefClientOptions,
-} from '@sep6/idea2';
+} from '@aedi/idea2';
 import { AttributeType, TableV2 } from 'aws-cdk-lib/aws-dynamodb';
 import { RemovalPolicy, Stack } from 'aws-cdk-lib';
 import { ILambdaDependency } from '../idea2-infra-types';
@@ -22,7 +22,7 @@ export class Idea2DynamoTable
   constructor(
     scope: Construct,
     id: string,
-    props: { resourceRef: DynamoRef<any, any> }
+    props: { resourceRef: DynamoRef<any, any> },
   ) {
     super(scope, id, props);
 
@@ -52,7 +52,7 @@ export class Idea2DynamoTable
 
   grantLambdaAccess(
     { lambdaFunction }: Idea2LambdaFunction,
-    options?: DynamoRefClientOptions
+    options?: DynamoRefClientOptions,
   ): void {
     options = { ...defaultDynamoRefClientOptions, ...options };
     if (options.fullAccess) {

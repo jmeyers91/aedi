@@ -15,7 +15,7 @@ import {
   getClientRefFromRef,
   LambdaDependencyGroup,
   RefType,
-} from '@sep6/idea2';
+} from '@aedi/idea2';
 import { ILambdaDependency } from '../idea2-infra-types';
 import { Idea2BaseConstruct } from '../idea2-base-construct';
 
@@ -29,7 +29,7 @@ export class Idea2LambdaFunction
   constructor(
     scope: Construct,
     id: string,
-    props: { resourceRef: LambdaRef<any, any, any> }
+    props: { resourceRef: LambdaRef<any, any, any> },
   ) {
     super(scope, id, props);
 
@@ -43,7 +43,7 @@ export class Idea2LambdaFunction
 
     // Collect dependencies from the lambda context refs
     for (const contextValue of Object.values(
-      lambdaRef.context as LambdaDependencyGroup
+      lambdaRef.context as LambdaDependencyGroup,
     )) {
       // Ignore event transforms here - they're only relevant at runtime and require no additional permissions or construct refs
       if ('transformEvent' in contextValue) {
@@ -70,7 +70,7 @@ export class Idea2LambdaFunction
 
     if (!lambdaRef.handlerLocation) {
       throw new Error(
-        `Unable to resolve lambda handler location: ${lambdaRef.uid}`
+        `Unable to resolve lambda handler location: ${lambdaRef.uid}`,
       );
     }
 
@@ -82,7 +82,7 @@ export class Idea2LambdaFunction
       environment: {
         ...environment,
         IDEA_CONSTRUCT_UID_MAP: JSON.stringify(
-          environment.IDEA_CONSTRUCT_UID_MAP
+          environment.IDEA_CONSTRUCT_UID_MAP,
         ),
       },
     };
@@ -93,19 +93,19 @@ export class Idea2LambdaFunction
       .filter(isLambdaDependency)
       .reduce(
         (props, construct) => construct.transformLambdaProps?.(props) ?? props,
-        baseNodejsFunctionProps
+        baseNodejsFunctionProps,
       );
 
     // Create the nodejs function
     const nodeJsFunction = new NodejsFunction(
       this,
       'function',
-      transformedNodejsFunctionProps
+      transformedNodejsFunctionProps,
     );
     this.lambdaFunction = nodeJsFunction;
 
     console.log(
-      `- Lambda ${lambdaRef.id} -> ${lambdaRef.filepath} ${lambdaRef.handlerLocation.filepath} ${lambdaRef.handlerLocation.exportKey}`
+      `- Lambda ${lambdaRef.id} -> ${lambdaRef.filepath} ${lambdaRef.handlerLocation.filepath} ${lambdaRef.handlerLocation.exportKey}`,
     );
 
     // Grant the lambda access to each of its dependencies.
@@ -113,7 +113,7 @@ export class Idea2LambdaFunction
       if ('grantLambdaAccess' in construct) {
         construct.grantLambdaAccess?.(
           this,
-          'options' in clientRef ? clientRef.options : undefined
+          'options' in clientRef ? clientRef.options : undefined,
         );
       }
     }

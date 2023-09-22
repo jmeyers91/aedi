@@ -11,7 +11,7 @@ import {
   isQueryParamsDependency,
   isStaticSiteApiClientGenerator,
   resolveRef,
-} from '@sep6/idea2';
+} from '@aedi/idea2';
 import { RemovalPolicy, Stack } from 'aws-cdk-lib';
 import {
   OriginAccessIdentity,

@@ -1,4 +1,4 @@
-import { Lambda, LambdaInvokeClient } from '@sep6/idea2';
+import { Lambda, LambdaInvokeClient } from '@aedi/idea2';
 import { Scope } from '../idea';
 
 const scope = Scope('basic-lambda');
@@ -7,7 +7,7 @@ export const echo = Lambda(
   scope,
   'echo',
   {},
-  (_, { message }: { message: string }) => ({ message })
+  (_, { message }: { message: string }) => ({ message }),
 );
 
 export const echoProxy = Lambda(
@@ -15,5 +15,5 @@ export const echoProxy = Lambda(
   'echoProxy',
   { echo: LambdaInvokeClient(echo) },
   ({ echo }, { proxyMessage }: { proxyMessage: string }) =>
-    echo({ message: proxyMessage })
+    echo({ message: proxyMessage }),
 );

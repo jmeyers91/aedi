@@ -1,4 +1,4 @@
-import { RefType } from '@sep6/idea2';
+import { RefType } from '@aedi/idea2';
 import { Construct } from 'constructs';
 import { Idea2Bucket } from './resources/idea2-bucket-construct';
 import { Idea2DynamoTable } from './resources/idea2-dynamo-construct';

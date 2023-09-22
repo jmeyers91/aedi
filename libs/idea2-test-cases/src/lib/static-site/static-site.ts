@@ -23,7 +23,7 @@ import {
   lambdaProxyHandler,
   reply,
   withRoutes,
-} from '@sep6/idea2';
+} from '@aedi/idea2';
 import { Scope } from '../idea';
 import { randomUUID } from 'crypto';
 import { PreSignUpTriggerEvent } from 'aws-lambda';

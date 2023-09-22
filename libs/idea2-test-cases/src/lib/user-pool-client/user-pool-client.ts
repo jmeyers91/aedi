@@ -1,4 +1,4 @@
-import { Lambda, UserPool, UserPoolClient } from '@sep6/idea2';
+import { Lambda, UserPool, UserPoolClient } from '@aedi/idea2';
 import { Scope } from '../idea';
 import { ListUsersCommand } from '@aws-sdk/client-cognito-identity-provider';
 
@@ -14,7 +14,7 @@ export const getUserPoolInfo = Lambda(
   scope,
   'getUserPoolInfo',
   { userPool },
-  ({ userPool }) => userPool
+  ({ userPool }) => userPool,
 );
 
 export const listUserPoolUsers = Lambda(
@@ -25,7 +25,7 @@ export const listUserPoolUsers = Lambda(
     return userPool.client.send(
       new ListUsersCommand({
         UserPoolId: userPool.userPoolId,
-      })
+      }),
     );
-  }
+  },
 );

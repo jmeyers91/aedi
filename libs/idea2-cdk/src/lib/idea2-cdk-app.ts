@@ -5,7 +5,7 @@ import {
   resolveConstruct,
   runWithIdea2CdkAppContext,
 } from './idea2-infra-utils';
-import { IResourceRef, Idea2App } from '@sep6/idea2';
+import { IResourceRef, Idea2App } from '@aedi/idea2';
 import { Idea2Stack } from './resources/idea2-stack-construct';
 
 export class Idea2CdkApp implements Idea2CdkAppContext {

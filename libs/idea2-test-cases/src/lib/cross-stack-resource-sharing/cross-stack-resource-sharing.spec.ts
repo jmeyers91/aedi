@@ -1,6 +1,6 @@
-import { LambdaInvokeClient } from '@sep6/idea2';
+import { LambdaInvokeClient } from '@aedi/idea2';
 import { echo, echoProxy } from './cross-stack-resource-sharing';
-import { resolveConstructRef } from '@sep6/idea2-local';
+import { resolveConstructRef } from '@aedi/idea2-local';
 
 describe('cross-stack-resource-sharing', () => {
   test('echo should return its input event', async () => {
@@ -13,7 +13,7 @@ describe('cross-stack-resource-sharing', () => {
 
   test('echoProxy should return its input event', async () => {
     const invokeEchoProxy = await resolveConstructRef(
-      LambdaInvokeClient(echoProxy)
+      LambdaInvokeClient(echoProxy),
     );
 
     expect(await invokeEchoProxy({ proxyMessage: 'hello world' })).toEqual({

@@ -1,7 +1,7 @@
-import { resolveConstructRef } from '@sep6/idea2-local';
+import { resolveConstructRef } from '@aedi/idea2-local';
 import { api } from './transforms';
 import { randomUUID } from 'crypto';
-import { FetchClient } from '@sep6/idea2';
+import { FetchClient } from '@aedi/idea2';
 
 describe('transforms', () => {
   let apiFetch: FetchClient;
@@ -145,10 +145,10 @@ describe('transforms', () => {
     }
 
     const staticIds = new Set(
-      responses.map((response) => response.uuid.staticUuid)
+      responses.map((response) => response.uuid.staticUuid),
     );
     const dynamicIds = new Set(
-      responses.map((response) => response.uuid.dynamicUuid)
+      responses.map((response) => response.uuid.dynamicUuid),
     );
 
     expect(staticIds.size).toEqual(1);

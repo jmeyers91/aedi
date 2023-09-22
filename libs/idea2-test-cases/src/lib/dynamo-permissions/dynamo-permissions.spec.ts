@@ -1,6 +1,6 @@
-import { resolveConstructRef } from '@sep6/idea2-local';
+import { resolveConstructRef } from '@aedi/idea2-local';
 import { api as dynamoCrudApi } from './dynamo-permissions';
-import { FetchClient } from '@sep6/idea2';
+import { FetchClient } from '@aedi/idea2';
 
 describe('dynamo permissions', () => {
   let apiFetch: FetchClient;
@@ -27,7 +27,7 @@ describe('dynamo permissions', () => {
     expect(await response.json()).toEqual({
       success: false,
       error: expect.stringMatching(
-        /User: .+? is not authorized to perform: dynamodb:PutItem on resource: .+? because no identity-based policy allows the dynamodb:PutItem action/
+        /User: .+? is not authorized to perform: dynamodb:PutItem on resource: .+? because no identity-based policy allows the dynamodb:PutItem action/,
       ),
     });
     expect(response.status).toEqual(200);

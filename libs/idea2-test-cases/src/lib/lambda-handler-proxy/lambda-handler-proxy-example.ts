@@ -1,4 +1,4 @@
-import { Get, Post, RestApi, lambdaProxyHandler } from '@sep6/idea2';
+import { Get, Post, RestApi, lambdaProxyHandler } from '@aedi/idea2';
 import { Scope } from '../idea';
 
 const scope = Scope('lambda-handler-proxy-example');

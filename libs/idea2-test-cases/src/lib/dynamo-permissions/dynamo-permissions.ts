@@ -1,4 +1,4 @@
-import { Get, grant, Table, RestApi, TableClient } from '@sep6/idea2';
+import { Get, grant, Table, RestApi, TableClient } from '@aedi/idea2';
 import { Scope } from '../idea';
 
 const scope = Scope('dynamo-permissions');
@@ -26,7 +26,7 @@ export const hasReadPermissionsSuccess = Get(
     await table.get({ counterId: 'test' });
 
     return { success: true };
-  }
+  },
 );
 
 export const hasWritePermissionsSuccess = Get(
@@ -38,7 +38,7 @@ export const hasWritePermissionsSuccess = Get(
     await table.put({ Item: { counterId: 'test' } });
 
     return { success: true };
-  }
+  },
 );
 
 export const hasWritePermissionsFail = Get(
@@ -57,5 +57,5 @@ export const hasWritePermissionsFail = Get(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return { success: false, error: (error as any).message };
     }
-  }
+  },
 );

@@ -1,4 +1,4 @@
-import { RestApi } from '@sep6/idea2';
+import { RestApi } from '@aedi/idea2';
 import { Scope } from '../idea';
 
 export const scope = Scope('healthcheck-multi');

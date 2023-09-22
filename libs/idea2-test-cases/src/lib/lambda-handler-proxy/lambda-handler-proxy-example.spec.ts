@@ -1,6 +1,6 @@
-import { resolveConstructRef } from '@sep6/idea2-local';
+import { resolveConstructRef } from '@aedi/idea2-local';
 import { api } from './lambda-handler-proxy-example';
-import { FetchClient } from '@sep6/idea2';
+import { FetchClient } from '@aedi/idea2';
 
 describe('lambda-handler-proxy-example', () => {
   let apiFetch: FetchClient;

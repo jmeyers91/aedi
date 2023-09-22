@@ -11,33 +11,17 @@
     "importHelpers": true,
     "target": "es2015",
     "module": "esnext",
-    "lib": [
-      "es2020",
-      "dom"
-    ],
+    "lib": ["es2020", "dom"],
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "@sep6/idea2": [
-        "libs/idea2/src/index.ts"
-      ],
-      "@sep6/idea2-browser-client": [
-        "libs/idea2-browser-client/src/index.ts"
-      ],
-      "@sep6/idea2-cdk": [
-        "libs/idea2-cdk/src/index.ts"
-      ],
-      "@sep6/idea2-local": [
-        "libs/idea2-local/src/index.ts"
-      ],
-      "@sep6/idea2-test-cases": [
-        "libs/idea2-test-cases/src/index.ts"
-      ]
+      "@aedi/idea2": ["libs/idea2/src/index.ts"],
+      "@aedi/idea2-browser-client": ["libs/idea2-browser-client/src/index.ts"],
+      "@aedi/idea2-cdk": ["libs/idea2-cdk/src/index.ts"],
+      "@aedi/idea2-local": ["libs/idea2-local/src/index.ts"],
+      "@aedi/idea2-test-cases": ["libs/idea2-test-cases/src/index.ts"]
     }
   },
-  "exclude": [
-    "node_modules",
-    "tmp"
-  ]
+  "exclude": ["node_modules", "tmp"]
 }

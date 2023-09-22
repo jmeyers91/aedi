@@ -3,7 +3,7 @@ import {
   LookupRef,
   RefType,
   ResourceRef,
-} from '@sep6/idea2';
+} from '@aedi/idea2';
 import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { Construct } from 'constructs';
 
@@ -13,7 +13,7 @@ export abstract class Idea2BaseConstruct<R extends RefType> extends Construct {
   constructor(
     scope: Construct,
     id: string,
-    { resourceRef }: { resourceRef: ResourceRef }
+    { resourceRef }: { resourceRef: ResourceRef },
   ) {
     super(scope, id);
 
