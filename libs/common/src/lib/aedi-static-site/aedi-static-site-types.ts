@@ -33,6 +33,8 @@ export type ResolveStaticSiteClientConfig<R extends StaticSiteRef<any>> =
   ResolveClientConfig<Required<R>['clientConfig']>;
 
 export type ResolveClientConfig<C> = {
+  ApiError: { new (): Error & { response: Response; data: unknown } };
+} & {
   [K in keyof C]: C[K] extends ResourceRef
     ? LookupConstructRef<C[K]['type']>
     : C[K] extends { __generateApiClient: infer R }

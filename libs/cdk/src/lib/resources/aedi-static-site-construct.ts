@@ -160,19 +160,31 @@ class StaticSiteConfigApi extends Construct {
 
     // This script is run in the static site
     const clientConfigScript = `
-      window.__clientConfig = {
-        ...___RESOLVED_CONFIG___,
+      (() => {
+        class ApiError extends Error {
+          constructor(message, response, data) {
+            super(message);
+            this.response = response;
+            this.data = data;
+          }
+        }
 
-        ${apiClients
-          .map(({ key, clientSrc }) => `${key}: ${clientSrc}`)
-          .join(',\n\n')}
-      };
+        window.__clientConfig = {
+          ...___RESOLVED_CONFIG___,
 
-      ${
-        getMode() === 'development'
-          ? `console.log("${staticSiteRef.uid} config", window.__clientConfig);`
-          : ''
-      }
+          ApiError,
+
+          ${apiClients
+            .map(({ key, clientSrc }) => `${key}: ${clientSrc}`)
+            .join(',\n\n')}
+        };
+
+        ${
+          getMode() === 'development'
+            ? `console.log("${staticSiteRef.uid} config", window.__clientConfig);`
+            : ''
+        }
+      })();
     `;
 
     const lambdaSrc = `"use strict";
@@ -219,14 +231,34 @@ class StaticSiteConfigApi extends Construct {
 
 function generateRestApiClient(restApi: RestApiRef): string {
   resolveConstruct;
-  return `({ baseUrl, getHeaders }) => ({
-    ${restApi.routes
-      .map(
-        (routeDef) =>
-          `${routeDef.lambdaRef.id}: ${generateRestApiRouteClient(routeDef)}`,
-      )
-      .join(',\n\n')}
-  })`;
+  return `({ baseUrl, getHeaders }) => {
+    async function handleResponse(response) {
+      const contentType = (response.headers.get('Content-Type') ?? 'application/json').split(';')[0];
+      let data;
+      if (contentType === 'application/json') {
+        data = await response.json();
+      } else if(contentType === 'application/x-www-form-urlencoded' || contentType === 'multipart/form-data') {
+        data = await response.formData();
+      } else {
+        data = await response.text();
+      }
+  
+      if (!response.ok) {
+        throw new ApiError(\`Request failed with status: \${response.status}\`, response, data);
+      }
+  
+      return data;
+    }
+
+    return {
+      ${restApi.routes
+        .map(
+          (routeDef) =>
+            `${routeDef.lambdaRef.id}: ${generateRestApiRouteClient(routeDef)}`,
+        )
+        .join(',\n\n')}
+    };
+  }`;
 }
 
 function generateRestApiRouteClient(routeDef: RestApiRefRoute) {
@@ -270,7 +302,7 @@ function generateRestApiRouteClient(routeDef: RestApiRefRoute) {
           `if (${key} !== undefined) { url.searchParams.append("${key}", ${key}); }`,
       )
       .join('\n')}
-    const response = await fetch(url, {
+    return handleResponse(await fetch(url, {
       method: "${routeDef.method}",
       headers: {
         "Content-Type": "application/json",
@@ -281,8 +313,7 @@ function generateRestApiRouteClient(routeDef: RestApiRefRoute) {
           ? `body: JSON.stringify({ ${bodyInputKeys.join(', ')} }),`
           : ''
       }
-    });
-    return response.json();
+    }));
   }`;
 }
 
