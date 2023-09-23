@@ -85,8 +85,8 @@ export function EditContactPage() {
         to={contact ? `/contacts/view/${contact?.contactId}` : '/contacts'}
       />
       {!!loadError && <ErrorFill error={loadError} />}
-      {isLoading && <SpinnerFill />}
-      {!isLoading && !loadError && (
+      {!!(contactId && isLoading) && <SpinnerFill />}
+      {(!contactId || !isLoading) && !loadError && (
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <h1 className="font-bold text-lg">
             {contact ? 'Edit contact' : 'Add contact'}
