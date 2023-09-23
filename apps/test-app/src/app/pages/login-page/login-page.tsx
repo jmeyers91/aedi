@@ -1,66 +1,38 @@
-import {
-  CognitoUser,
-  CognitoUserSession,
-  AuthenticationDetails,
-} from 'amazon-cognito-identity-js';
-import { userPool } from '../../utils/cognito-utils';
-import { useContext } from 'react';
-import { AuthContext } from '../../contexts/AuthContext';
+import { FormEvent } from 'react';
 import { Link } from 'react-router-dom';
-import style from './login-page.module.css';
+import { BlockButton } from '../../components/block-button';
+import { InputGroup } from '../../components/input-group';
+import { useLogin } from '../../hooks/auth-hooks';
+import { FormError } from '../../components/error-components';
 
 export function LoginPage() {
-  const { setUser } = useContext(AuthContext);
+  const login = useLogin();
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const username = formData.get('username') as string;
+    const password = formData.get('password') as string;
+
+    login.mutate({ username, password });
+  };
 
   return (
-    <div className={style.LoginPage}>
+    <div className="flex-1 flex flex-col justify-center items-center gap-8">
       <form
-        id="login-form"
-        onSubmit={async (event) => {
-          event.preventDefault();
-          const formData = new FormData(event.currentTarget);
-          const username = formData.get('username') as string;
-          const password = formData.get('password') as string;
-
-          const user = new CognitoUser({
-            Username: username,
-            Pool: userPool,
-          });
-
-          const { userConfirmationNecessary } = await new Promise<{
-            session: CognitoUserSession;
-            userConfirmationNecessary?: boolean;
-          }>((resolve, reject) =>
-            user.authenticateUser(
-              new AuthenticationDetails({
-                Username: username,
-                Password: password,
-              }),
-              {
-                onSuccess: (session, userConfirmationNecessary) =>
-                  resolve({ session, userConfirmationNecessary }),
-                onFailure: reject,
-              },
-            ),
-          );
-
-          if (userConfirmationNecessary) {
-            throw new Error('TODO: Add user confirmation');
-          }
-
-          // TODO: Add error handling
-
-          setUser(user);
-        }}
+        onSubmit={handleSubmit}
+        className="flex flex-col gap-8 w-96 max-w-full"
       >
-        <h3>Login</h3>
-        <label htmlFor="username">Username</label>
-        <input name="username" type="text" placeholder="Username" />
-        <label htmlFor="password">Password</label>
-        <input name="password" type="password" placeholder="Password" />
-        <button type="submit">Login</button>
+        <h3 className="font-bold">Login</h3>
+        <InputGroup name="username" label="Username" type="text" />
+        <InputGroup name="password" label="Password" type="password" />
+
+        <FormError error={login.error} />
+        <BlockButton type="submit">Login</BlockButton>
       </form>
-      <Link to="/register">Register</Link>
+      <Link to="/register" className="hover:text-sky-500 transition-colors">
+        Register
+      </Link>
     </div>
   );
 }

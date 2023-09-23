@@ -118,10 +118,14 @@ export function FullRoute<
         ),
       );
     } catch (error) {
+      // Allow short-circuiting error wrapping by throwing a `LambdaResultError` which includes a fully formed reply
+      if (error instanceof LambdaResultError) {
+        return error.handlerResult as any;
+      }
       const { message, statusCode = 500 } = error as Error & {
         statusCode?: number;
       };
-      return errorReply(message, statusCode) as any;
+      return errorReply({ message, statusCode }, statusCode) as any;
     }
   };
 
@@ -398,16 +402,18 @@ export function reply<T>(
   });
 }
 
-export function errorReply<T>(
-  error: T,
+export function errorReply<E extends { message: string }>(
+  errorObject: E,
   statusCode = 400,
-): RouteResponse<{ error: T }> {
-  return reply(
-    {
-      error,
-    },
-    statusCode,
-  );
+): RouteResponse<E> {
+  return reply(errorObject, statusCode);
+}
+
+export function badRequest(
+  message = 'Bad request.',
+  statusCode = 400,
+): LambdaResultError {
+  return new LambdaResultError(message, errorReply({ message, statusCode }));
 }
 
 /**

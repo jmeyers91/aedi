@@ -17,6 +17,7 @@ import {
   Delete,
   Api,
   ShareTypes,
+  badRequest,
 } from '@aedi/common';
 import { Scope } from '../app';
 import { randomUUID } from 'crypto';
@@ -138,7 +139,7 @@ export const api = Api(scope, 'api', {
       const contact = await contactsTable.get({ userId, contactId });
 
       if (!contact) {
-        throw badRequest('Not found', 404);
+        throw badRequest('Contact not found.');
       }
 
       return contact;
@@ -278,10 +279,3 @@ export const staticSite = StaticSite(scope, 'site', {
     }>(),
   },
 });
-
-function badRequest(
-  message: string,
-  statusCode = 400,
-): Error & { statusCode: number } {
-  return Object.assign(new Error(message), { statusCode });
-}

@@ -1,12 +1,10 @@
 import { CognitoUser } from 'amazon-cognito-identity-js';
 import { createContext } from 'react';
 
-export const AuthContext = createContext<{
+export const UserContext = createContext<{
   user: CognitoUser | null;
-  setUser(user: CognitoUser): void;
-  logout(): void;
+  setUser(user: CognitoUser | null): void;
 }>({
   user: null,
   setUser() {},
-  logout() {},
 });

@@ -1,75 +1,44 @@
-import {
-  ISignUpResult,
-  CognitoUserSession,
-  AuthenticationDetails,
-} from 'amazon-cognito-identity-js';
-import { userPool } from '../../utils/cognito-utils';
-import { useContext } from 'react';
-import { AuthContext } from '../../contexts/AuthContext';
+import { FormEvent } from 'react';
 import { Link } from 'react-router-dom';
+import { BlockButton } from '../../components/block-button';
+import { InputGroup } from '../../components/input-group';
+import { useRegister } from '../../hooks/auth-hooks';
+import { FormError } from '../../components/error-components';
 
 export function RegisterPage() {
-  const { setUser } = useContext(AuthContext);
+  const register = useRegister();
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const username = formData.get('username') as string;
+    const password = formData.get('password') as string;
+    const passwordConfirmed = formData.get('passwordConfirmed') as string;
+
+    register.mutate({ username, password, passwordConfirmed });
+  };
 
   return (
-    <div>
+    <div className="flex-1 flex flex-col justify-center items-center gap-8">
       <form
-        id="register-form"
-        onSubmit={async (event) => {
-          event.preventDefault();
-          const formData = new FormData(event.currentTarget);
-          const username = formData.get('username') as string;
-          const password = formData.get('password') as string;
-
-          const signUpResult = await new Promise<ISignUpResult | undefined>(
-            (resolve, reject) => {
-              userPool.signUp(username, password, [], [], (err, result) => {
-                if (err) {
-                  reject(err);
-                } else {
-                  resolve(result);
-                }
-              });
-            },
-          );
-
-          if (!signUpResult) {
-            throw new Error(`Sign-up result is falsy.`);
-          }
-
-          // TODO: Add error handling
-          const { userConfirmationNecessary } = await new Promise<{
-            session: CognitoUserSession;
-            userConfirmationNecessary?: boolean;
-          }>((resolve, reject) =>
-            signUpResult.user.authenticateUser(
-              new AuthenticationDetails({
-                Username: username,
-                Password: password,
-              }),
-              {
-                onSuccess: (session, userConfirmationNecessary) =>
-                  resolve({ session, userConfirmationNecessary }),
-                onFailure: reject,
-              },
-            ),
-          );
-
-          if (userConfirmationNecessary) {
-            throw new Error('TODO: Add user confirmation');
-          }
-
-          setUser(signUpResult.user);
-        }}
+        onSubmit={handleSubmit}
+        className="flex flex-col gap-8 w-96 max-w-full"
       >
-        <h3>Register</h3>
-        <label htmlFor="username">Username</label>
-        <input name="username" type="text" placeholder="Username" />
-        <label htmlFor="password">Password</label>
-        <input name="password" type="password" placeholder="Password" />
-        <button type="submit">Submit</button>
+        <h3 className="font-bold">Register</h3>
+        <InputGroup name="username" label="Username" type="text" />
+        <InputGroup name="password" label="Password" type="password" />
+        <InputGroup
+          name="passwordConfirmed"
+          label="Password confirmed"
+          type="password"
+        />
+
+        <FormError error={register.error} />
+        <BlockButton type="submit">Register</BlockButton>
       </form>
-      <Link to="/login">Back</Link>
+      <Link to="/login" className="hover:text-sky-500 transition-colors">
+        Back
+      </Link>
     </div>
   );
 }

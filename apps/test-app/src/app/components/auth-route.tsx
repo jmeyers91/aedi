@@ -1,9 +1,9 @@
 import { ComponentProps, useContext, Fragment } from 'react';
-import { AuthContext } from '../contexts/AuthContext';
+import { UserContext } from '../contexts/user-context';
 import { Navigate } from 'react-router-dom';
 
 export function AuthRoute({ children }: ComponentProps<typeof Fragment>) {
-  const { user } = useContext(AuthContext);
+  const { user } = useContext(UserContext);
 
   if (!user) {
     return <Navigate to="/login" replace />;
@@ -13,7 +13,7 @@ export function AuthRoute({ children }: ComponentProps<typeof Fragment>) {
 }
 
 export function NoAuthRoute({ children }: ComponentProps<typeof Fragment>) {
-  const { user } = useContext(AuthContext);
+  const { user } = useContext(UserContext);
 
   if (user) {
     return <Navigate to="/" replace />;

@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { CognitoUser } from 'amazon-cognito-identity-js';
 import { userPool } from './utils/cognito-utils';
-import { AuthContext } from './contexts/AuthContext';
+import { UserContext } from './contexts/user-context';
 import { RouterProvider } from 'react-router-dom';
 import { router } from './router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SnackbarProvider } from 'notistack';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 
 const queryClient = new QueryClient();
 
@@ -14,20 +15,13 @@ export function App() {
     userPool.getCurrentUser(),
   );
 
-  const logout = () => {
-    if (!user) {
-      return;
-    }
-    user.signOut();
-    setUser(null);
-  };
-
   return (
     <SnackbarProvider>
       <QueryClientProvider client={queryClient}>
-        <AuthContext.Provider value={{ user, logout, setUser }}>
+        <ReactQueryDevtools />
+        <UserContext.Provider value={{ user, setUser }}>
           <RouterProvider router={router} />
-        </AuthContext.Provider>
+        </UserContext.Provider>
       </QueryClientProvider>
     </SnackbarProvider>
   );

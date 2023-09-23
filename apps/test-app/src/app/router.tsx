@@ -12,6 +12,7 @@ import { RegisterPage } from './pages/register-page/register-page';
 import { EditContactPage } from './pages/contacts-page/edit-contact-page';
 import { ViewContactPage } from './pages/contacts-page/view-contact-page';
 import { AccountSettingsPage } from './pages/account-settings-page/account-settings-page';
+import { ContactStats } from './pages/contacts-page/contact-stats';
 
 export const router = createBrowserRouter(
   createRoutesFromElements(
@@ -48,13 +49,13 @@ export const router = createBrowserRouter(
           </AuthRoute>
         }
       >
+        <Route index element={<ContactStats />} />
         <Route path="/contacts/add" element={<EditContactPage key="add" />} />
         <Route
           path="/contacts/edit/:contactId"
           element={<EditContactPage key="edit" />}
         />
         <Route path="/contacts/view/:contactId" element={<ViewContactPage />} />
-        R
       </Route>
       <Route index element={<IndexPage />} />
     </Route>,

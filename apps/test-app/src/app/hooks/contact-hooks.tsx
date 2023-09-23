@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../client-config';
 import { useSnackbar } from 'notistack';
+import { debugThrottle } from '../utils/debug-utils';
 
 enum ContactQueryKey {
   useContactList = 'useContactList',
@@ -8,13 +9,19 @@ enum ContactQueryKey {
 }
 
 export function useContactList() {
-  return useQuery([ContactQueryKey.useContactList], api.listContacts);
+  return useQuery([ContactQueryKey.useContactList], async () => {
+    await debugThrottle();
+    return api.listContacts({});
+  });
 }
 
 export function useContact(contactId: string | null | undefined) {
   return useQuery(
     [ContactQueryKey.useContact, contactId],
-    () => api.getContact({ contactId: contactId as string }),
+    async () => {
+      await debugThrottle();
+      return api.getContact({ contactId: contactId as string });
+    },
     { enabled: !!contactId },
   );
 }

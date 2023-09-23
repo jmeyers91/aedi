@@ -1,20 +1,16 @@
 import { Link, Outlet } from 'react-router-dom';
-import { useContactList } from '../../hooks/contact-hooks';
 import { ContactList } from './contact-list';
 import { XIcon } from '../../components/icons/x-icon';
 import { ComponentProps } from 'react';
 
 export function ContactsPage() {
-  const { data, error } = useContactList();
-
   return (
     <main className="flex flex-col flex-1 ring-emerald-500">
       <div className="relative flex-1 h-full overflow-hidden">
         <div className="absolute left-0 right-0 top-0 bottom-0 grid sm:grid-cols-2">
           {/* Left columns */}
           <section className="overflow-auto relative h-full">
-            {!!data?.items && <ContactList contacts={data?.items} />}
-            {!!error && <div>Error: {(error as Error).message}</div>}
+            <ContactList />
             <div className="absolute right-0 top-4 bottom-4 w-[1px] bg-gray-100"></div>
           </section>
           {/* Right column */}
@@ -29,7 +25,7 @@ export function ContactPageDetailsSection(props: ComponentProps<'section'>) {
   return (
     <section
       {...props}
-      className="overflow-auto sm:relative absolute inset-0 p-8 bg-white z-10"
+      className="flex flex-col overflow-auto sm:relative absolute inset-0 p-8 bg-white z-10"
     />
   );
 }

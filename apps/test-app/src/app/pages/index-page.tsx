@@ -1,9 +1,9 @@
 import { useContext } from 'react';
-import { AuthContext } from '../contexts/AuthContext';
+import { UserContext } from '../contexts/user-context';
 import { Navigate } from 'react-router-dom';
 
 export function IndexPage() {
-  const { user } = useContext(AuthContext);
+  const { user } = useContext(UserContext);
 
   if (user) {
     return <Navigate to="/contacts" replace />;

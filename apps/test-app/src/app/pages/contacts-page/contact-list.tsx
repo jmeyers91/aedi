@@ -1,10 +1,13 @@
 import { formatContactName } from '../../utils/name-utils';
 import { Link } from 'react-router-dom';
-import type { Contact } from 'libs/test-cases/src/lib/static-site';
 import { SearchIcon } from '../../components/icons/search-icon';
 import { useState } from 'react';
+import { useContactList } from '../../hooks/contact-hooks';
+import { SpinnerFill } from '../../components/spinner';
+import { XIcon } from '../../components/icons/x-icon';
 
-export function ContactList({ contacts }: { contacts: Contact[] }) {
+export function ContactList() {
+  const { data, isLoading } = useContactList();
   const [search, setSearch] = useState('');
 
   return (
@@ -17,17 +20,30 @@ export function ContactList({ contacts }: { contacts: Contact[] }) {
             value={search}
             onChange={(event) => setSearch(event.currentTarget.value)}
           />
-          <SearchIcon className="pointer-events-none absolute right-4 top-3.5 text-emerald-800" />
+          <div className="absolute right-4 top-4 text-emerald-800">
+            {search.length > 0 ? (
+              <button onClick={() => setSearch('')}>
+                <XIcon size="w-6 h-6" />
+              </button>
+            ) : (
+              <SearchIcon className="pointer-events-none" />
+            )}
+          </div>
         </div>
       </div>
-      <ul className="flex flex-col">
-        {contacts.length === 0 && (
-          <li>
-            <p>You don't have any contacts yet. Add some.</p>
+      <ul className="flex flex-col flex-1">
+        {data?.items?.length === 0 && (
+          <li className="px-6 py-4 flex justify-center items-center flex-1 text-gray-500">
+            <p>You don't have any contacts yet.</p>
           </li>
         )}
-        {contacts
-          .filter((contact) => {
+        {isLoading && (
+          <li className="px-6 py-4 flex flex-1">
+            <SpinnerFill />
+          </li>
+        )}
+        {data?.items
+          ?.filter((contact) => {
             if (search.length === 0) {
               return true;
             }
