@@ -11,17 +11,33 @@
     "importHelpers": true,
     "target": "es2015",
     "module": "esnext",
-    "lib": ["es2020", "dom"],
+    "lib": [
+      "es2020",
+      "dom"
+    ],
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "@aedi/cdk": ["libs/cdk/src/index.ts"],
-      "@aedi/common": ["libs/common/src/index.ts"],
-      "@aedi/browser-client": ["libs/browser-client/src/index.ts"],
-      "@aedi/test-cases": ["libs/test-cases/src/index.ts"],
-      "@aedi/local": ["libs/local/src/index.ts"]
+      "@aedi/browser-client": [
+        "libs/browser-client/src/index.ts"
+      ],
+      "@aedi/cdk": [
+        "libs/cdk/src/index.ts"
+      ],
+      "@aedi/common": [
+        "libs/common/src/index.ts"
+      ],
+      "@aedi/local": [
+        "libs/local/src/index.ts"
+      ],
+      "@aedi/test-cases": [
+        "libs/test-cases/src/index.ts"
+      ]
     }
   },
-  "exclude": ["node_modules", "tmp"]
+  "exclude": [
+    "node_modules",
+    "tmp"
+  ]
 }

@@ -171,12 +171,27 @@ export const api = Api(scope, 'api', {
 
   updateContact: Put(
     '/contacts/{contactId}',
-    { auth: Authorize(userPool), contactsTable: writableContactsTable },
-    async ({ auth: { userId }, contactsTable }, event) => {
+    {
+      auth: Authorize(userPool),
+      body: Body(
+        Type.Object({
+          firstName: Type.Optional(Type.String()),
+          lastName: Type.Optional(Type.String()),
+          email: Type.Optional(Type.String()),
+          phone: Type.Optional(Type.String()),
+        }),
+      ),
+      contactsTable: writableContactsTable,
+    },
+    async (
+      {
+        auth: { userId },
+        body: { firstName, lastName, email, phone },
+        contactsTable,
+      },
+      event,
+    ) => {
       const { contactId } = event.pathParameters;
-      const { firstName, lastName, email, phone } = JSON.parse(
-        event.body ?? '{}',
-      );
 
       const updatedContact = await contactsTable.patch(
         { userId, contactId },
@@ -199,6 +214,9 @@ export const api = Api(scope, 'api', {
     },
   ),
 
+  /**
+   * This endpoint only exists to test param type checking.
+   */
   doThing: Get(
     '/do-thing',
     {
@@ -215,6 +233,9 @@ export const api = Api(scope, 'api', {
     ({ params }) => ({ params }),
   ),
 
+  /**
+   * This endpoint exists to test using `reply` to override the response content type.
+   */
   exportContacts: Get(
     '/contacts.csv',
     { auth: Authorize(userPool), contactsTable },

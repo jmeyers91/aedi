@@ -1,27 +1,26 @@
-import { Link, Outlet } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
 import { useContactList } from '../../hooks/contact-hooks';
-import styles from './contacts-page.module.css';
+import { ContactList } from './contact-list';
 
 export function ContactsPage() {
-  const { data } = useContactList();
+  const { data, error } = useContactList();
 
   return (
-    <div className={styles.ContactsPage}>
-      <div className={styles.Left}>
-        <div className={styles.ContactListSubHead}>
-          <Link to="/contacts/add">Add contact</Link>
+    <main className="flex flex-col flex-1 border">
+      <div className="relative flex-1 h-full overflow-hidden">
+        <div className="absolute left-0 right-0 top-0 bottom-0 grid grid-cols-2">
+          {/* Left columns */}
+          <div className="overflow-auto relative h-full">
+            {!!data?.items && <ContactList contacts={data?.items} />}
+            {!!error && <div>Error: {(error as Error).message}</div>}
+            <div className="absolute right-0 top-4 bottom-4 w-[1px] bg-gray-100"></div>
+          </div>
+          {/* Right column */}
+          <div className="overflow-auto p-8">
+            <Outlet />
+          </div>
         </div>
-        <ul className={styles.ContactList}>
-          {data?.items?.map((contact) => (
-            <li key={contact.contactId} className={styles.ContactListItem}>
-              {contact.firstName || '[BLANK]'} {contact.lastName || '[BLANK]'}
-            </li>
-          ))}
-        </ul>
       </div>
-      <div className={styles.Right}>
-        <Outlet />
-      </div>
-    </div>
+    </main>
   );
 }
