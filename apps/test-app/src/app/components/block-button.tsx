@@ -8,7 +8,9 @@ export function blockButtonClassName({
   disabled,
   className,
 }: Pick<ComponentProps<'button'>, 'disabled' | 'className'> = {}) {
-  return `p-4 rounded-lg  text-white transition-colors ${
-    disabled ? 'bg-gray-600' : 'bg-green-600 hover:bg-green-700'
+  return `p-4 rounded transition-colors border-2 bg-white text-semibold ${
+    disabled
+      ? 'text-gray-600 border-gray-600'
+      : 'text-sky-600 border-sky-600 hover:border-sky-800 hover:text-sky-800'
   } ${className ?? ''}`;
 }

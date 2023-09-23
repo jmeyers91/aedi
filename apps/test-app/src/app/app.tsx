@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { CognitoUser } from 'amazon-cognito-identity-js';
-import { userPool } from '../utils/cognito-utils';
+import { userPool } from './utils/cognito-utils';
 import { AuthContext } from './contexts/AuthContext';
 import { RouterProvider } from 'react-router-dom';
 import { router } from './router';

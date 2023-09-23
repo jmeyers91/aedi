@@ -3,7 +3,7 @@ import {
   CognitoUserSession,
   AuthenticationDetails,
 } from 'amazon-cognito-identity-js';
-import { userPool } from '../../../utils/cognito-utils';
+import { userPool } from '../../utils/cognito-utils';
 import { useContext } from 'react';
 import { AuthContext } from '../../contexts/AuthContext';
 import { Link } from 'react-router-dom';
@@ -40,8 +40,8 @@ export function LoginPage() {
                 onSuccess: (session, userConfirmationNecessary) =>
                   resolve({ session, userConfirmationNecessary }),
                 onFailure: reject,
-              }
-            )
+              },
+            ),
           );
 
           if (userConfirmationNecessary) {

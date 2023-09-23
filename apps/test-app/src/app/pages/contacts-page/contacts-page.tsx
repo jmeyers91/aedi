@@ -6,7 +6,7 @@ export function ContactsPage() {
   const { data, error } = useContactList();
 
   return (
-    <main className="flex flex-col flex-1 border">
+    <main className="flex flex-col flex-1 ring-emerald-500">
       <div className="relative flex-1 h-full overflow-hidden">
         <div className="absolute left-0 right-0 top-0 bottom-0 grid grid-cols-2">
           {/* Left columns */}

@@ -38,13 +38,30 @@ export function useUpdateContact() {
   const queryClient = useQueryClient();
 
   return useMutation(api.updateContact, {
-    onSuccess() {
-      enqueueSnackbar({ variant: 'success', message: 'Contact updated.' });
+    onSuccess(_, { contactId }) {
+      enqueueSnackbar({ variant: 'success', message: 'Contact saved.' });
       queryClient.invalidateQueries({
         queryKey: [ContactQueryKey.useContactList],
       });
       queryClient.invalidateQueries({
-        queryKey: [ContactQueryKey.useContact],
+        queryKey: [ContactQueryKey.useContact, contactId],
+      });
+    },
+  });
+}
+
+export function useDeleteContact() {
+  const { enqueueSnackbar } = useSnackbar();
+  const queryClient = useQueryClient();
+
+  return useMutation(api.deleteContact, {
+    onSuccess(_, { contactId }) {
+      enqueueSnackbar({ variant: 'success', message: 'Contact deleted.' });
+      queryClient.invalidateQueries({
+        queryKey: [ContactQueryKey.useContactList],
+      });
+      queryClient.removeQueries({
+        queryKey: [ContactQueryKey.useContact, contactId],
       });
     },
   });

@@ -2,19 +2,24 @@ import { FormEvent } from 'react';
 import {
   useContact,
   useCreateContact,
+  useDeleteContact,
   useUpdateContact,
 } from '../../hooks/contact-hooks';
 import { useNavigate, useParams } from 'react-router-dom';
 import { BlockButton } from '../../components/block-button';
 import { FormError, FormFieldError } from '../../components/form-error';
+import Swal from 'sweetalert2';
+import { formatContactName } from '../../utils/name-utils';
 
 export function EditContactPage() {
   const { contactId } = useParams<{ contactId: string }>();
   const { data: contact, error: loadError } = useContact(contactId);
   const createContact = useCreateContact();
   const editContact = useUpdateContact();
+  const deleteContact = useDeleteContact();
   const navigate = useNavigate();
   const saveError = createContact.error ?? editContact.error;
+  const deleteError = deleteContact.error;
   const error = loadError;
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -46,6 +51,26 @@ export function EditContactPage() {
     }
   };
 
+  const handleDelete = async () => {
+    if (!contact) return;
+
+    const result = await Swal.fire({
+      title: `Delete ${formatContactName(
+        contact.firstName,
+        contact.lastName,
+      )}?`,
+      text: "This action can't be undone.",
+      icon: 'warning',
+      confirmButtonText: 'Delete',
+    });
+    if (result.isConfirmed) {
+      await deleteContact.mutateAsync({
+        contactId: contact.contactId,
+      });
+      navigate('/contacts');
+    }
+  };
+
   if (error) {
     return <div>Error: {(error as Error).message}</div>;
   }
@@ -60,11 +85,12 @@ export function EditContactPage() {
         {contact ? 'Edit contact' : 'Add contact'}
       </h1>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <FormError error={saveError} />
+        <FormError error={saveError ?? deleteError} />
 
         <div className="flex flex-col gap-2">
           <label htmlFor="firstName">First name</label>
           <input
+            required
             id="firstName"
             name="firstName"
             placeholder="First name"
@@ -77,6 +103,7 @@ export function EditContactPage() {
         <div className="flex flex-col gap-2">
           <label htmlFor="lastName">Last name</label>
           <input
+            required
             id="lastName"
             name="lastName"
             placeholder="Last name"
@@ -89,6 +116,7 @@ export function EditContactPage() {
         <div className="flex flex-col gap-2">
           <label htmlFor="email">Email</label>
           <input
+            required
             id="email"
             name="email"
             type="email"
@@ -102,6 +130,7 @@ export function EditContactPage() {
         <div className="flex flex-col gap-2">
           <label htmlFor="phone">Phone</label>
           <input
+            required
             id="phone"
             name="phone"
             type="tel"
@@ -112,13 +141,33 @@ export function EditContactPage() {
           <FormFieldError error={saveError} field="phone" />
         </div>
 
-        <BlockButton
-          type="submit"
-          className="mt-8 w-48 self-center"
-          disabled={editContact.isLoading || createContact.isLoading}
-        >
-          {contact ? 'Save' : 'Add'}
-        </BlockButton>
+        <div className="mt-8 flex flex-col items-center gap-8 w-full">
+          <BlockButton
+            type="submit"
+            className="w-48"
+            disabled={
+              editContact.isLoading ||
+              createContact.isLoading ||
+              deleteContact.isLoading
+            }
+          >
+            Save
+          </BlockButton>
+          {!!contact && (
+            <button
+              type="button"
+              disabled={
+                editContact.isLoading ||
+                createContact.isLoading ||
+                deleteContact.isLoading
+              }
+              className="text-gray-500 hover:text-red-800 transition-colors"
+              onClick={handleDelete}
+            >
+              Delete
+            </button>
+          )}
+        </div>
       </form>
     </div>
   );

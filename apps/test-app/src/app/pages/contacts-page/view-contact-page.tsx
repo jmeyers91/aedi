@@ -1,6 +1,6 @@
 import { Link, useParams } from 'react-router-dom';
 import { useContact } from '../../hooks/contact-hooks';
-import { formatContactName } from '../../../utils/name-utils';
+import { formatContactName } from '../../utils/name-utils';
 import { PencilIcon } from '../../components/icons/pencil-icon';
 
 export function ViewContactPage() {

@@ -1,6 +1,6 @@
 import { resolveBrowserClient } from '@aedi/browser-client';
 import type { staticSite } from '@aedi/test-cases';
-import { getUserAuthHeaders, userPool } from '../utils/cognito-utils';
+import { getUserAuthHeaders, userPool } from './utils/cognito-utils';
 
 export const clientConfig = resolveBrowserClient<typeof staticSite>();
 

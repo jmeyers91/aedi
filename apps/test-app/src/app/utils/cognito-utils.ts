@@ -3,7 +3,7 @@ import {
   CognitoUserPool,
   CognitoUserSession,
 } from 'amazon-cognito-identity-js';
-import { clientConfig } from '../app/client-config';
+import { clientConfig } from '../client-config';
 
 export const userPool = new CognitoUserPool({
   UserPoolId: clientConfig?.userPool.userPoolId as string,
