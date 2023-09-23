@@ -6,8 +6,8 @@ import {
 import { clientConfig } from '../client-config';
 
 export const userPool = new CognitoUserPool({
-  UserPoolId: clientConfig?.userPool.userPoolId as string,
-  ClientId: clientConfig?.userPool.userPoolClientId as string,
+  UserPoolId: clientConfig.userPool.userPoolId as string,
+  ClientId: clientConfig.userPool.userPoolClientId as string,
 });
 
 export async function getUserAuthHeaders(

@@ -22,7 +22,7 @@ import {
 import { Lambda, LambdaProxyHandler, lambdaProxyHandler } from '../aedi-lambda';
 import addFormats from 'ajv-formats';
 import addErrors from 'ajv-errors';
-import Ajv from 'ajv';
+import Ajv, { Options as AjvOptions } from 'ajv';
 
 let ajv: Ajv;
 
@@ -556,9 +556,13 @@ export function Api<R extends object>(
     };
 }
 
-function getAjv() {
-  if (!ajv) {
-    ajv = addFormats(new Ajv({ allErrors: true }), [
+export function getAjvOptions(): AjvOptions {
+  return { allErrors: true };
+}
+
+export function addAjvPlugins(ajv: Ajv) {
+  return addErrors(
+    addFormats(ajv, [
       'date-time',
       'time',
       'date',
@@ -568,8 +572,17 @@ function getAjv() {
       'ipv6',
       'uuid',
       'regex',
-    ]);
-    addErrors(ajv);
+    ]),
+  );
+}
+
+export function initAjv(options: AjvOptions = {}) {
+  return addAjvPlugins(new Ajv({ ...getAjvOptions(), ...options }));
+}
+
+export function getAjv() {
+  if (!ajv) {
+    ajv = initAjv();
   }
   return ajv;
 }

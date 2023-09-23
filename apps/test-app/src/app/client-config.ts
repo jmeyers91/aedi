@@ -1,12 +1,10 @@
-import { resolveBrowserClient } from '@aedi/browser-client';
 import type { staticSite } from '@aedi/test-cases';
+import { CollectSharedTypes, resolveBrowserClient } from '@aedi/browser-client';
 import { getUserAuthHeaders, userPool } from './utils/cognito-utils';
 
 export const clientConfig = resolveBrowserClient<typeof staticSite>();
 
-if (!clientConfig) {
-  throw new Error(`Unable to load client config`);
-}
+export type ApiTypes = CollectSharedTypes<typeof clientConfig>;
 
 export const api = clientConfig.apiClient({
   baseUrl: clientConfig.api.url,

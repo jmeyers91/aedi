@@ -1,4 +1,5 @@
 import type {
+  SharedTypes,
   StaticSiteApiClientGenerator,
   StaticSiteRef,
 } from './aedi-static-site-types';
@@ -33,4 +34,53 @@ export function isStaticSiteApiClientGenerator(
     typeof value === 'object' &&
     '__generateApiClient' in value
   );
+}
+
+/**
+ * Shares types with a static site. Types shared with this function can be
+ * accessed from browser clients using the `CollectSharedTypes` and `LookupSharedType` utility
+ * types exported from `@aedi/browser-client`.
+ *
+ * Example:
+ *
+ * Static site:
+ * ```ts
+ * export const staticSite = StaticSite(scope, 'site', {
+ *   assetPath: './dist/apps/test-app',
+ *   clientConfig: {
+ *     types: ShareTypes<{
+ *       Counter: { counterId: string, count: number };
+ *       Contact: { contactId: string, userId: string, name: string };
+ *     }>(),
+ *   },
+ * });
+ * ```
+ *
+ * Browser:
+ *
+ * ```ts
+ * import type { staticSite } from '@aedi/test-cases';
+ * import { LookupSharedType, resolveBrowserClient } from '@aedi/browser-client';
+ *
+ * export const clientConfig = resolveBrowserClient<typeof staticSite>();
+ *
+ * type SharedTypes = CollectSharedTypes<typeof clientConfig>;
+ * type Contact = SharedTypes['Contact'];
+ *
+ * // Alternatively, lookup a specific shared type:
+ *
+ * type Counter = LookupSharedType<typeof clientConfig, 'Counter'>;
+ * ```
+ *
+ * In this example, `SharedTypes` resolves to:
+ *
+ * ```ts
+ * type SharedTypes = {
+ *   Counter: { counterId: string, count: number };
+ *   Contact: { contactId: string, userId: string, name: string };
+ * }
+ * ```
+ */
+export function ShareTypes<T>(): SharedTypes<T> {
+  return {};
 }

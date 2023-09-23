@@ -242,7 +242,8 @@ class StaticSiteConfigApi extends Construct {
 }
 
 function generateRestApiClient(restApi: RestApiRef): string {
-  resolveConstruct;
+  const generatedRouteClients = restApi.routes.map(generateRestApiRouteClient);
+
   return `({ baseUrl, getHeaders }) => {
     async function handleResponse(response) {
       const contentType = (response.headers.get('Content-Type') ?? 'application/json').split(';')[0];
@@ -262,16 +263,13 @@ function generateRestApiClient(restApi: RestApiRef): string {
       return data;
     }
 
-    ${restApi.routes
-      .map((routeDef) => generateRestApiRouteClient(routeDef))
+    ${generatedRouteClients
+      .map((routeClient) => routeClient.definitions.join('\n'))
       .join('\n\n')}
 
     return {
-      ${restApi.routes
-        .map(
-          (routeDef) =>
-            `${routeDef.lambdaRef.id}, ${routeDef.lambdaRef.id}Request`,
-        )
+      ${generatedRouteClients
+        .flatMap((routeClient) => routeClient.exportNames)
         .join(', ')}
     };
   }`;
@@ -280,6 +278,8 @@ function generateRestApiClient(restApi: RestApiRef): string {
 function generateRestApiRouteClient(routeDef: RestApiRefRoute) {
   const bodySchema = findBodySchema(routeDef);
   const queryParamSchema = findQueryParamSchema(routeDef);
+  const fnName = routeDef.lambdaRef.id;
+  const requestFnName = `${fnName}Request`;
 
   let pathInputKeys: string[] = [];
   const renderedPath = routeDef.path
@@ -308,10 +308,14 @@ function generateRestApiRouteClient(routeDef: RestApiRefRoute) {
     new Set([...pathInputKeys, ...bodyInputKeys, ...queryParamInputKeys]),
   );
 
-  return [
-    `const ${routeDef.lambdaRef.id}Request = async (${
-      inputKeys.length > 0 ? `{ ${inputKeys.join(', ')} }` : ''
-    }) => {
+  const exportNames = [fnName, requestFnName];
+
+  return {
+    exportNames,
+    definitions: [
+      `const ${requestFnName} = async (${
+        inputKeys.length > 0 ? `{ ${inputKeys.join(', ')} }` : ''
+      }) => {
       const url = new URL(\`\${baseUrl}${renderedPath}\`);
       ${queryParamInputKeys
         .map(
@@ -332,10 +336,11 @@ function generateRestApiRouteClient(routeDef: RestApiRefRoute) {
         }
       });
     };`,
-    `const ${routeDef.lambdaRef.id} = async (inputs) => {
-      return handleResponse(await ${routeDef.lambdaRef.id}Request(inputs));
-    };`,
-  ].join('\n');
+      `const ${fnName} = async (inputs) => {
+        return handleResponse(await ${fnName}Request(inputs));
+      };`,
+    ],
+  };
 }
 
 export function findBodySchema(routeDef: RestApiRefRoute) {

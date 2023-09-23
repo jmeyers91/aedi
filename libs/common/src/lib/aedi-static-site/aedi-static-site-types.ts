@@ -79,3 +79,7 @@ export type StaticSiteApiClientGenerator<R> = {
   __generateApiClient: { __routes?: R };
   restApiRef: RestApiRef;
 };
+
+export interface SharedTypes<T> {
+  __SHARED_TYPES?: T;
+}

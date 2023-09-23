@@ -5,12 +5,11 @@ import {
   useDeleteContact,
   useUpdateContact,
 } from '../../hooks/contact-hooks';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { BlockButton } from '../../components/block-button';
 import { FormError, FormFieldError } from '../../components/form-error';
 import Swal from 'sweetalert2';
 import { formatContactName } from '../../utils/name-utils';
-import { XIcon } from '../../components/icons/x-icon';
 import {
   CloseContactPageLink,
   ContactPageDetailsSection,

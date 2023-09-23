@@ -16,6 +16,7 @@ import {
   Put,
   Delete,
   Api,
+  ShareTypes,
 } from '@aedi/common';
 import { Scope } from '../app';
 import { randomUUID } from 'crypto';
@@ -272,6 +273,9 @@ export const staticSite = StaticSite(scope, 'site', {
     userPool,
     exampleBucket,
     title: 'client config title',
+    types: ShareTypes<{
+      Contact: Contact;
+    }>(),
   },
 });
 
