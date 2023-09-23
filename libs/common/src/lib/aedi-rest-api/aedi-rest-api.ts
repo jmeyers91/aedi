@@ -1,6 +1,5 @@
 import type { APIGatewayEvent, Context } from 'aws-lambda';
-import { Type, Static, TObject } from '@sinclair/typebox';
-import { TypeCompiler } from '@sinclair/typebox/compiler';
+import { Static, TObject } from '@sinclair/typebox';
 import type {
   AnyLambdaRef,
   EventTransformRef,
@@ -21,10 +20,11 @@ import {
   mapEvent,
 } from '../aedi-resource-utils';
 import { Lambda, LambdaProxyHandler, lambdaProxyHandler } from '../aedi-lambda';
+import addFormats from 'ajv-formats';
+import addErrors from 'ajv-errors';
+import Ajv from 'ajv';
 
-const foo = Type.Object({
-  foo: Type.String(),
-});
+let ajv: Ajv;
 
 export type RouteEvent = APIGatewayEvent;
 export type RouteResponse<T> = {
@@ -425,9 +425,32 @@ export function Body<T extends TObject<any>>(
   bodySchema: T;
   __body?: Static<T>;
 } {
+  const ajv = getAjv();
+  const validate = ajv.compile(bodySchema);
   return Object.assign(
-    mapEvent((event: APIGatewayEvent) => {
-      return JSON.parse(event.body ?? '{}') as T;
+    mapEvent(async (event: APIGatewayEvent) => {
+      const body = JSON.parse(event.body ?? '{}');
+
+      if (validate(body)) {
+        return body;
+      }
+
+      const errorMessage = `Request body validation error.`;
+
+      // Throw the error with an associated 400 bad request response
+      throw new LambdaResultError(
+        errorMessage,
+        // This reply matches the format of validation errors returned by our rest api
+        reply(
+          {
+            message: errorMessage,
+            errors: validate.errors,
+            statusCode: '400',
+            type: 'BAD_REQUEST_PARAMETERS',
+          },
+          400,
+        ),
+      );
     }),
     { bodySchema },
   );
@@ -453,22 +476,16 @@ export function Params<T extends TObject<any>>(
    * schema validation on those query params. The logic below adds schema validation to
    * the query params to fill in the missing functionality in the lambda.
    */
-  const compiledSchema = TypeCompiler.Compile(queryParamSchema);
+  const ajv = getAjv();
+  const validate = ajv.compile(queryParamSchema);
   return Object.assign(
     mapEvent((event: APIGatewayEvent) => {
       const queryStringParameters = event.queryStringParameters ?? {};
 
-      if (compiledSchema.Check(queryStringParameters)) {
+      if (validate(queryStringParameters)) {
         return queryStringParameters;
       }
-
-      const errors = compiledSchema.Errors(queryStringParameters);
-
-      const validationErrors = Array.from(errors)
-        .map((error) => `${error.path} - ${error.message}`)
-        .join(', ');
-
-      const errorMessage = `Invalid request parameters: ${validationErrors}`;
+      const errorMessage = 'Request param validation error.';
 
       // Throw the error with an associated 400 bad request response
       throw new LambdaResultError(
@@ -477,6 +494,7 @@ export function Params<T extends TObject<any>>(
         reply(
           {
             message: errorMessage,
+            errors: validate.errors,
             statusCode: '400',
             type: 'BAD_REQUEST_PARAMETERS',
           },
@@ -538,23 +556,20 @@ export function Api<R extends object>(
     };
 }
 
-export function VirtualApi<R extends object>(
-  scope: Scope,
-  id: string,
-  routes: R,
-  restApiOptions: Parameters<typeof RestApi>[2] = {},
-) {
-  // const restApi = RestApi(scope, id, restApiOptions);
-  // const resolvedRoutes: Record<string, unknown> = {};
-  // for (const [key, value] of Object.entries(routes)) {
-  //   if (typeof value === 'function') {
-  //     resolvedRoutes[key] = value(restApi, key);
-  //   } else {
-  //     resolvedRoutes[key] = value;
-  //   }
-  // }
-  // return withRoutes(id, restApi, resolvedRoutes) as RestApiRef &
-  //   LambdaProxyHandler & {
-  //     __routes?: R;
-  //   };
+function getAjv() {
+  if (!ajv) {
+    ajv = addFormats(new Ajv({ allErrors: true }), [
+      'date-time',
+      'time',
+      'date',
+      'email',
+      'hostname',
+      'ipv4',
+      'ipv6',
+      'uuid',
+      'regex',
+    ]);
+    addErrors(ajv);
+  }
+  return ajv;
 }

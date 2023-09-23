@@ -119,45 +119,49 @@ export class AediRestApi
         routeOptions.authorizationType = AuthorizationType.COGNITO;
       }
 
-      const bodySchema = findBodySchema(route);
-      const paramSchema = findQueryParamSchema(route);
-      if (bodySchema || paramSchema) {
-        const bodyModel = bodySchema
-          ? new Model(this, `${route.lambdaRef.id}Body`, {
-              restApi: this.restApi,
-              modelName: `${route.lambdaRef.id}Body`,
-              schema: {
-                ...bodySchema,
-                type: bodySchema.type as JsonSchemaType,
-              },
-            })
-          : null;
+      // API Gateway schema validation sucks :( - error messages are useless which almost defeats the purpose
+      // And query param validation is limited and can't handle full schema validation
+      // Phone format strings also seem to be unimplemented - it's just not worth it
 
-        routeOptions.requestValidator = new RequestValidator(
-          this,
-          `body-validator-${route.lambdaRef.id}`,
-          {
-            restApi: this.restApi,
-            requestValidatorName: `${route.lambdaRef.id}-validator`,
-            validateRequestBody: !!bodyModel,
-            validateRequestParameters: !!paramSchema,
-          },
-        );
+      // const bodySchema = findBodySchema(route);
+      // const paramSchema = findQueryParamSchema(route);
+      // if (bodySchema || paramSchema) {
+      //   const bodyModel = bodySchema
+      //     ? new Model(this, `${route.lambdaRef.id}Body`, {
+      //         restApi: this.restApi,
+      //         modelName: `${route.lambdaRef.id}Body`,
+      //         schema: {
+      //           ...bodySchema,
+      //           type: bodySchema.type as JsonSchemaType,
+      //         },
+      //       })
+      //     : null;
 
-        if (paramSchema) {
-          routeOptions.requestParameters = {};
-          for (const key of Object.keys(paramSchema.properties)) {
-            const isRequired = !!paramSchema.required?.includes(key);
-            routeOptions.requestParameters[
-              `method.request.querystring.${key}`
-            ] = isRequired;
-          }
-        }
+      //   routeOptions.requestValidator = new RequestValidator(
+      //     this,
+      //     `body-validator-${route.lambdaRef.id}`,
+      //     {
+      //       restApi: this.restApi,
+      //       requestValidatorName: `${route.lambdaRef.id}-validator`,
+      //       validateRequestBody: !!bodyModel,
+      //       validateRequestParameters: !!paramSchema,
+      //     },
+      //   );
 
-        routeOptions.requestModels = {
-          ...(!!bodyModel && { 'application/json': bodyModel }),
-        };
-      }
+      //   if (paramSchema) {
+      //     routeOptions.requestParameters = {};
+      //     for (const key of Object.keys(paramSchema.properties)) {
+      //       const isRequired = !!paramSchema.required?.includes(key);
+      //       routeOptions.requestParameters[
+      //         `method.request.querystring.${key}`
+      //       ] = isRequired;
+      //     }
+      //   }
+
+      //   routeOptions.requestModels = {
+      //     ...(!!bodyModel && { 'application/json': bodyModel }),
+      //   };
+      // }
 
       apiGatewayResource.addMethod(
         route.method,

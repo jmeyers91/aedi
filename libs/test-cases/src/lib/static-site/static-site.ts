@@ -20,13 +20,34 @@ import {
 import { Scope } from '../app';
 import { randomUUID } from 'crypto';
 import { PreSignUpTriggerEvent } from 'aws-lambda';
-import { Type } from '@sinclair/typebox';
+import { Static, Type } from '@sinclair/typebox';
 
 const scope = Scope('static-site');
 
 const resourceScope = Scope('static-site-resources');
 
 const exampleBucket = Bucket(resourceScope, 'example-bucket');
+
+const Contact = Type.Object({
+  userId: Type.String(),
+  contactId: Type.String(),
+  firstName: Type.String({
+    minLength: 1,
+    errorMessage: { minLength: 'First name is required.' },
+  }),
+  lastName: Type.String(),
+  email: Type.String({
+    format: 'email',
+    errorMessage: { format: 'Must be a valid email address.' },
+  }),
+  phone: Type.String(),
+});
+const CreateContactFields = Type.Omit(Contact, ['userId', 'contactId']);
+const UpdateContactFields = Type.Partial(
+  Type.Omit(Contact, ['userId', 'contactId']),
+);
+
+export type Contact = Static<typeof Contact>;
 
 // Auto-confirm users to avoid dealing with email/sms codes in tests
 export const preSignUpTrigger = Lambda(
@@ -46,15 +67,6 @@ export const userPool = UserPool(scope, 'user-pool', {
     preSignUp: preSignUpTrigger,
   },
 });
-
-export interface Contact {
-  userId: string;
-  contactId: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-}
 
 export const contactsTableResource = Table<Contact, 'userId' | 'contactId'>(
   scope,
@@ -79,7 +91,6 @@ const writableContactsTable = TableClient(
 export const api = Api(scope, 'api', {
   healthcheck: Get('/healthcheck', {}, (event, context) => ({
     healthy: true,
-    cool: 'beans oh yeah',
     event,
     context,
   })),
@@ -89,7 +100,7 @@ export const api = Api(scope, 'api', {
     {},
     (_, event, context) => ({
       healthy: true,
-      cool: `beans oh yeah: ${event.pathParameters.param}`,
+      param: event.pathParameters.param,
       event,
       context,
     }),
@@ -101,7 +112,7 @@ export const api = Api(scope, 'api', {
       auth: Authorize(userPool),
       params: Params(
         Type.Object({
-          page: Type.Optional(Type.String({ default: '0' })),
+          page: Type.Optional(Type.String({ default: '1' })),
         }),
       ),
       contactsTable,
@@ -138,14 +149,7 @@ export const api = Api(scope, 'api', {
     {
       auth: Authorize(userPool),
       contactsTable: writableContactsTable,
-      body: Body(
-        Type.Object({
-          firstName: Type.String(),
-          lastName: Type.String(),
-          email: Type.String(),
-          phone: Type.String(),
-        }),
-      ),
+      body: Body(CreateContactFields),
     },
     async ({
       auth: { userId },
@@ -173,14 +177,7 @@ export const api = Api(scope, 'api', {
     '/contacts/{contactId}',
     {
       auth: Authorize(userPool),
-      body: Body(
-        Type.Object({
-          firstName: Type.Optional(Type.String()),
-          lastName: Type.Optional(Type.String()),
-          email: Type.Optional(Type.String()),
-          phone: Type.Optional(Type.String()),
-        }),
-      ),
+      body: Body(UpdateContactFields),
       contactsTable: writableContactsTable,
     },
     async (

@@ -221,8 +221,11 @@ export class DynamoTable<T, K extends keyof T>
     const patchEntries = Object.entries(patch);
 
     if (patchEntries.length === 0) {
-      // TODO: Handle more gracefully?
-      throw new Error('Empty patch.');
+      const row = await this.get(key);
+      if (!row) {
+        throw new Error(`Not found.`);
+      }
+      return row;
     }
 
     const updateInput: Omit<UpdateCommandInput, 'TableName'> = patchEntries

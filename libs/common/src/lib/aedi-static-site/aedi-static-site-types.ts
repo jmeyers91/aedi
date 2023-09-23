@@ -33,7 +33,14 @@ export type ResolveStaticSiteClientConfig<R extends StaticSiteRef<any>> =
   ResolveClientConfig<Required<R>['clientConfig']>;
 
 export type ResolveClientConfig<C> = {
-  ApiError: { new (): Error & { response: Response; data: unknown } };
+  ApiError: {
+    new (): Error & {
+      response: Response;
+      data: unknown;
+      findErrorAtPath(path: string): string | undefined;
+      isValidationError(): boolean;
+    };
+  };
 } & {
   [K in keyof C]: C[K] extends ResourceRef
     ? LookupConstructRef<C[K]['type']>

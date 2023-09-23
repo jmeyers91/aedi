@@ -4,14 +4,17 @@ import {
   useCreateContact,
   useUpdateContact,
 } from '../../hooks/contact-hooks';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { BlockButton } from '../../components/block-button';
+import { FormError, FormFieldError } from '../../components/form-error';
 
 export function EditContactPage() {
   const { contactId } = useParams<{ contactId: string }>();
   const { data: contact, error: loadError } = useContact(contactId);
   const createContact = useCreateContact();
   const editContact = useUpdateContact();
+  const navigate = useNavigate();
+  const saveError = createContact.error ?? editContact.error;
   const error = loadError;
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -31,16 +34,16 @@ export function EditContactPage() {
         email,
         phone,
       });
+      navigate(`/contacts/view/${contactId}`);
     } else {
-      await createContact.mutateAsync({
+      const newContact = await createContact.mutateAsync({
         firstName,
         lastName,
         email,
         phone,
       });
+      navigate(`/contacts/view/${newContact.contactId}`);
     }
-
-    event.currentTarget?.reset();
   };
 
   if (error) {
@@ -57,6 +60,8 @@ export function EditContactPage() {
         {contact ? 'Edit contact' : 'Add contact'}
       </h1>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <FormError error={saveError} />
+
         <div className="flex flex-col gap-2">
           <label htmlFor="firstName">First name</label>
           <input
@@ -66,6 +71,7 @@ export function EditContactPage() {
             defaultValue={contact?.firstName}
             className="p-4 rounded bg-gray-100"
           />
+          <FormFieldError error={saveError} field="firstName" />
         </div>
 
         <div className="flex flex-col gap-2">
@@ -77,6 +83,7 @@ export function EditContactPage() {
             defaultValue={contact?.lastName}
             className="p-4 rounded bg-gray-100"
           />
+          <FormFieldError error={saveError} field="lastName" />
         </div>
 
         <div className="flex flex-col gap-2">
@@ -89,6 +96,7 @@ export function EditContactPage() {
             defaultValue={contact?.email}
             className="p-4 rounded bg-gray-100"
           />
+          <FormFieldError error={saveError} field="email" />
         </div>
 
         <div className="flex flex-col gap-2">
@@ -101,6 +109,7 @@ export function EditContactPage() {
             defaultValue={contact?.phone}
             className="p-4 rounded bg-gray-100"
           />
+          <FormFieldError error={saveError} field="phone" />
         </div>
 
         <BlockButton

@@ -157,6 +157,8 @@ class StaticSiteConfigApi extends Construct {
 
     // TODO: Move all this shit out of this file
     // Maybe a proper templating system for rendering clients for refs?
+    // TODO: Replace the whole code-gen concept by passing the information needed for the client in the static site config as data
+    // I'd like to get away from doing any codegen if possible as I'm sure it's going to be a nightmare to maintain.
 
     // This script is run in the static site
     const clientConfigScript = `
@@ -166,6 +168,16 @@ class StaticSiteConfigApi extends Construct {
             super(message);
             this.response = response;
             this.data = data;
+          }
+
+          findErrorAtPath(path) {
+            if (this.isValidationError()) {
+              return this.data.errors.find(error => error?.instancePath === path)?.message;
+            }
+          }
+
+          isValidationError() {
+            return Array.isArray(this.data?.errors);
           }
         }
 

@@ -20,10 +20,12 @@ export function useContact(contactId: string | null | undefined) {
 }
 
 export function useCreateContact() {
+  const { enqueueSnackbar } = useSnackbar();
   const queryClient = useQueryClient();
 
   return useMutation(api.createContact, {
     onSuccess() {
+      enqueueSnackbar({ variant: 'success', message: 'Contact created.' });
       queryClient.invalidateQueries({
         queryKey: [ContactQueryKey.useContactList],
       });
@@ -34,6 +36,7 @@ export function useCreateContact() {
 export function useUpdateContact() {
   const { enqueueSnackbar } = useSnackbar();
   const queryClient = useQueryClient();
+
   return useMutation(api.updateContact, {
     onSuccess() {
       enqueueSnackbar({ variant: 'success', message: 'Contact updated.' });
