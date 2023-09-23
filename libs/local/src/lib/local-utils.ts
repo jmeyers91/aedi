@@ -62,12 +62,7 @@ export function loadConstructRef<R extends ResourceRef>(
 
 export async function resolveConstructRef<
   R extends ResourceRef | ClientRef | TransformedRef<any, any>,
->(
-  ref: R,
-  mockEvent?: any,
-  mockContext?: any,
-  mockCallback?: any,
-): Promise<ResolveRef<R>> {
+>(ref: R, mockEvent?: any, mockContext?: any): Promise<ResolveRef<R>> {
   const resourceRef = getClientRefFromRef(ref).ref;
 
   return resolveRef(
@@ -76,7 +71,6 @@ export async function resolveConstructRef<
     // Fake lambda handler props for invoke scoped refs
     mockEvent,
     mockContext,
-    mockCallback,
   );
 }
 
