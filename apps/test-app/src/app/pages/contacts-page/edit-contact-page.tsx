@@ -5,11 +5,16 @@ import {
   useDeleteContact,
   useUpdateContact,
 } from '../../hooks/contact-hooks';
-import { useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { BlockButton } from '../../components/block-button';
 import { FormError, FormFieldError } from '../../components/form-error';
 import Swal from 'sweetalert2';
 import { formatContactName } from '../../utils/name-utils';
+import { XIcon } from '../../components/icons/x-icon';
+import {
+  CloseContactPageLink,
+  ContactPageDetailsSection,
+} from './contacts-page';
 
 export function EditContactPage() {
   const { contactId } = useParams<{ contactId: string }>();
@@ -80,10 +85,15 @@ export function EditContactPage() {
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <ContactPageDetailsSection>
+      <CloseContactPageLink
+        to={contact ? `/contacts/view/${contact?.contactId}` : '/contacts'}
+      />
+
       <h1 className="font-bold text-lg">
         {contact ? 'Edit contact' : 'Add contact'}
       </h1>
+
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <FormError error={saveError ?? deleteError} />
 
@@ -169,6 +179,6 @@ export function EditContactPage() {
           )}
         </div>
       </form>
-    </div>
+    </ContactPageDetailsSection>
   );
 }

@@ -11,6 +11,7 @@ import { LoginPage } from './pages/login-page/login-page';
 import { RegisterPage } from './pages/register-page/register-page';
 import { EditContactPage } from './pages/contacts-page/edit-contact-page';
 import { ViewContactPage } from './pages/contacts-page/view-contact-page';
+import { AccountSettingsPage } from './pages/account-settings-page/account-settings-page';
 
 export const router = createBrowserRouter(
   createRoutesFromElements(
@@ -32,6 +33,14 @@ export const router = createBrowserRouter(
         }
       />
       <Route
+        path="/account"
+        element={
+          <AuthRoute>
+            <AccountSettingsPage />
+          </AuthRoute>
+        }
+      />
+      <Route
         path="/contacts"
         element={
           <AuthRoute>
@@ -45,6 +54,7 @@ export const router = createBrowserRouter(
           element={<EditContactPage key="edit" />}
         />
         <Route path="/contacts/view/:contactId" element={<ViewContactPage />} />
+        R
       </Route>
       <Route index element={<IndexPage />} />
     </Route>,

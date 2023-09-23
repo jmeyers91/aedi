@@ -237,7 +237,7 @@ export const api = Api(scope, 'api', {
     '/contacts.csv',
     { auth: Authorize(userPool), contactsTable },
     async ({ auth: { userId }, contactsTable }, event) => {
-      const { Items: contacts = [] } = await contactsTable.query({
+      const { items: contacts = [] } = await contactsTable.query({
         KeyConditionExpression: `userId = :userId`,
         ExpressionAttributeValues: {
           ':userId': userId,

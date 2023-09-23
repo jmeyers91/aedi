@@ -34,11 +34,11 @@ export interface IReadableDynamoTable<T, PK extends keyof T> {
   get(key: { [Key in PK]: T[Key] }): Promise<T | undefined>;
   query(
     input: Omit<QueryCommandInput, 'TableName'>,
-  ): Promise<{ items?: T[] } & QueryCommandOutput>;
+  ): Promise<{ items?: T[] } & Omit<QueryCommandOutput, 'Items'>>;
 
   scan(
     input: Omit<ScanCommandInput, 'TableName'>,
-  ): Promise<{ items?: T[] } & ScanCommandOutput>;
+  ): Promise<{ items?: T[] } & Omit<ScanCommandOutput, 'Items'>>;
 }
 
 export interface IWritableDynamoTable<T, PK extends keyof T> {

@@ -46,7 +46,7 @@ export function ContactList({ contacts }: { contacts: Contact[] }) {
               >
                 <img
                   src="profile-pic.png"
-                  className="w-16 h-16 rounded-full overflow-hidden bg-center object-cover bg-gray-200"
+                  className="w-16 h-16 flex-shrink-0 rounded-full overflow-hidden bg-center object-cover bg-gray-200"
                 />
 
                 <div className="flex flex-col gap-1">

@@ -40,6 +40,11 @@ export type InferRestApiClient<A> = A extends { __routes?: infer R }
       getHeaders?(): Record<string, string> | Promise<Record<string, string>>;
     }) => {
       [K in keyof R]: InferRestApiRouteClient<R[K]>;
+    } & {
+      [K in Extract<
+        keyof R,
+        string
+      > as `${K}Request`]: InferRestApiRouteRequestClient<R[K]>;
     }
   : never;
 
@@ -52,6 +57,17 @@ export type InferRestApiRouteClient<R> = R extends {
   ? I[keyof I] extends never
     ? () => Promise<Awaited<R>>
     : (inputs: I) => Promise<Awaited<R>>
+  : never;
+
+export type InferRestApiRouteRequestClient<R> = R extends {
+  __route?: {
+    inputs: infer I;
+    result: infer R;
+  };
+}
+  ? I[keyof I] extends never
+    ? () => Promise<Response>
+    : (inputs: I) => Promise<Response>
   : never;
 
 export type InferRequestBody<C> = Extract<

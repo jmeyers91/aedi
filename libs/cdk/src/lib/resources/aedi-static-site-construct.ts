@@ -262,13 +262,17 @@ function generateRestApiClient(restApi: RestApiRef): string {
       return data;
     }
 
+    ${restApi.routes
+      .map((routeDef) => generateRestApiRouteClient(routeDef))
+      .join('\n\n')}
+
     return {
       ${restApi.routes
         .map(
           (routeDef) =>
-            `${routeDef.lambdaRef.id}: ${generateRestApiRouteClient(routeDef)}`,
+            `${routeDef.lambdaRef.id}, ${routeDef.lambdaRef.id}Request`,
         )
-        .join(',\n\n')}
+        .join(', ')}
     };
   }`;
 }
@@ -304,29 +308,34 @@ function generateRestApiRouteClient(routeDef: RestApiRefRoute) {
     new Set([...pathInputKeys, ...bodyInputKeys, ...queryParamInputKeys]),
   );
 
-  return `async (${
-    inputKeys.length > 0 ? `{ ${inputKeys.join(', ')} }` : ''
-  }) => {
-    const url = new URL(\`\${baseUrl}${renderedPath}\`);
-    ${queryParamInputKeys
-      .map(
-        (key) =>
-          `if (${key} !== undefined) { url.searchParams.append("${key}", ${key}); }`,
-      )
-      .join('\n')}
-    return handleResponse(await fetch(url, {
-      method: "${routeDef.method}",
-      headers: {
-        "Content-Type": "application/json",
-        ...(await getHeaders?.()),
-      },
-      ${
-        bodyInputKeys.length > 0
-          ? `body: JSON.stringify({ ${bodyInputKeys.join(', ')} }),`
-          : ''
-      }
-    }));
-  }`;
+  return [
+    `const ${routeDef.lambdaRef.id}Request = async (${
+      inputKeys.length > 0 ? `{ ${inputKeys.join(', ')} }` : ''
+    }) => {
+      const url = new URL(\`\${baseUrl}${renderedPath}\`);
+      ${queryParamInputKeys
+        .map(
+          (key) =>
+            `if (${key} !== undefined) { url.searchParams.append("${key}", ${key}); }`,
+        )
+        .join('\n')}
+      return await fetch(url, {
+        method: "${routeDef.method}",
+        headers: {
+          "Content-Type": "application/json",
+          ...(await getHeaders?.()),
+        },
+        ${
+          bodyInputKeys.length > 0
+            ? `body: JSON.stringify({ ${bodyInputKeys.join(', ')} }),`
+            : ''
+        }
+      });
+    };`,
+    `const ${routeDef.lambdaRef.id} = async (inputs) => {
+      return handleResponse(await ${routeDef.lambdaRef.id}Request(inputs));
+    };`,
+  ].join('\n');
 }
 
 export function findBodySchema(routeDef: RestApiRefRoute) {
