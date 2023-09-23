@@ -1,5 +1,5 @@
 import type { GENERATED } from '../aedi-constants';
-import { InferRestApiClient, RestApiRef } from '../aedi-rest-api';
+import { RestApiRef } from '../aedi-rest-api';
 import type {
   IResourceRef,
   IResourceTypeMap,
@@ -33,19 +33,8 @@ export type ResolveStaticSiteClientConfig<R extends StaticSiteRef<any>> =
   ResolveClientConfig<Required<R>['clientConfig']>;
 
 export type ResolveClientConfig<C> = {
-  ApiError: {
-    new (): Error & {
-      response: Response;
-      data: unknown;
-      findErrorAtPath(path: string): string | undefined;
-      isValidationError(): boolean;
-    };
-  };
-} & {
   [K in keyof C]: C[K] extends ResourceRef
     ? LookupConstructRef<C[K]['type']>
-    : C[K] extends { __generateApiClient: infer R }
-    ? InferRestApiClient<R>
     : C[K];
 };
 
@@ -74,11 +63,6 @@ export interface StaticSiteTypeMap extends IResourceTypeMap {
   constructRef: StaticSiteConstructRef;
   clientRef: StaticSiteClientRef<StaticSiteRef<any>, any>;
 }
-
-export type StaticSiteApiClientGenerator<R> = {
-  __generateApiClient: { __routes?: R };
-  restApiRef: RestApiRef;
-};
 
 export interface SharedTypes<T> {
   __SHARED_TYPES?: T;

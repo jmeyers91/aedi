@@ -1,3 +1,4 @@
+import { ApiError } from '@aedi/browser-client';
 import { clientConfig } from '../client-config';
 import { ErrorCircleIcon } from './icons/error-circle-icon';
 
@@ -27,7 +28,7 @@ export function FormError({ error }: { error: unknown }) {
   if (!error) {
     return null;
   }
-  if (clientConfig && error instanceof clientConfig.ApiError) {
+  if (clientConfig && error instanceof ApiError) {
     // Validation errors are displayed individually
     if (error.isValidationError()) {
       return null;
@@ -50,7 +51,7 @@ export function FormFieldError({
   if (!error) {
     return null;
   }
-  if (clientConfig && error instanceof clientConfig.ApiError) {
+  if (clientConfig && error instanceof ApiError) {
     const fieldErrorMessage = error.findErrorAtPath(
       `/${field.replace(/\./g, '/')}`,
     );
@@ -68,7 +69,7 @@ export function getErrorMessage(error: unknown): string {
   }
 
   // Get API error messages
-  if (error instanceof clientConfig.ApiError) {
+  if (error instanceof ApiError) {
     if (
       error.data &&
       typeof error.data === 'object' &&

@@ -23,6 +23,7 @@ import { Lambda, LambdaProxyHandler, lambdaProxyHandler } from '../aedi-lambda';
 import addFormats from 'ajv-formats';
 import addErrors from 'ajv-errors';
 import Ajv, { Options as AjvOptions } from 'ajv';
+import { ApiBrand, ApiRouteBrand } from './aedi-rest-api-browser-client-types';
 
 let ajv: Ajv;
 
@@ -93,8 +94,8 @@ export function FullRoute<
     RouteEvent & { pathParameters: PathParameters<P> },
     R
   >,
-): LambdaRef<C, RouteEvent, RouteResponse<R>> & {
-  __route?: {
+): LambdaRef<C, RouteEvent, RouteResponse<R>> &
+  ApiRouteBrand<{
     path: P;
     operationName: L;
     inputs: PathParameters<P> &
@@ -102,8 +103,7 @@ export function FullRoute<
       InferRequestQueryParams<C>;
     result: R;
     lambdaContext: C;
-  };
-} {
+  }> {
   const wrappedLambdaHandlerFn = async (
     ctx: any,
     event: RouteEvent,
@@ -156,8 +156,8 @@ export function Route<
 ): ((
   restApiRef: RestApiRef,
   lambdaId: L,
-) => LambdaRef<C, RouteEvent, RouteResponse<R>>) & {
-  __route?: {
+) => LambdaRef<C, RouteEvent, RouteResponse<R>>) &
+  ApiRouteBrand<{
     path: P;
     operationName: L;
     inputs: PathParameters<P> &
@@ -165,8 +165,7 @@ export function Route<
       InferRequestQueryParams<C>;
     result: R;
     lambdaContext: C;
-  };
-} {
+  }> {
   return (restApiRef: RestApiRef, lambdaId: L) =>
     FullRoute(restApiRef, lambdaId, method, path, lambdaContext, fn);
 }
@@ -524,11 +523,21 @@ export function isQueryParamsDependency(
   return !!(value && typeof value === 'object' && 'queryParamSchema' in value);
 }
 
+export function findBodySchema(routeDef: RestApiRefRoute) {
+  return Object.values(routeDef.lambdaRef.context).find(isBodyDependency)
+    ?.bodySchema;
+}
+
+export function findQueryParamSchema(routeDef: RestApiRefRoute) {
+  return Object.values(routeDef.lambdaRef.context).find(isQueryParamsDependency)
+    ?.queryParamSchema;
+}
+
 export function withRoutes<R extends object>(
   exportName: string,
   restApiRef: RestApiRef,
   routes: R,
-): RestApiRef & LambdaProxyHandler & { __routes?: R } {
+): RestApiRef & LambdaProxyHandler & ApiBrand<{ routes: R }> {
   return Object.assign(
     restApiRef,
     lambdaProxyHandler(
@@ -557,9 +566,8 @@ export function Api<R extends object>(
     }
   }
   return withRoutes(id, restApi, resolvedRoutes) as RestApiRef &
-    LambdaProxyHandler & {
-      __routes?: R;
-    };
+    LambdaProxyHandler &
+    ApiBrand<{ routes: R }>;
 }
 
 export function getAjvOptions(): AjvOptions {

@@ -8,7 +8,6 @@ import {
   TableClient,
   UserPool,
   Authorize,
-  generateApiClient,
   Grant,
   reply,
   Get,
@@ -18,6 +17,7 @@ import {
   Api,
   ShareTypes,
   badRequest,
+  createBrowserClientMap,
 } from '@aedi/common';
 import { Scope } from '../app';
 import { randomUUID } from 'crypto';
@@ -270,7 +270,7 @@ export const staticSite = StaticSite(scope, 'site', {
   assetPath: './dist/apps/test-app',
   clientConfig: {
     api,
-    apiClient: generateApiClient(api),
+    apiClient: createBrowserClientMap(api),
     userPool,
     exampleBucket,
     title: 'client config title',

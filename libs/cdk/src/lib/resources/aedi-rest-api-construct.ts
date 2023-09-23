@@ -11,20 +11,13 @@ import {
   AuthorizationType,
   CognitoUserPoolsAuthorizer,
   Cors,
-  JsonSchemaType,
   LambdaIntegration,
   MethodOptions,
-  Model,
-  RequestValidator,
   ResponseType,
   RestApi,
 } from 'aws-cdk-lib/aws-apigateway';
 import { ILambdaDependency } from '../aedi-infra-types';
 import { AediBaseConstruct } from '../aedi-base-construct';
-import {
-  findBodySchema,
-  findQueryParamSchema,
-} from './aedi-static-site-construct';
 
 export class AediRestApi
   extends AediBaseConstruct<RefType.REST_API>
@@ -118,50 +111,6 @@ export class AediRestApi
         );
         routeOptions.authorizationType = AuthorizationType.COGNITO;
       }
-
-      // API Gateway schema validation sucks :( - error messages are useless which almost defeats the purpose
-      // And query param validation is limited and can't handle full schema validation
-      // Phone format strings also seem to be unimplemented - it's just not worth it
-
-      // const bodySchema = findBodySchema(route);
-      // const paramSchema = findQueryParamSchema(route);
-      // if (bodySchema || paramSchema) {
-      //   const bodyModel = bodySchema
-      //     ? new Model(this, `${route.lambdaRef.id}Body`, {
-      //         restApi: this.restApi,
-      //         modelName: `${route.lambdaRef.id}Body`,
-      //         schema: {
-      //           ...bodySchema,
-      //           type: bodySchema.type as JsonSchemaType,
-      //         },
-      //       })
-      //     : null;
-
-      //   routeOptions.requestValidator = new RequestValidator(
-      //     this,
-      //     `body-validator-${route.lambdaRef.id}`,
-      //     {
-      //       restApi: this.restApi,
-      //       requestValidatorName: `${route.lambdaRef.id}-validator`,
-      //       validateRequestBody: !!bodyModel,
-      //       validateRequestParameters: !!paramSchema,
-      //     },
-      //   );
-
-      //   if (paramSchema) {
-      //     routeOptions.requestParameters = {};
-      //     for (const key of Object.keys(paramSchema.properties)) {
-      //       const isRequired = !!paramSchema.required?.includes(key);
-      //       routeOptions.requestParameters[
-      //         `method.request.querystring.${key}`
-      //       ] = isRequired;
-      //     }
-      //   }
-
-      //   routeOptions.requestModels = {
-      //     ...(!!bodyModel && { 'application/json': bodyModel }),
-      //   };
-      // }
 
       apiGatewayResource.addMethod(
         route.method,
