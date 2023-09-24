@@ -26,7 +26,7 @@ export function ContactStats() {
   }, [data]);
 
   return (
-    <ContactPageDetailsSection>
+    <ContactPageDetailsSection data-testid="contact-stats-section">
       {isLoading && <SpinnerFill />}
 
       {stats && (

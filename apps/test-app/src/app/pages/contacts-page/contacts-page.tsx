@@ -5,7 +5,10 @@ import { ComponentProps } from 'react';
 
 export function ContactsPage() {
   return (
-    <main className="flex flex-col flex-1 ring-emerald-500">
+    <main
+      className="flex flex-col flex-1 ring-emerald-500"
+      test-id="ContactsPage"
+    >
       <div className="relative flex-1 h-full overflow-hidden">
         <div className="absolute left-0 right-0 top-0 bottom-0 grid sm:grid-cols-2">
           {/* Left columns */}

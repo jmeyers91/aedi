@@ -72,6 +72,10 @@ export function useRegister() {
         throw new Error("Passwords don't match.");
       }
 
+      if (username.length === 0) {
+        throw new Error(`Username is required.`);
+      }
+
       const signUpResult = await new Promise<ISignUpResult | undefined>(
         (resolve, reject) => {
           userPool.signUp(username, password, [], [], (err, result) => {

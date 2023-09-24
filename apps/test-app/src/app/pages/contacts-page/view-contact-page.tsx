@@ -15,7 +15,7 @@ export function ViewContactPage() {
   const { data: contact, isLoading, error } = useContact(contactId as string);
 
   return (
-    <ContactPageDetailsSection>
+    <ContactPageDetailsSection data-testid="view-contact-section">
       <CloseContactPageLink to="/contacts">
         <XIcon />
       </CloseContactPageLink>
@@ -24,18 +24,19 @@ export function ViewContactPage() {
       {!!contact && (
         <>
           <div className="flex items-center gap-4">
-            <h3 className="text-xl">
+            <h3 className="text-xl" data-testid="contact-name">
               {formatContactName(contact.firstName, contact.lastName)}
             </h3>
             <Link
               to={`/contacts/edit/${contact.contactId}`}
               className="text-gray-700"
+              data-testid="edit-contact-button"
             >
               <PencilIcon />
             </Link>
           </div>
-          <p>Email: {contact.email}</p>
-          <p>Phone: {contact.phone}</p>
+          <p data-testid="contact-email">Email: {contact.email}</p>
+          <p data-testid="contact-phone">Phone: {contact.phone}</p>
         </>
       )}
     </ContactPageDetailsSection>

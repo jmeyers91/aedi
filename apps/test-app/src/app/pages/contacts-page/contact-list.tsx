@@ -11,7 +11,10 @@ export function ContactList() {
   const [search, setSearch] = useState('');
 
   return (
-    <div className="relative flex flex-col gap-6 pb-16 pt-4 flex-1 h-full overflow-auto">
+    <div
+      data-testid="contact-list"
+      className="relative flex flex-col gap-6 pb-16 pt-4 flex-1 h-full overflow-auto"
+    >
       <div className="flex flex-shrink-0 justify-between gap-6 sticky left-0 right-0 top-0 py-3 px-6">
         <div className="relative flex-1 flex">
           <input
@@ -33,7 +36,10 @@ export function ContactList() {
       </div>
       <ul className="flex flex-col flex-1">
         {data?.items?.length === 0 && (
-          <li className="px-6 py-4 flex justify-center items-center flex-1 text-gray-500">
+          <li
+            className="px-6 py-4 flex justify-center items-center flex-1 text-gray-500"
+            data-testid="empty-contact-list"
+          >
             <p>You don't have any contacts yet.</p>
           </li>
         )}

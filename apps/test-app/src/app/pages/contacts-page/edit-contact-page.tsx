@@ -77,7 +77,9 @@ export function EditContactPage() {
   };
 
   return (
-    <ContactPageDetailsSection>
+    <ContactPageDetailsSection
+      data-testid={contactId ? 'edit-contact-section' : 'add-contact-section'}
+    >
       <CloseContactPageLink
         to={contact ? `/contacts/view/${contact?.contactId}` : '/contacts'}
       />
@@ -138,6 +140,7 @@ export function EditContactPage() {
                 }
                 className="text-gray-500 hover:text-red-800 transition-colors"
                 onClick={handleDelete}
+                data-testid="delete-contact-button"
               >
                 Delete
               </button>

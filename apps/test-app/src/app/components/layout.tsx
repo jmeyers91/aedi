@@ -24,6 +24,7 @@ export function Layout() {
         {!!user && (
           <div className="flex flex-row items-center gap-8 pr-8">
             <Link
+              data-testid="add-contact-button"
               to="/contacts/add"
               className={`${blockButtonClassName()} flex items-center gap-2`}
             >

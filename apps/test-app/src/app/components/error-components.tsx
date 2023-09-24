@@ -6,7 +6,7 @@ export function ErrorCard(props: { message: string }) {
   return (
     <div className="bg-red-200 text-red-700 p-4 rounded flex gap-4">
       <ErrorCircleIcon />
-      <p>{props.message}</p>
+      <p className="error-message">{props.message}</p>
     </div>
   );
 }
