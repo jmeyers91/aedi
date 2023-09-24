@@ -10,7 +10,7 @@
     "test:deploy:static-site": "npm run cdk deploy 'aedi-test-static-site' -- --require-approval never",
     "test:diff": "npm run cdk diff '*'",
     "test": "paws admin && nx reset && NODE_NO_WARNINGS=1 AWS_PROFILE=admin AWS_REGION=us-west-2 npx nx run-many -t test",
-    "e2e": "npm run e2e:fetch-map && npx nx reset && npx nx run-many -t e2e",
+    "e2e": "npx nx reset && BASE_URL='https://d28ut8rnwx95ud.cloudfront.net' npx nx run-many -t e2e",
     "e2e:local": "BASE_URL='http://localhost:4200' npx nx run-many -t e2e"
   },
   "private": true,

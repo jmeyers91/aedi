@@ -65,7 +65,10 @@ describe('dynamo CRUD', () => {
 
     test('GET /contacts - fail unauthorized', async () => {
       const response = await apiFetch(`/contacts`);
-      expect(await response.json()).toEqual({ error: 'Unauthorized' });
+      expect(await response.json()).toEqual({
+        message: 'Unauthorized',
+        statusCode: 401,
+      });
       expect(response.status).toEqual(401);
     });
   });
@@ -99,7 +102,10 @@ describe('dynamo CRUD', () => {
 
     test('POST /contacts - fail unauthorized', async () => {
       const response = await apiFetch(`/contacts`, { method: 'POST' });
-      expect(await response.json()).toEqual({ error: 'Unauthorized' });
+      expect(await response.json()).toEqual({
+        message: 'Unauthorized',
+        statusCode: 401,
+      });
       expect(response.status).toEqual(401);
     });
   });
@@ -121,13 +127,19 @@ describe('dynamo CRUD', () => {
           Authorization: randomUUID(),
         },
       });
-      expect(await response.json()).toEqual({ error: 'Not found' });
+      expect(await response.json()).toEqual({
+        message: 'Not found',
+        statusCode: 404,
+      });
       expect(response.status).toEqual(404);
     });
 
     test('GET /contacts/{contactId} - fail unauthorized', async () => {
       const response = await apiFetch(`/contacts/${randomUUID()}`);
-      expect(await response.json()).toEqual({ error: 'Unauthorized' });
+      expect(await response.json()).toEqual({
+        message: 'Unauthorized',
+        statusCode: 401,
+      });
       expect(response.status).toEqual(401);
     });
   });
