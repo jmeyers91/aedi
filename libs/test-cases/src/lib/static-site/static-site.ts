@@ -16,8 +16,8 @@ import {
   Delete,
   Api,
   ShareTypes,
-  badRequest,
   createBrowserClientMap,
+  ApiException,
 } from '@aedi/common';
 import { Scope } from '../app';
 import { randomUUID } from 'crypto';
@@ -139,7 +139,7 @@ export const api = Api(scope, 'api', {
       const contact = await contactsTable.get({ userId, contactId });
 
       if (!contact) {
-        throw badRequest('Contact not found.');
+        throw new ApiException('Contact not found.');
       }
 
       return contact;
@@ -168,6 +168,18 @@ export const api = Api(scope, 'api', {
         email,
         phone,
       };
+
+      /**
+       * This is added to test whether or not multi-field error handling is working as intended.
+       * Ideally we can throw errors that match the format of AJV validation errors so that
+       * both error types can be displayed as field-specific errors in the frontend.
+       */
+      if (firstName === 'terry' && lastName === 'cooper') {
+        throw new ApiException('I dislike terry cooper', 418, {
+          firstName: 'Terry is not allowed in my contacts app',
+          lastName: 'Terry still owes me $20',
+        });
+      }
 
       await contactsTable.put({ Item: contact });
 

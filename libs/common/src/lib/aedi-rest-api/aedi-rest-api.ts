@@ -10,6 +10,7 @@ import type {
 import type {
   InferRequestBody,
   InferRequestQueryParams,
+  ApiExceptionReply,
   RestApiRef,
   RestApiRefRoute,
 } from './aedi-rest-api-types';
@@ -125,7 +126,8 @@ export function FullRoute<
       const { message, statusCode = 500 } = error as Error & {
         statusCode?: number;
       };
-      return errorReply({ message, statusCode }, statusCode) as any;
+      const exception: ApiExceptionReply = { message, statusCode };
+      return reply(exception, statusCode) as any;
     }
   };
 
@@ -401,18 +403,36 @@ export function reply<T>(
   });
 }
 
-export function errorReply<E extends { message: string }>(
-  errorObject: E,
-  statusCode = 400,
-): RouteResponse<E> {
-  return reply(errorObject, statusCode);
-}
+export class ApiException extends LambdaResultError {
+  constructor(
+    message: string,
+    statusCode?: number,
+    errorMap?: Record<string, string>,
+  ) {
+    const exception: ApiExceptionReply = {
+      message,
+      statusCode: statusCode ?? 400,
+    };
 
-export function badRequest(
-  message = 'Bad request.',
-  statusCode = 400,
-): LambdaResultError {
-  return new LambdaResultError(message, errorReply({ message, statusCode }));
+    if (errorMap) {
+      /**
+       * Convert the error map into a format that resembles AJV's errors.
+       * This unifies both schema validation errors and non-schema validation errors
+       * allowing both to be displayed in the UI using the same logic.
+       */
+      exception.errors = Object.entries(errorMap).map(
+        ([instancePath, message]) => ({
+          // Make sure paths are prefixed with / to match AJV conventions
+          // I'm not a fan of having to add it everywhere, so it gets added here
+          instancePath:
+            instancePath[0] === '/' ? instancePath : `/${instancePath}`,
+          message,
+        }),
+      );
+    }
+
+    super(message, reply(exception, statusCode));
+  }
 }
 
 /**
@@ -442,19 +462,17 @@ export function Body<T extends TObject<any>>(
 
       const errorMessage = `Request body validation error.`;
 
+      const errorResponse: ApiExceptionReply = {
+        message: errorMessage,
+        errors: validate.errors,
+        statusCode: 400,
+      };
+
       // Throw the error with an associated 400 bad request response
       throw new LambdaResultError(
         errorMessage,
         // This reply matches the format of validation errors returned by our rest api
-        reply(
-          {
-            message: errorMessage,
-            errors: validate.errors,
-            statusCode: '400',
-            type: 'BAD_REQUEST_PARAMETERS',
-          },
-          400,
-        ),
+        reply(errorResponse, 400),
       );
     }),
     { bodySchema },
@@ -492,19 +510,17 @@ export function Params<T extends TObject<any>>(
       }
       const errorMessage = 'Request param validation error.';
 
+      const errorReply: ApiExceptionReply = {
+        message: errorMessage,
+        errors: validate.errors,
+        statusCode: 400,
+      };
+
       // Throw the error with an associated 400 bad request response
       throw new LambdaResultError(
         errorMessage,
         // This reply matches the format of validation errors returned by our rest api
-        reply(
-          {
-            message: errorMessage,
-            errors: validate.errors,
-            statusCode: '400',
-            type: 'BAD_REQUEST_PARAMETERS',
-          },
-          400,
-        ),
+        reply(errorReply, 400),
       );
     }),
     { queryParamSchema },

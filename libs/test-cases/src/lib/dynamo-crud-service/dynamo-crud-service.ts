@@ -11,6 +11,7 @@ import {
   Scope as AediScope,
   Construct,
   lambdaProxyHandler,
+  ApiException,
 } from '@aedi/common';
 import { Scope } from '../app';
 import { randomUUID } from 'crypto';
@@ -102,7 +103,7 @@ function ContactService(
         const contact = await contactsTable.get({ userId, contactId });
 
         if (!contact) {
-          throw badRequest('Not found', 404);
+          throw new ApiException('Not found', 404);
         }
 
         return contact;
@@ -184,14 +185,7 @@ function ContactService(
 function assertAuth(event: RouteEvent): { userId: string } {
   const userId = event.headers.Authorization;
   if (!userId) {
-    throw badRequest('Unauthorized', 401);
+    throw new ApiException('Unauthorized', 401);
   }
   return { userId };
-}
-
-function badRequest(
-  message: string,
-  statusCode = 400,
-): Error & { statusCode: number } {
-  return Object.assign(new Error(message), { statusCode });
 }

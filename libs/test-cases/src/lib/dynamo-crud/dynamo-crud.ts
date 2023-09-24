@@ -9,6 +9,7 @@ import {
   Table,
   TableClient,
   reply,
+  ApiException,
 } from '@aedi/common';
 import { Scope } from '../app';
 import { randomUUID } from 'crypto';
@@ -75,7 +76,7 @@ export const getContact = GetLambda(
     const contact = await contactsTable.get({ userId, contactId });
 
     if (!contact) {
-      throw badRequest('Not found', 404);
+      throw new ApiException('Not found', 404);
     }
 
     return contact;
@@ -206,14 +207,7 @@ export const getTeapot = GetLambda(
 function assertAuth(event: RouteEvent): { userId: string } {
   const userId = event.headers.Authorization;
   if (!userId) {
-    throw badRequest('Unauthorized', 401);
+    throw new ApiException('Unauthorized', 401);
   }
   return { userId };
-}
-
-function badRequest(
-  message: string,
-  statusCode = 400,
-): Error & { statusCode: number } {
-  return Object.assign(new Error(message), { statusCode });
 }

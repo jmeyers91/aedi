@@ -48,3 +48,10 @@ export type InferRequestQueryParams<C> = Extract<
 > extends { __queryParams?: infer Q }
   ? Q
   : never;
+
+export type ApiExceptionReply = {
+  message: string;
+  statusCode: string | number;
+  type?: string;
+  errors?: { instancePath: string; message?: string }[] | null;
+};

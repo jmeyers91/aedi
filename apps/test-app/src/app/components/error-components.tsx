@@ -1,4 +1,4 @@
-import { ApiError } from '@aedi/browser-client';
+import { ApiClientException } from '@aedi/browser-client';
 import { clientConfig } from '../client-config';
 import { ErrorCircleIcon } from './icons/error-circle-icon';
 
@@ -28,9 +28,9 @@ export function FormError({ error }: { error: unknown }) {
   if (!error) {
     return null;
   }
-  if (clientConfig && error instanceof ApiError) {
-    // Validation errors are displayed individually
-    if (error.isValidationError()) {
+  if (clientConfig && error instanceof ApiClientException) {
+    // Field errors are displayed individually
+    if (error.getFieldErrorCount() > 0) {
       return null;
     }
   }
@@ -51,10 +51,8 @@ export function FormFieldError({
   if (!error) {
     return null;
   }
-  if (clientConfig && error instanceof ApiError) {
-    const fieldErrorMessage = error.findErrorAtPath(
-      `/${field.replace(/\./g, '/')}`,
-    );
+  if (clientConfig && error instanceof ApiClientException) {
+    const fieldErrorMessage = error.findErrorAtPath(field);
     if (!fieldErrorMessage) {
       return null;
     }
@@ -69,15 +67,8 @@ export function getErrorMessage(error: unknown): string {
   }
 
   // Get API error messages
-  if (error instanceof ApiError) {
-    if (
-      error.data &&
-      typeof error.data === 'object' &&
-      'message' in error.data &&
-      typeof error.data.message === 'string'
-    ) {
-      return error.data.message;
-    }
+  if (error instanceof ApiClientException) {
+    return error.data.message;
   }
 
   // Get plain error message if it exists
