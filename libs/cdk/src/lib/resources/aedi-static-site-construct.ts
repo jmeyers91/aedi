@@ -1,5 +1,4 @@
 import { Construct } from 'constructs';
-import * as synchronizedPrettier from '@prettier/sync';
 import { ILambdaDependency } from '../aedi-infra-types';
 import { RefType, StaticSiteConstructRef, StaticSiteRef } from '@aedi/common';
 import { RemovalPolicy, Stack } from 'aws-cdk-lib';
