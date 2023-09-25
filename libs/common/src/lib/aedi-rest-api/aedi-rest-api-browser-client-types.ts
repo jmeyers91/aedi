@@ -81,6 +81,6 @@ export type ApiMapClient<M> = {
 };
 
 export interface ApiMapClientOptions {
-  baseUrl: string;
+  baseUrl?: string;
   getHeaders?(): Record<string, string> | Promise<Record<string, string>>;
 }

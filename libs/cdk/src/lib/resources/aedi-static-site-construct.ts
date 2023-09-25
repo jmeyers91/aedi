@@ -1,20 +1,23 @@
 import { Construct } from 'constructs';
 import { ILambdaDependency } from '../aedi-infra-types';
-import { RefType, StaticSiteConstructRef, StaticSiteRef } from '@aedi/common';
+import {
+  RefType,
+  StaticSiteConstructRef,
+  StaticSiteRef,
+  isBehavior,
+} from '@aedi/common';
 import { RemovalPolicy, Stack } from 'aws-cdk-lib';
 import {
   OriginAccessIdentity,
   Distribution,
   ViewerProtocolPolicy,
   CachePolicy,
+  AllowedMethods,
+  OriginRequestPolicy,
 } from 'aws-cdk-lib/aws-cloudfront';
 import { RestApiOrigin, S3Origin } from 'aws-cdk-lib/aws-cloudfront-origins';
 import { Bucket } from 'aws-cdk-lib/aws-s3';
-import {
-  BucketDeployment,
-  ISource,
-  Source,
-} from 'aws-cdk-lib/aws-s3-deployment';
+import { BucketDeployment, Source } from 'aws-cdk-lib/aws-s3-deployment';
 import { AediBaseConstruct } from '../aedi-base-construct';
 import { Cors, LambdaIntegration, RestApi } from 'aws-cdk-lib/aws-apigateway';
 import { InlineCode, Runtime, Function } from 'aws-cdk-lib/aws-lambda';
@@ -80,12 +83,48 @@ export class AediStaticSite
       );
     }
 
-    const bucketDeploymentSources: ISource[] = [
-      Source.asset(staticSiteRef.assetPath),
-    ];
+    for (const behavior of Object.values(this.resourceRef.clientConfig)) {
+      if (!isBehavior(behavior)) continue;
+
+      const { behaviorRef, behaviorOptions } = behavior;
+      if (behaviorRef.type === RefType.REST_API) {
+        const restApi = resolveConstruct(behaviorRef);
+
+        this.distribution.addBehavior(
+          behaviorOptions.path,
+          new RestApiOrigin(restApi.restApi),
+          {
+            viewerProtocolPolicy: fromEnumKey(
+              ViewerProtocolPolicy,
+              behaviorOptions.viewerProtocolPolicy,
+              'REDIRECT_TO_HTTPS',
+            ),
+            cachePolicy: fromEnumKey(
+              CachePolicy,
+              behaviorOptions.cachePolicy,
+              'CACHING_DISABLED',
+            ),
+            allowedMethods: fromEnumKey(
+              AllowedMethods,
+              behaviorOptions.allowedMethods,
+              'ALLOW_ALL',
+            ),
+            originRequestPolicy: fromEnumKey(
+              OriginRequestPolicy,
+              behaviorOptions.originRequestPolicy,
+              'ALL_VIEWER_EXCEPT_HOST_HEADER',
+            ),
+          },
+        );
+      } else {
+        throw new Error(
+          `Unsupported rest API behavior target type: ${behaviorRef.type}`,
+        );
+      }
+    }
 
     new BucketDeployment(this, 'bucket-deployment', {
-      sources: bucketDeploymentSources,
+      sources: [Source.asset(staticSiteRef.assetPath)],
       destinationBucket: this.bucket,
       distribution: this.distribution,
     });
@@ -131,6 +170,11 @@ class StaticSiteConfigApi extends Construct {
         const construct = resolveConstruct(value);
         if ('getConstructRef' in construct) {
           resolvedConfig[key] = construct.getConstructRef();
+        } else if (isBehavior(value)) {
+          const construct = resolveConstruct(value.behaviorRef);
+          if ('getConstructRef' in construct) {
+            resolvedConfig[key] = construct.getConstructRef();
+          }
         } else {
           resolvedConfig[key] = {};
         }
@@ -181,4 +225,20 @@ class StaticSiteConfigApi extends Construct {
       .addResource('{proxy+}')
       .addMethod('GET', new LambdaIntegration(getClientConfigLambda));
   }
+}
+
+/**
+ * Takes an enum, an optional key, and a default key.
+ * If the optional key is passed, its enum value is returned.
+ * Otherwise, the default enum value is returned.
+ *
+ * Used to pass CDK enums from the Aedi core without having to reference any
+ * of the CDK enum types directly.
+ */
+function fromEnumKey<E, K extends keyof E, D extends keyof E>(
+  enumDef: E,
+  key: K | undefined,
+  defaultKey: D,
+): E[K] | E[D] {
+  return enumDef[key ?? defaultKey];
 }

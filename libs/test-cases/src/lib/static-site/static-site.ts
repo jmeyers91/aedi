@@ -18,6 +18,7 @@ import {
   ShareTypes,
   createBrowserClientMap,
   ApiException,
+  Behavior,
 } from '@aedi/common';
 import { Scope } from '../app';
 import { randomUUID } from 'crypto';
@@ -91,14 +92,14 @@ const writableContactsTable = TableClient(
 );
 
 export const api = Api(scope, 'api', {
-  healthcheck: Get('/healthcheck', {}, (event, context) => ({
+  healthcheck: Get('/api/healthcheck', {}, (event, context) => ({
     healthy: true,
     event,
     context,
   })),
 
   healthcheckWithParam: Get(
-    '/healthcheck/{param}',
+    '/api/healthcheck/{param}',
     {},
     (_, event, context) => ({
       healthy: true,
@@ -109,7 +110,7 @@ export const api = Api(scope, 'api', {
   ),
 
   listContacts: Get(
-    '/contacts',
+    '/api/contacts',
     {
       auth: Authorize(userPool),
       params: Params(
@@ -131,7 +132,7 @@ export const api = Api(scope, 'api', {
   ),
 
   getContact: Get(
-    '/contacts/{contactId}',
+    '/api/contacts/{contactId}',
     { auth: Authorize(userPool), contactsTable },
     async ({ auth: { userId }, contactsTable }, event) => {
       const { contactId } = event.pathParameters;
@@ -147,7 +148,7 @@ export const api = Api(scope, 'api', {
   ),
 
   createContact: Post(
-    '/contacts',
+    '/api/contacts',
     {
       auth: Authorize(userPool),
       contactsTable: writableContactsTable,
@@ -188,7 +189,7 @@ export const api = Api(scope, 'api', {
   ),
 
   updateContact: Put(
-    '/contacts/{contactId}',
+    '/api/contacts/{contactId}',
     {
       auth: Authorize(userPool),
       body: Body(UpdateContactFields),
@@ -214,7 +215,7 @@ export const api = Api(scope, 'api', {
   ),
 
   deleteContact: Delete(
-    '/contacts/{contactId}',
+    '/api/contacts/{contactId}',
     { auth: Authorize(userPool), contactsTable: writableContactsTable },
     async ({ auth: { userId }, contactsTable }, event) => {
       const { contactId } = event.pathParameters;
@@ -229,7 +230,7 @@ export const api = Api(scope, 'api', {
    * This endpoint only exists to test param type checking.
    */
   doThing: Get(
-    '/do-thing',
+    '/api/do-thing',
     {
       params: Params(
         Type.Object({
@@ -248,7 +249,7 @@ export const api = Api(scope, 'api', {
    * This endpoint exists to test using `reply` to override the response content type.
    */
   exportContacts: Get(
-    '/contacts.csv',
+    '/api/contacts.csv',
     { auth: Authorize(userPool), contactsTable },
     async ({ auth: { userId }, contactsTable }, event) => {
       const { items: contacts = [] } = await contactsTable.query({
@@ -281,8 +282,8 @@ export const api = Api(scope, 'api', {
 export const staticSite = StaticSite(scope, 'site', {
   assetPath: './dist/apps/test-app',
   clientConfig: {
-    api,
-    apiClient: createBrowserClientMap(api),
+    api: Behavior('/api/*', api),
+    apiMap: createBrowserClientMap(api),
     userPool,
     exampleBucket,
     title: 'client config title',

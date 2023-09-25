@@ -35,6 +35,8 @@ export type ResolveStaticSiteClientConfig<R extends StaticSiteRef<any>> =
 export type ResolveClientConfig<C> = {
   [K in keyof C]: C[K] extends ResourceRef
     ? LookupConstructRef<C[K]['type']>
+    : C[K] extends { behaviorRef: ResourceRef }
+    ? LookupConstructRef<C[K]['behaviorRef']['type']>
     : C[K];
 };
 
@@ -66,4 +68,34 @@ export interface StaticSiteTypeMap extends IResourceTypeMap {
 
 export interface SharedTypes<T> {
   __SHARED_TYPES?: T;
+}
+
+export interface StaticSiteBehaviorOptions {
+  path: string;
+  viewerProtocolPolicy?: 'HTTPS_ONLY' | 'REDIRECT_TO_HTTPS' | 'ALLOW_ALL';
+  cachePolicy?:
+    | 'AMPLIFY'
+    | 'CACHING_OPTIMIZED'
+    | 'CACHING_OPTIMIZED_FOR_UNCOMPRESSED_OBJECTS'
+    | 'CACHING_DISABLED'
+    | 'ELEMENTAL_MEDIA_PACKAGE';
+  allowedMethods?: 'ALLOW_GET_HEAD' | 'ALLOW_GET_HEAD_OPTIONS' | 'ALLOW_ALL';
+  cachedMethods?: 'CACHE_GET_HEAD' | 'CACHE_GET_HEAD_OPTIONS';
+  originRequestPolicy?:
+    | 'USER_AGENT_REFERER_HEADERS'
+    | 'CORS_CUSTOM_ORIGIN'
+    | 'CORS_S3_ORIGIN'
+    | 'ALL_VIEWER'
+    | 'ELEMENTAL_MEDIA_TAILOR'
+    | 'ALL_VIEWER_AND_CLOUDFRONT_2022'
+    | 'ALL_VIEWER_EXCEPT_HOST_HEADER';
+  compress?: boolean;
+}
+
+export interface StaticSiteBehavior<
+  R extends ResourceRef,
+  O extends StaticSiteBehaviorOptions,
+> {
+  behaviorRef: R;
+  behaviorOptions: O;
 }

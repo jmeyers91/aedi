@@ -42,33 +42,32 @@ export class ApiClientException extends ApiClientError {
 
 export function createBrowserApiClient<M>(
   apiMap: M,
-): (clientOptions: ApiMapClientOptions) => ApiMapClient<M> {
-  return (clientOptions) => {
-    const apiClient: ApiMapClient<any> = {};
+  clientOptions: ApiMapClientOptions = {},
+): ApiMapClient<M> {
+  const apiClient: ApiMapClient<any> = {};
 
-    clientOptions = {
-      ...clientOptions,
-      // Remove the trailing space from the base URL to avoid double-slash issues
-      baseUrl: clientOptions.baseUrl?.replace(/\/$/, ''),
-    };
-
-    for (const [key, routeMap] of Object.entries(apiMap as ApiMap)) {
-      const requestFn: ApiMapRouteRequestClient<any> = async (requestInputs) =>
-        sendApiRequest({
-          clientOptions,
-          routeMap,
-          requestInputs,
-        });
-
-      const dataFn: ApiMapRouteClient<any> = async (inputs) =>
-        handleApiResponse(await requestFn(inputs));
-
-      apiClient[`${key}Request`] = requestFn;
-      apiClient[key] = dataFn;
-    }
-
-    return apiClient as ApiMapClient<M>;
+  clientOptions = {
+    ...clientOptions,
+    // Remove the trailing space from the base URL to avoid double-slash issues
+    baseUrl: clientOptions.baseUrl?.replace(/\/$/, ''),
   };
+
+  for (const [key, routeMap] of Object.entries(apiMap as ApiMap)) {
+    const requestFn: ApiMapRouteRequestClient<any> = async (requestInputs) =>
+      sendApiRequest({
+        clientOptions,
+        routeMap,
+        requestInputs,
+      });
+
+    const dataFn: ApiMapRouteClient<any> = async (inputs) =>
+      handleApiResponse(await requestFn(inputs));
+
+    apiClient[`${key}Request`] = requestFn;
+    apiClient[key] = dataFn;
+  }
+
+  return apiClient as ApiMapClient<M>;
 }
 
 async function sendApiRequest({
@@ -102,7 +101,10 @@ async function sendApiRequest({
       return part.value;
     })
     .join('/');
-  const url = new URL(`${baseUrl}/${path}`);
+
+  const url = baseUrl
+    ? new URL(`${baseUrl}/${path}`)
+    : new URL(path, window.location.origin);
 
   if (routeMap.params) {
     for (const key of routeMap.params) {

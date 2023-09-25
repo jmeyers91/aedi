@@ -1,5 +1,15 @@
-import type { SharedTypes, StaticSiteRef } from './aedi-static-site-types';
-import { CreateResourceOptions, RefType, Scope } from '../aedi-types';
+import type {
+  SharedTypes,
+  StaticSiteBehavior,
+  StaticSiteBehaviorOptions,
+  StaticSiteRef,
+} from './aedi-static-site-types';
+import {
+  CreateResourceOptions,
+  RefType,
+  ResourceRef,
+  Scope,
+} from '../aedi-types';
 import { createResource } from '../aedi-resource-utils';
 
 export function StaticSite<C>(
@@ -13,6 +23,23 @@ export function StaticSite<C>(
     id,
     options,
   );
+}
+
+export function Behavior<
+  R extends ResourceRef,
+  O extends Omit<StaticSiteBehaviorOptions, 'path'> = StaticSiteBehaviorOptions,
+>(
+  path: string,
+  ref: R,
+  options: O = {} as O,
+): StaticSiteBehavior<R, O & { path: string }> {
+  return { behaviorRef: ref, behaviorOptions: { ...options, path } };
+}
+
+export function isBehavior(
+  value: unknown,
+): value is StaticSiteBehavior<ResourceRef, StaticSiteBehaviorOptions> {
+  return !!(value && typeof value === 'object' && 'behaviorRef' in value);
 }
 
 /**
