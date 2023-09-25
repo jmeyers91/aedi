@@ -1,6 +1,7 @@
 import { Construct } from 'constructs';
 import { ILambdaDependency } from '../aedi-infra-types';
 import {
+  GENERATED,
   RefType,
   StaticSiteConstructRef,
   StaticSiteRef,
@@ -14,6 +15,7 @@ import {
   CachePolicy,
   AllowedMethods,
   OriginRequestPolicy,
+  DistributionProps,
 } from 'aws-cdk-lib/aws-cloudfront';
 import { RestApiOrigin, S3Origin } from 'aws-cdk-lib/aws-cloudfront-origins';
 import { Bucket } from 'aws-cdk-lib/aws-s3';
@@ -21,7 +23,24 @@ import { BucketDeployment, Source } from 'aws-cdk-lib/aws-s3-deployment';
 import { AediBaseConstruct } from '../aedi-base-construct';
 import { Cors, LambdaIntegration, RestApi } from 'aws-cdk-lib/aws-apigateway';
 import { InlineCode, Runtime, Function } from 'aws-cdk-lib/aws-lambda';
-import { getMode, isResourceRef, resolveConstruct } from '../aedi-infra-utils';
+import {
+  NotReadOnly,
+  fromEnumKey,
+  getMode,
+  getRegionStack,
+  isResourceRef,
+  resolveConstruct,
+} from '../aedi-infra-utils';
+import {
+  Certificate,
+  CertificateValidation,
+} from 'aws-cdk-lib/aws-certificatemanager';
+import {
+  ARecord,
+  PublicHostedZone,
+  RecordTarget,
+} from 'aws-cdk-lib/aws-route53';
+import { CloudFrontTarget } from 'aws-cdk-lib/aws-route53-targets';
 
 export class AediStaticSite
   extends AediBaseConstruct<RefType.STATIC_SITE>
@@ -52,7 +71,7 @@ export class AediStaticSite
 
     this.bucket.grantRead(originAccessIdentity);
 
-    this.distribution = new Distribution(this, 'distribution', {
+    const distributionProps: NotReadOnly<DistributionProps> = {
       defaultBehavior: {
         origin: new S3Origin(this.bucket, { originAccessIdentity }),
         viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
@@ -65,7 +84,42 @@ export class AediStaticSite
           responsePagePath: '/index.html',
         },
       ],
-    });
+    };
+
+    // Add the domain name and certificate to the distribution
+    if (staticSiteRef.domain && staticSiteRef.domain !== GENERATED) {
+      const usEast1Stack = getRegionStack(this, 'us-east-1'); // Cloudfront distribution certs must be in us-east-1
+      const certId = `${staticSiteRef.uid.split('.').join('-')}-domain-cert`;
+      const hostedZoneId = `${staticSiteRef.uid
+        .split('.')
+        .join('-')}-domain-zone`;
+      distributionProps.domainNames = [staticSiteRef.domain.name];
+      distributionProps.certificate = new Certificate(usEast1Stack, certId, {
+        domainName: staticSiteRef.domain.name,
+        validation: CertificateValidation.fromDns(
+          PublicHostedZone.fromLookup(usEast1Stack, hostedZoneId, {
+            domainName: staticSiteRef.domain.zone,
+          }),
+        ),
+      });
+    }
+
+    this.distribution = new Distribution(
+      this,
+      'distribution',
+      distributionProps,
+    );
+
+    // Create an A-record pointing from the domain to the distribution
+    if (staticSiteRef.domain && staticSiteRef.domain !== GENERATED) {
+      new ARecord(this, 'ARecord', {
+        recordName: staticSiteRef.domain.name,
+        target: RecordTarget.fromAlias(new CloudFrontTarget(this.distribution)),
+        zone: PublicHostedZone.fromLookup(this, 'domain-hosted-zone', {
+          domainName: staticSiteRef.domain.zone,
+        }),
+      });
+    }
 
     // Add the client config API to host the client config script
     if (this.resourceRef.clientConfig) {
@@ -260,20 +314,4 @@ class StaticSiteConfigApi extends Construct {
       .addResource('{proxy+}')
       .addMethod('GET', new LambdaIntegration(getClientConfigLambda));
   }
-}
-
-/**
- * Takes an enum, an optional key, and a default key.
- * If the optional key is passed, its enum value is returned.
- * Otherwise, the default enum value is returned.
- *
- * Used to pass CDK enums from the Aedi core without having to reference any
- * of the CDK enum types directly.
- */
-function fromEnumKey<E, K extends keyof E, D extends keyof E>(
-  enumDef: E,
-  key: K | undefined,
-  defaultKey: D,
-): E[K] | E[D] {
-  return enumDef[key ?? defaultKey];
 }

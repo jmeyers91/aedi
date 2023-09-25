@@ -12,6 +12,8 @@ export class AediStack extends Stack {
     resourceRef: ResourceRef;
     construct: Construct;
   }[] = [];
+  private readonly regionStacks = new Map<string, Stack>();
+  private readonly aediStackId: string;
 
   constructor(
     scope: Construct,
@@ -19,10 +21,32 @@ export class AediStack extends Stack {
     { resourceRef: stackRef }: { resourceRef: StackRef },
   ) {
     super(scope, id, {
+      crossRegionReferences: true,
       ...getAediCdkAppContext().defaultStackProps,
     });
 
+    this.aediStackId = id;
     this.stackRef = stackRef;
+  }
+
+  /**
+   * Gets an alternative stack in another region for this stack.
+   * Used when you need one or two constructs in a region other than the one you're deploying your application to.
+   * For example, Cloudfront distribution certificates must be deployed to us-east-1.
+   */
+  getRegionStack(region: string): Stack {
+    let stack = this.regionStacks.get(region);
+    if (!stack) {
+      stack = new Stack(this, `${this.aediStackId}-${region}`, {
+        env: {
+          account: this.account,
+          region,
+        },
+        crossRegionReferences: true,
+      });
+      this.regionStacks.set(region, stack);
+    }
+    return stack;
   }
 
   registerResourceConstruct(resourceConstruct: {

@@ -84,6 +84,36 @@ export function resolveConstruct<R extends ResourceRef>(
   return construct as any;
 }
 
+/**
+ * Finds or creates a region stack in a construct's scope.
+ * The construct must be inside an Aedi stack.
+ */
+export function getRegionStack(construct: Construct, region: string) {
+  const stack = Stack.of(construct);
+  if (!(stack instanceof AediStack)) {
+    throw new Error(
+      `Parent stack must be an AediStack to call getRegionStack.`,
+    );
+  }
+  return stack.getRegionStack(region);
+}
+
+/**
+ * Takes an enum, an optional key, and a default key.
+ * If the optional key is passed, its enum value is returned.
+ * Otherwise, the default enum value is returned.
+ *
+ * Used to pass CDK enums from the Aedi core without having to reference any
+ * of the CDK enum types directly.
+ */
+export function fromEnumKey<E, K extends keyof E, D extends keyof E>(
+  enumDef: E,
+  key: K | undefined,
+  defaultKey: D,
+): E[K] | E[D] {
+  return enumDef[key ?? defaultKey];
+}
+
 function isAediApp(value: unknown): value is AediApp {
   return !!(value && typeof value === 'object' && 'isAediApp' in value);
 }
@@ -111,3 +141,5 @@ export interface AediCdkAppContext {
   getCachedResource(resourceRef: IResourceRef): Construct | undefined;
   cacheResource(resourceRef: IResourceRef, resource: Construct): void;
 }
+
+export type NotReadOnly<T> = { -readonly [K in keyof T]: T[K] };

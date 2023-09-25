@@ -10,8 +10,18 @@ import type {
 
 export interface StaticSiteRef<C> extends IResourceRef {
   type: RefType.STATIC_SITE;
-  domain?: { domainName: string; domainZone: string } | typeof GENERATED;
+
+  /**
+   * The local path to the directory that should be uploaded as the contents of the bucket
+   * during deployments.
+   */
   assetPath: string;
+
+  /**
+   * The domain name and zone to use for the static site.
+   * The certificate is created in us-east-1 and is verified using DNS verification.
+   */
+  domain?: { name: string; zone: string } | typeof GENERATED;
 
   /**
    * Client config will be provided to the static site and can be accessed using the aedi browser client library.

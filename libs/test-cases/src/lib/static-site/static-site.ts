@@ -281,6 +281,7 @@ export const api = Api(scope, 'api', {
 });
 
 export const staticSite = StaticSite(scope, 'site', {
+  domain: { name: 'contacts.smplj.xyz', zone: 'smplj.xyz' },
   assetPath: './dist/apps/test-app',
   clientConfig: {
     api: Behavior('/api/*', api),
