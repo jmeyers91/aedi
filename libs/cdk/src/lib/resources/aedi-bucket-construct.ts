@@ -6,6 +6,7 @@ import { BucketConstructRef, BucketRef, RefType } from '@aedi/common';
 import { ILambdaDependency } from '../aedi-infra-types';
 import { AediLambdaFunction } from './aedi-lambda-construct';
 import { AediBaseConstruct } from '../aedi-base-construct';
+import { getMode } from '../aedi-infra-utils';
 
 export class AediBucket
   extends AediBaseConstruct<RefType.BUCKET>
@@ -18,10 +19,12 @@ export class AediBucket
     super(scope, id, props);
 
     const bucketRef = (this.bucketRef = this.resourceRef);
+    const defaultRemovalPolicy =
+      getMode() === 'production' ? RemovalPolicy.RETAIN : RemovalPolicy.DESTROY;
 
     const bucket = new Bucket(this, 'bucket', {
       autoDeleteObjects: true,
-      removalPolicy: RemovalPolicy.DESTROY,
+      removalPolicy: defaultRemovalPolicy,
     });
     this.bucket = bucket;
 

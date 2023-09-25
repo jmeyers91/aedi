@@ -28,8 +28,9 @@ import { Static, Type } from '@sinclair/typebox';
 const scope = Scope('static-site');
 
 const resourceScope = Scope('static-site-resources');
-
-const exampleBucket = Bucket(resourceScope, 'example-bucket');
+const publicDocs = Bucket(resourceScope, 'public-doc-bucket', {
+  assetPath: './libs/test-cases/src/lib/static-site/public-docs-bucket',
+});
 
 const Contact = Type.Object({
   userId: Type.String(),
@@ -283,10 +284,9 @@ export const staticSite = StaticSite(scope, 'site', {
   assetPath: './dist/apps/test-app',
   clientConfig: {
     api: Behavior('/api/*', api),
+    publicDocs: Behavior('/docs/*', publicDocs),
     apiMap: createBrowserClientMap(api),
     userPool,
-    exampleBucket,
-    title: 'client config title',
     types: ShareTypes<{
       Contact: Contact;
     }>(),

@@ -87,6 +87,14 @@ export class AediStaticSite
       if (!isBehavior(behavior)) continue;
 
       const { behaviorRef, behaviorOptions } = behavior;
+
+      // TODO: Move the logic for adding these behaviors into the individual constructs using an interface
+      /**
+       * TODO: The default values for these behavior options should be clearly defined somewhere.
+       * They're different for each behavior type because they can be very confusing and difficult to
+       * configure correctly, and ideally all of the behavior types have reasonable defaults that
+       * behave in a way a developer expects without being too permissive.
+       */
       if (behaviorRef.type === RefType.REST_API) {
         const restApi = resolveConstruct(behaviorRef);
 
@@ -114,6 +122,33 @@ export class AediStaticSite
               behaviorOptions.originRequestPolicy,
               'ALL_VIEWER_EXCEPT_HOST_HEADER',
             ),
+          },
+        );
+      } else if (behaviorRef.type === RefType.BUCKET) {
+        const { bucket } = resolveConstruct(behaviorRef);
+
+        this.distribution.addBehavior(
+          behaviorOptions.path,
+          new S3Origin(bucket),
+          {
+            viewerProtocolPolicy: fromEnumKey(
+              ViewerProtocolPolicy,
+              behaviorOptions.viewerProtocolPolicy,
+              'REDIRECT_TO_HTTPS',
+            ),
+            cachePolicy: fromEnumKey(
+              CachePolicy,
+              behaviorOptions.cachePolicy,
+              'CACHING_OPTIMIZED',
+            ),
+            allowedMethods: fromEnumKey(
+              AllowedMethods,
+              behaviorOptions.allowedMethods,
+              'ALLOW_GET_HEAD',
+            ),
+            originRequestPolicy: behaviorOptions.originRequestPolicy
+              ? OriginRequestPolicy[behaviorOptions.originRequestPolicy]
+              : undefined,
           },
         );
       } else {
