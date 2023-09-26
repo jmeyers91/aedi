@@ -21,14 +21,10 @@ import { RestApiOrigin, S3Origin } from 'aws-cdk-lib/aws-cloudfront-origins';
 import { Bucket } from 'aws-cdk-lib/aws-s3';
 import { BucketDeployment, Source } from 'aws-cdk-lib/aws-s3-deployment';
 import { AediBaseConstruct } from '../aedi-base-construct';
-import { Cors, LambdaIntegration, RestApi } from 'aws-cdk-lib/aws-apigateway';
-import { InlineCode, Runtime, Function } from 'aws-cdk-lib/aws-lambda';
 import {
   NotReadOnly,
   fromEnumKey,
-  getMode,
   getRegionStack,
-  isResourceRef,
   resolveConstruct,
 } from '../aedi-infra-utils';
 import {
@@ -41,6 +37,7 @@ import {
   RecordTarget,
 } from 'aws-cdk-lib/aws-route53';
 import { CloudFrontTarget } from 'aws-cdk-lib/aws-route53-targets';
+import { ClientConfigProvider } from '../constructs/client-config-provider/client-config-provider';
 
 export class AediStaticSite
   extends AediBaseConstruct<RefType.STATIC_SITE>
@@ -121,19 +118,13 @@ export class AediStaticSite
       });
     }
 
-    // Add the client config API to host the client config script
+    const sources = [Source.asset(staticSiteRef.assetPath)];
+
     if (this.resourceRef.clientConfig) {
-      this.distribution.addBehavior(
-        '/aedi/client-config.js',
-        new RestApiOrigin(
-          new StaticSiteConfigApi(this, 'config-api', {
-            staticSiteRef,
-          }).restApi,
-        ),
-        {
-          viewerProtocolPolicy: ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
-          cachePolicy: CachePolicy.CACHING_DISABLED,
-        },
+      sources.push(
+        new ClientConfigProvider(this, 'client-config-provider', {
+          staticSiteRef: this.resourceRef,
+        }).clientConfigSource,
       );
     }
 
@@ -213,7 +204,7 @@ export class AediStaticSite
     }
 
     new BucketDeployment(this, 'bucket-deployment', {
-      sources: [Source.asset(staticSiteRef.assetPath)],
+      sources,
       destinationBucket: this.bucket,
       distribution: this.distribution,
     });
@@ -229,89 +220,5 @@ export class AediStaticSite
 
   grantLambdaAccess() {
     // No special permissions needed to grant lambda functions access to static sites
-  }
-}
-
-/**
- * An API Gateway REST API that returns the client config script for a static site.
- * This API is only created if the `clientConfig` option is used in the static site.
- *
- * Note: A lambda is used here because it is the only construct that can resolve cross-stack
- * construct references. S3 asset sources can only reference constructs in their stack, so adding
- * an additional source to the bucket doesn't work.
- */
-class StaticSiteConfigApi extends Construct {
-  public readonly restApi;
-
-  constructor(
-    scope: Construct,
-    id: string,
-    { staticSiteRef }: { staticSiteRef: StaticSiteRef<any> },
-  ) {
-    super(scope, id);
-
-    const resolvedConfig: Record<string, unknown> = {};
-
-    for (const [key, value] of Object.entries(
-      staticSiteRef.clientConfig ?? {},
-    )) {
-      if (isResourceRef(value)) {
-        const construct = resolveConstruct(value);
-        if ('getConstructRef' in construct) {
-          resolvedConfig[key] = construct.getConstructRef();
-        } else if (isBehavior(value)) {
-          const construct = resolveConstruct(value.behaviorRef);
-          if ('getConstructRef' in construct) {
-            resolvedConfig[key] = construct.getConstructRef();
-          }
-        } else {
-          resolvedConfig[key] = {};
-        }
-      } else {
-        resolvedConfig[key] = value;
-      }
-    }
-
-    // This script is run in the static site global scope
-    const clientConfigScript = `
-        window.__clientConfig = ${JSON.stringify(resolvedConfig, null, 2)};
-        ${
-          getMode() === 'development'
-            ? `console.log("${staticSiteRef.uid} config", window.__clientConfig);`
-            : ''
-        }
-    `;
-
-    const lambdaSrc = `"use strict";
-    module.exports.handler = async () => ({
-      statusCode: 200,
-      body: \`${clientConfigScript}\`,
-      headers: {
-        'Content-Type': 'application/javascript',
-      },
-     });`;
-
-    /**
-     * This lambda responds with a JS script that injects the resolved client config into the global scope
-     * of the static site. This makes the resolved client config available for access using the `@aedi/browser-client` library.
-     */
-    const getClientConfigLambda = new Function(this, 'config-lambda', {
-      code: new InlineCode(lambdaSrc),
-      handler: 'index.handler',
-      runtime: Runtime.NODEJS_18_X,
-    });
-
-    const restApi = new RestApi(this, 'api', {
-      defaultCorsPreflightOptions: {
-        allowCredentials: true,
-        allowMethods: Cors.ALL_METHODS,
-        allowOrigins: Cors.ALL_ORIGINS,
-      },
-    });
-    this.restApi = restApi;
-
-    this.restApi.root
-      .addResource('{proxy+}')
-      .addMethod('GET', new LambdaIntegration(getClientConfigLambda));
   }
 }
