@@ -13,6 +13,7 @@ export class AediStack extends Stack {
     construct: Construct;
   }[] = [];
   private readonly regionStacks = new Map<string, Stack>();
+  private readonly cdkApp: Construct;
   private readonly aediStackId: string;
 
   constructor(
@@ -25,6 +26,7 @@ export class AediStack extends Stack {
       ...getAediCdkAppContext().defaultStackProps,
     });
 
+    this.cdkApp = scope;
     this.aediStackId = id;
     this.stackRef = stackRef;
   }
@@ -37,7 +39,7 @@ export class AediStack extends Stack {
   getRegionStack(region: string): Stack {
     let stack = this.regionStacks.get(region);
     if (!stack) {
-      stack = new Stack(this, `${this.aediStackId}-${region}`, {
+      stack = new Stack(this.cdkApp, `${this.aediStackId}-${region}`, {
         env: {
           account: this.account,
           region,
