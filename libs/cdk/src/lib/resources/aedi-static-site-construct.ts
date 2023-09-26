@@ -124,7 +124,7 @@ export class AediStaticSite
       sources.push(
         new ClientConfigProvider(this, 'client-config-provider', {
           staticSiteRef: this.resourceRef,
-        }).clientConfigSource,
+        }),
       );
     }
 

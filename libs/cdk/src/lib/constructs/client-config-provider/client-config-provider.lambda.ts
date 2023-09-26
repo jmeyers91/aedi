@@ -25,6 +25,9 @@ export const handler = async (
 
   try {
     response['Status'] = 'SUCCESS';
+    /**
+     * Return the value as-is.
+     */
     response.Data = { Result: JSON.stringify(event.ResourceProperties.value) };
     return response;
   } catch (error) {
