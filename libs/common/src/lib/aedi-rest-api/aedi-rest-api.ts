@@ -569,8 +569,8 @@ export function withRoutes<R extends object>(
 export function Api<R extends object>(
   scope: Scope,
   id: string,
+  restApiOptions: Parameters<typeof RestApi>[2],
   routes: R,
-  restApiOptions: Parameters<typeof RestApi>[2] = {},
 ) {
   const restApi = RestApi(scope, id, restApiOptions);
   const resolvedRoutes: Record<string, unknown> = {};

@@ -6,18 +6,34 @@ import {
   AuthorizerRef,
   UserPoolRef,
 } from '@aedi/common';
-import { createConstructName, resolveConstruct } from '../aedi-infra-utils';
+import {
+  NotReadOnly,
+  createConstructName,
+  resolveConstruct,
+} from '../aedi-infra-utils';
 import {
   AuthorizationType,
   CognitoUserPoolsAuthorizer,
   Cors,
   LambdaIntegration,
   MethodOptions,
+  PassthroughBehavior,
   ResponseType,
   RestApi,
+  RestApiProps,
 } from 'aws-cdk-lib/aws-apigateway';
 import { ILambdaDependency } from '../aedi-infra-types';
 import { AediBaseConstruct } from '../aedi-base-construct';
+import {
+  Certificate,
+  CertificateValidation,
+} from 'aws-cdk-lib/aws-certificatemanager';
+import {
+  ARecord,
+  PublicHostedZone,
+  RecordTarget,
+} from 'aws-cdk-lib/aws-route53';
+import { ApiGateway } from 'aws-cdk-lib/aws-route53-targets';
 
 export class AediRestApi
   extends AediBaseConstruct<RefType.REST_API>
@@ -34,15 +50,44 @@ export class AediRestApi
     super(scope, id, props);
 
     const restApiRef = this.resourceRef;
+    const domain = restApiRef.domain
+      ? {
+          name: restApiRef.domain.name,
+          zone: PublicHostedZone.fromLookup(this, 'domain-zone', {
+            domainName: restApiRef.domain.zone,
+          }),
+        }
+      : null;
 
-    this.restApi = new RestApi(this, restApiRef.id, {
+    const restApiProps: NotReadOnly<RestApiProps> = {
       restApiName: createConstructName(restApiRef),
       defaultCorsPreflightOptions: {
         allowCredentials: true,
         allowMethods: Cors.ALL_METHODS,
         allowOrigins: Cors.ALL_ORIGINS,
       },
-    });
+      binaryMediaTypes: ['application/json'],
+    };
+
+    if (domain) {
+      restApiProps.domainName = {
+        domainName: domain.name,
+        certificate: new Certificate(this, 'domain-cert', {
+          domainName: domain.name,
+          validation: CertificateValidation.fromDns(domain.zone),
+        }),
+      };
+    }
+
+    this.restApi = new RestApi(this, restApiRef.id, restApiProps);
+
+    if (domain) {
+      new ARecord(this, 'domain-a-record', {
+        recordName: domain.name,
+        target: RecordTarget.fromAlias(new ApiGateway(this.restApi)),
+        zone: domain.zone,
+      });
+    }
 
     this.restApi.addGatewayResponse('bad-request-body-response', {
       type: ResponseType.BAD_REQUEST_BODY,
@@ -114,7 +159,16 @@ export class AediRestApi
 
       apiGatewayResource.addMethod(
         route.method,
-        new LambdaIntegration(resolveConstruct(route.lambdaRef).lambdaFunction),
+        new LambdaIntegration(
+          resolveConstruct(route.lambdaRef).lambdaFunction,
+          {
+            passthroughBehavior: PassthroughBehavior.NEVER,
+            requestTemplates: {
+              'application/json':
+                '{ "rawBody": "$util.escapeJavaScript($util.base64Decode($input.body))" }',
+            },
+          },
+        ),
         routeOptions,
       );
     }

@@ -1,6 +1,7 @@
 import './access-bucket-from-lambda';
 import './basic-lambda';
 import './cross-stack-resource-sharing';
+import './discord-bot';
 import './healthcheck';
 import './healthcheck-multi';
 import './dynamo-crud';

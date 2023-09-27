@@ -9,7 +9,9 @@ export interface RestApiRefRoute {
 
 export interface RestApiRef extends IResourceRef {
   type: RefType.REST_API;
+  domain?: { name: string; zone: string };
   routes: RestApiRefRoute[];
+  binaryMediaTypes?: string[];
 }
 
 export interface RestApiClientRef<T extends RestApiRef, O extends object> {
