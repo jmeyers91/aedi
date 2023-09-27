@@ -1,5 +1,6 @@
 import type { BucketTypeMap } from './aedi-bucket/aedi-bucket-types';
 import { ConstructTypeMap } from './aedi-construct';
+import { CustomResourceTypeMap } from './aedi-custom-resource';
 import type { DynamoTypeMap } from './aedi-dynamo/aedi-dynamo-types';
 import type { LambdaTypeMap } from './aedi-lambda/aedi-lambda-types';
 import type { RestApiTypeMap } from './aedi-rest-api/aedi-rest-api-types';
@@ -14,6 +15,7 @@ import { UserPoolTypeMap } from './aedi-user-pool/aedi-user-pool-types';
 export enum RefType {
   BUCKET = 'bucket',
   CONSTRUCT = 'construct',
+  CUSTOM_RESOURCE = 'custom-resource',
   DYNAMO = 'dynamo',
   LAMBDA = 'lambda',
   REST_API = 'rest-api',
@@ -29,6 +31,7 @@ export enum RefType {
 export interface ResourceRefTypeMap extends Record<RefType, IResourceTypeMap> {
   [RefType.BUCKET]: BucketTypeMap;
   [RefType.CONSTRUCT]: ConstructTypeMap;
+  [RefType.CUSTOM_RESOURCE]: CustomResourceTypeMap;
   [RefType.DYNAMO]: DynamoTypeMap;
   [RefType.LAMBDA]: LambdaTypeMap;
   [RefType.REST_API]: RestApiTypeMap;

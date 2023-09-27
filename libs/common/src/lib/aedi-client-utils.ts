@@ -3,6 +3,7 @@ import {
   type ClientRef,
   type AediAppHandlerEnv,
   type ResourceRef,
+  ConstructRefLookupMap,
 } from './aedi-types';
 
 let cachedEnv: AediAppHandlerEnv | undefined = undefined;
@@ -12,7 +13,7 @@ export function resolveLambdaRuntimeEnv(): AediAppHandlerEnv {
     cachedEnv = {
       AEDI_FUNCTION_ID: env('AEDI_FUNCTION_ID'),
       AEDI_FUNCTION_UID: env('AEDI_FUNCTION_UID'),
-      AEDI_CONSTRUCT_UID_MAP: JSON.parse(env('AEDI_CONSTRUCT_UID_MAP')),
+      AEDI_CONSTRUCT_UID_MAP: createConstructUidMap(),
     };
   }
   return cachedEnv;
@@ -28,6 +29,21 @@ export function getClientRefFromRef(
     return ref;
   }
   return { refType: ref.type, ref } as ClientRef;
+}
+
+function createConstructUidMap(): ConstructRefLookupMap {
+  const constructMap: ConstructRefLookupMap = {};
+  for (const [key, value] of Object.entries(process.env)) {
+    if (typeof value === 'string') {
+      const match = key.match(/AEDI_REF_(.*)/);
+      if (match) {
+        const uid = match[1];
+        constructMap[uid.replace(/__/g, '.').replace(/_/g, '-')] =
+          JSON.parse(value);
+      }
+    }
+  }
+  return constructMap;
 }
 
 function env(name: string): string {

@@ -66,8 +66,11 @@ export class AediRestApi
         allowMethods: Cors.ALL_METHODS,
         allowOrigins: Cors.ALL_ORIGINS,
       },
-      binaryMediaTypes: ['application/json'],
     };
+
+    if (restApiRef.binaryMediaTypes) {
+      restApiProps.binaryMediaTypes = restApiRef.binaryMediaTypes;
+    }
 
     if (domain) {
       restApiProps.domainName = {
@@ -159,16 +162,7 @@ export class AediRestApi
 
       apiGatewayResource.addMethod(
         route.method,
-        new LambdaIntegration(
-          resolveConstruct(route.lambdaRef).lambdaFunction,
-          {
-            passthroughBehavior: PassthroughBehavior.NEVER,
-            requestTemplates: {
-              'application/json':
-                '{ "rawBody": "$util.escapeJavaScript($util.base64Decode($input.body))" }',
-            },
-          },
-        ),
+        new LambdaIntegration(resolveConstruct(route.lambdaRef).lambdaFunction),
         routeOptions,
       );
     }

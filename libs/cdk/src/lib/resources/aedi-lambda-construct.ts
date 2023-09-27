@@ -40,6 +40,11 @@ export class AediLambdaFunction
       clientRef: ClientRef;
       construct: ILambdaDependency<any> | Construct;
     }[] = [];
+    const environment: Omit<AediAppHandlerEnv, 'AEDI_CONSTRUCT_UID_MAP'> &
+      Record<`AEDI_REF_${string}`, string> = {
+      AEDI_FUNCTION_ID: lambdaRef.id,
+      AEDI_FUNCTION_UID: lambdaRef.uid,
+    };
 
     // Collect dependencies from the lambda context refs
     for (const contextValue of Object.values(
@@ -55,18 +60,20 @@ export class AediLambdaFunction
 
       if (construct) {
         if ('getConstructRef' in construct) {
-          constructUidMap[ref.uid] = (construct as any).getConstructRef();
+          const envKey = `AEDI_REF_${ref.uid
+            .replace(/-/g, '_')
+            .replace(/\./g, '__')}` as const;
+          const constructRef = construct.getConstructRef();
+          console.log('ENV', ref.uid, '->', envKey);
+          environment[envKey] =
+            typeof constructRef === 'string'
+              ? constructRef
+              : JSON.stringify(construct.getConstructRef());
         }
 
         dependencies.push({ construct, clientRef });
       }
     }
-
-    const environment: AediAppHandlerEnv = {
-      AEDI_FUNCTION_ID: lambdaRef.id,
-      AEDI_FUNCTION_UID: lambdaRef.uid,
-      AEDI_CONSTRUCT_UID_MAP: constructUidMap,
-    };
 
     if (!lambdaRef.handlerLocation) {
       throw new Error(
@@ -74,17 +81,14 @@ export class AediLambdaFunction
       );
     }
 
+    console.log('ENV', environment);
+
     const baseNodejsFunctionProps: NodejsFunctionProps = {
       runtime: Runtime.NODEJS_18_X,
       timeout: Duration.seconds(15),
       handler: lambdaRef.handlerLocation.exportKey,
       entry: lambdaRef.handlerLocation.filepath,
-      environment: {
-        ...environment,
-        AEDI_CONSTRUCT_UID_MAP: JSON.stringify(
-          environment.AEDI_CONSTRUCT_UID_MAP,
-        ),
-      },
+      environment: environment,
     };
 
     // Allow each dependency resrouce the opportunity to extend the nodejs options

@@ -5,25 +5,39 @@ import { getLambdaRefHandler } from './aedi-lambda-handler';
 import { getRootCallsiteFilepath } from '../aedi-resource-utils';
 
 export interface LambdaProxyHandler {
+  proxiedRefs: (AnyLambdaRef | LambdaProxyHandler)[];
   lambdaProxyHandler: Handler;
 }
 
 export function lambdaProxyHandler(
   exportVarName: string,
-  lambdaRefs: AnyLambdaRef[],
+  proxiedRefs: (AnyLambdaRef | LambdaProxyHandler)[],
 ): LambdaProxyHandler {
+  const lambdaRefs = proxiedRefs.flatMap(getRefLambdas);
+
   const handlerLocation: LambdaHandlerLocation = {
     filepath: getRootCallsiteFilepath(),
     exportKey: `index.${exportVarName}.lambdaProxyHandler`,
   };
 
-  for (const lambdaRef of lambdaRefs) {
-    lambdaRef.handlerLocation = handlerLocation;
+  for (const ref of lambdaRefs) {
+    ref.handlerLocation = handlerLocation;
+  }
+
+  function getRefLambdas(
+    ref: AnyLambdaRef | LambdaProxyHandler,
+  ): AnyLambdaRef[] {
+    if ('proxiedRefs' in ref) {
+      return ref.proxiedRefs.flatMap(getRefLambdas);
+    } else {
+      return [ref];
+    }
   }
 
   let cachedHandler: Handler;
 
   return {
+    proxiedRefs,
     lambdaProxyHandler: (event, context, callback) => {
       if (!cachedHandler) {
         const { AEDI_FUNCTION_UID } = resolveLambdaRuntimeEnv();

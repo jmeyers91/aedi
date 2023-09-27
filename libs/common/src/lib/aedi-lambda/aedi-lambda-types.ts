@@ -1,4 +1,4 @@
-import type { Callback, Context, Handler } from 'aws-lambda';
+import type { Context, Handler } from 'aws-lambda';
 import type {
   ClientRef,
   IResourceRef,
