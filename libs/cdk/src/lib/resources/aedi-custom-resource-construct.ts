@@ -15,13 +15,13 @@ export class AediCustomResource
   extends AediBaseConstruct<RefType.CUSTOM_RESOURCE>
   implements ILambdaDependency<CustomResourceConstructRef>
 {
-  public readonly customResourceRef: CustomResourceRef<any>;
+  public readonly customResourceRef: CustomResourceRef<any, any>;
   public readonly result: string;
 
   constructor(
     scope: Construct,
     id: string,
-    props: { resourceRef: CustomResourceRef<any> },
+    props: { resourceRef: CustomResourceRef<any, any> },
   ) {
     super(scope, id, props);
 

@@ -1,9 +1,12 @@
-import { Secret } from '@aedi/common';
+import { Grant, Secret, Table, TableClient } from '@aedi/common';
 import { Scope } from '../app';
 import {
   DiscordInteractionCallbackType,
   DiscordBot,
-  DiscordCommand,
+  DiscordCommandType,
+  DiscordCommandOptionType,
+  findStringResponseValue,
+  findBooleanResponseValue,
 } from './discord-utils';
 
 const scope = Scope('discord-bot');
@@ -13,6 +16,17 @@ const DISCORD_SERVER_ID = '601928995621044234'; // devtest
 const DISCORD_APP_ID = '1156061502604845069';
 const DISCORD_BOT_TOKEN_SECRET_ARN =
   'arn:aws:secretsmanager:us-west-2:664290008299:secret:aedi-test-discord-bot-token-2xkNVn';
+
+const counterTable = Table<{ counterId: string; count: number }, 'counterId'>(
+  scope,
+  'counter-table',
+  {
+    partitionKey: {
+      name: 'counterId',
+      type: 'STRING',
+    },
+  },
+);
 
 export const api = DiscordBot(
   scope,
@@ -26,16 +40,46 @@ export const api = DiscordBot(
       arn: DISCORD_BOT_TOKEN_SECRET_ARN,
     }),
   },
+  { counterTable: TableClient(Grant(counterTable, { write: true })) },
   {
-    blep: DiscordCommand(
-      {
-        type: 1,
+    count: {
+      options: {
+        type: DiscordCommandType.CHAT_INPUT,
+        description: 'Increment a counter',
+        options: [
+          {
+            name: 'counter',
+            description: 'The counter to increment.',
+            type: DiscordCommandOptionType.STRING,
+            required: true,
+          },
+        ],
+      },
+      handler: async (body, { counterTable }) => {
+        const counterId = findStringResponseValue(body, 'counter', true);
+        const counter = await counterTable.get({ counterId });
+        const count = (counter?.count ?? 0) + 1;
+
+        await counterTable.put({ Item: { counterId, count } });
+
+        return {
+          type: DiscordInteractionCallbackType.CHANNEL_MESSAGE_WITH_SOURCE,
+          data: {
+            content: `${counterId} count: ${count}`,
+          },
+        };
+      },
+    },
+
+    blep: {
+      options: {
+        type: DiscordCommandType.CHAT_INPUT,
         description: 'Send a random animal photo',
         options: [
           {
             name: 'animal',
             description: 'The type of animal',
-            type: 3,
+            type: DiscordCommandOptionType.STRING,
             required: true,
             choices: [
               {
@@ -55,24 +99,24 @@ export const api = DiscordBot(
           {
             name: 'only_smol',
             description: 'Whether to show only baby animals',
-            type: 5,
+            type: DiscordCommandOptionType.BOOLEAN,
             required: false,
           },
         ],
       },
-      async (body) => {
-        console.log(`Running blep command`, body);
+      handler: async (body) => {
+        const animalType = findStringResponseValue(body, 'animal', true);
+        const onlySmol = findBooleanResponseValue(body, 'only_smol');
+
         return {
           type: DiscordInteractionCallbackType.CHANNEL_MESSAGE_WITH_SOURCE,
           data: {
-            content: `Hello world:\n\`\`\`json\n${JSON.stringify(
-              body,
-              null,
-              2,
-            )}\n\`\`\`\n`,
+            content: `[insert picture of a ${animalType}${
+              onlySmol ? ' (small only)' : ''
+            }]`,
           },
         };
       },
-    ),
+    },
   },
 );

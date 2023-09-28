@@ -2,18 +2,20 @@ import type {
   CdkCustomResourceEvent,
   CdkCustomResourceResponse,
 } from 'aws-lambda';
-import { LambdaRef } from '../aedi-lambda';
+import { LambdaDependencyGroup, LambdaRef } from '../aedi-lambda';
 import type { IResourceRef, IResourceTypeMap, RefType } from '../aedi-types';
 import { defaultCustomResourceRefClientOptions } from './aedi-custom-resource-constants';
 
-export interface CustomResourceRef<R extends CdkCustomResourceResponse>
-  extends IResourceRef {
+export interface CustomResourceRef<
+  R extends CdkCustomResourceResponse,
+  C extends LambdaDependencyGroup,
+> extends IResourceRef {
   type: RefType.CUSTOM_RESOURCE;
-  lambda: LambdaRef<any, CdkCustomResourceEvent, R>;
+  lambda: LambdaRef<C, CdkCustomResourceEvent, R>;
 }
 
 export interface CustomResourceClientRef<
-  T extends CustomResourceRef<any>,
+  T extends CustomResourceRef<any, any>,
   O extends object,
 > {
   refType: RefType.CUSTOM_RESOURCE;
@@ -40,9 +42,9 @@ export type DefaultCustomResourceRefClientOptions =
   typeof defaultCustomResourceRefClientOptions;
 
 export interface CustomResourceTypeMap extends IResourceTypeMap {
-  ref: CustomResourceRef<any>;
+  ref: CustomResourceRef<any, any>;
   options: CustomResourceRefClientOptions;
   defaultOptions: DefaultCustomResourceRefClientOptions;
   constructRef: CustomResourceConstructRef;
-  clientRef: CustomResourceClientRef<CustomResourceRef<any>, any>;
+  clientRef: CustomResourceClientRef<CustomResourceRef<any, any>, any>;
 }
