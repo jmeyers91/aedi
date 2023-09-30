@@ -28,6 +28,9 @@
       "@aedi/common": [
         "libs/common/src/index.ts"
       ],
+      "@aedi/discord": [
+        "libs/discord/src/index.ts"
+      ],
       "@aedi/local": [
         "libs/local/src/index.ts"
       ],

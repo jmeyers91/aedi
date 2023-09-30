@@ -1,4 +1,13 @@
-import { Grant, Secret, Table, TableClient } from '@aedi/common';
+import {
+  Grant,
+  Lambda,
+  LambdaInvokeClient,
+  LazySecretValue,
+  Secret,
+  SecretValue,
+  Table,
+  TableClient,
+} from '@aedi/common';
 import { Scope } from '../app';
 import {
   DiscordInteractionCallbackType,
@@ -7,7 +16,7 @@ import {
   DiscordCommandOptionType,
   findStringResponseValue,
   findBooleanResponseValue,
-} from './discord-utils';
+} from '@aedi/discord';
 
 const scope = Scope('discord-bot');
 const DISCORD_PUBLIC_KEY =
@@ -16,6 +25,15 @@ const DISCORD_SERVER_ID = '601928995621044234'; // devtest
 const DISCORD_APP_ID = '1156061502604845069';
 const DISCORD_BOT_TOKEN_SECRET_ARN =
   'arn:aws:secretsmanager:us-west-2:664290008299:secret:aedi-test-discord-bot-token-2xkNVn';
+const CAT_PIC_API_KEY_SECRET_ARN =
+  'arn:aws:secretsmanager:us-west-2:664290008299:secret:cat-api-key-ZveAaP';
+const DOG_PIC_API_KEY_SECRET_ARN =
+  'arn:aws:secretsmanager:us-west-2:664290008299:secret:dog-api-key-etcW8n';
+
+enum AnimalType {
+  CAT = 'cat',
+  DOG = 'dog',
+}
 
 const counterTable = Table<{ counterId: string; count: number }, 'counterId'>(
   scope,
@@ -25,6 +43,60 @@ const counterTable = Table<{ counterId: string; count: number }, 'counterId'>(
       name: 'counterId',
       type: 'STRING',
     },
+  },
+);
+
+export const sendAnimalPic = Lambda(
+  scope,
+  'sendAnimalPic',
+  {
+    catPicApiKey: LazySecretValue(
+      Secret(scope, 'cat-pic-api-key', {
+        arn: CAT_PIC_API_KEY_SECRET_ARN,
+      }),
+    ),
+    dogPicApiKey: LazySecretValue(
+      Secret(scope, 'dog-pic-api-key', {
+        arn: DOG_PIC_API_KEY_SECRET_ARN,
+      }),
+    ),
+  },
+  async (
+    { catPicApiKey, dogPicApiKey },
+    {
+      interactionToken,
+      animalType,
+    }: {
+      interactionToken: string;
+      animalType: AnimalType | string;
+    },
+  ) => {
+    console.log(`Invoking with`, { interactionToken, animalType });
+    const url = `https://discord.com/api/v10/webhooks/${DISCORD_APP_ID}/${interactionToken}/messages/@original`;
+
+    const animalPicUrl =
+      animalType === AnimalType.CAT
+        ? await getCatPic({ apiKey: await catPicApiKey() })
+        : await getDogPic({ apiKey: await dogPicApiKey() });
+
+    const body = {
+      content: animalPicUrl,
+    };
+
+    console.log(`Sending interaction response`, body);
+    const response = await fetch(url, {
+      method: 'PATCH',
+      body: JSON.stringify(body),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (response.ok) {
+      console.log('Success');
+    } else {
+      console.error(`Request failed`, await response.text());
+    }
   },
 );
 
@@ -40,7 +112,12 @@ export const api = DiscordBot(
       arn: DISCORD_BOT_TOKEN_SECRET_ARN,
     }),
   },
-  { counterTable: TableClient(Grant(counterTable, { write: true })) },
+  {
+    counterTable: TableClient(Grant(counterTable, { write: true })),
+    sendAnimalPic: LambdaInvokeClient(sendAnimalPic, {
+      InvocationType: 'Event',
+    }),
+  },
   {
     count: {
       options: {
@@ -84,15 +161,11 @@ export const api = DiscordBot(
             choices: [
               {
                 name: 'Dog',
-                value: 'animal_dog',
+                value: AnimalType.DOG,
               },
               {
                 name: 'Cat',
-                value: 'animal_cat',
-              },
-              {
-                name: 'Penguin',
-                value: 'animal_penguin',
+                value: AnimalType.CAT,
               },
             ],
           },
@@ -104,19 +177,48 @@ export const api = DiscordBot(
           },
         ],
       },
-      handler: async (body) => {
+
+      handler: async (body, { sendAnimalPic }) => {
         const animalType = findStringResponseValue(body, 'animal', true);
-        const onlySmol = findBooleanResponseValue(body, 'only_smol');
+        // const onlySmol = findBooleanResponseValue(body, 'only_smol');
+        await sendAnimalPic({
+          interactionToken: body.token,
+          animalType,
+        });
 
         return {
-          type: DiscordInteractionCallbackType.CHANNEL_MESSAGE_WITH_SOURCE,
+          type: DiscordInteractionCallbackType.DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE,
           data: {
-            content: `[insert picture of a ${animalType}${
-              onlySmol ? ' (small only)' : ''
-            }]`,
+            flags: 1 << 7,
           },
         };
       },
     },
   },
 );
+
+async function getCatPic({ apiKey }: { apiKey: string }): Promise<string> {
+  const response = await fetch(
+    `https://api.thecatapi.com/v1/images/search?limit=${1}`,
+    {
+      headers: {
+        'x-api-key': apiKey,
+      },
+    },
+  );
+  const data = await response.json();
+  return data[0].url;
+}
+
+async function getDogPic({ apiKey }: { apiKey: string }): Promise<string> {
+  const response = await fetch(
+    `https://api.thedogapi.com/v1/images/search?limit=${1}`,
+    {
+      headers: {
+        'x-api-key': apiKey,
+      },
+    },
+  );
+  const data = await response.json();
+  return data[0].url;
+}
