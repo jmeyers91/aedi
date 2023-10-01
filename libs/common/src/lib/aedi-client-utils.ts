@@ -1,8 +1,8 @@
 import type { TransformedRef } from './aedi-lambda';
-import {
-  type ClientRef,
-  type AediAppHandlerEnv,
-  type ResourceRef,
+import type {
+  ClientRef,
+  AediAppHandlerEnv,
+  ResourceRef,
   ConstructRefLookupMap,
 } from './aedi-types';
 

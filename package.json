@@ -12,7 +12,12 @@
     "test:diff": "npm run cdk diff '*'",
     "test": "paws admin && nx reset && NODE_NO_WARNINGS=1 AWS_PROFILE=admin AWS_REGION=us-west-2 npx nx run-many -t test",
     "e2e": "npx nx reset && BASE_URL='https://contacts.smplj.xyz' npx nx run-many -t e2e",
-    "e2e:local": "npx nx reset && BASE_URL='http://localhost:4200' npx nx run-many -t e2e"
+    "e2e:local": "npx nx reset && BASE_URL='http://localhost:4200' npx nx run-many -t e2e",
+    "publish:common": "npm run build && cd dist/libs/common && npm publish --access=public",
+    "publish:cdk": "npm run build && cd dist/libs/cdk && npm publish --access=public",
+    "publish:local": "npm run build && cd dist/libs/local && npm publish --access=public",
+    "publish:browser-client": "npm run build && cd dist/libs/browser-client && npm publish --access=public",
+    "publish:all": "npm run publish:common && npm run publish:cdk && npm run publish:local && npm run publish:browser-client"
   },
   "private": true,
   "dependencies": {
@@ -94,7 +99,11 @@
     "ts-jest": "^29.1.0",
     "ts-node": "10.9.1",
     "typescript": "~5.1.3",
+    "verdaccio": "^5.0.4",
     "vite": "~4.3.9",
     "vitest": "~0.32.0"
+  },
+  "nx": {
+    "includedScripts": []
   }
 }

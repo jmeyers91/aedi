@@ -1,0 +1,8 @@
+{
+  "name": "@aedi/local",
+  "version": "0.0.3",
+  "dependencies": {
+    "@aedi/common": "^0.0.8",
+    "@aws-sdk/client-s3": "^3.409.0"
+  }
+}

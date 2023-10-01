@@ -4,6 +4,21 @@
   "sourceRoot": "libs/cdk/src",
   "projectType": "library",
   "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/cdk",
+        "tsConfig": "libs/cdk/tsconfig.lib.json",
+        "packageJson": "libs/cdk/package.json",
+        "main": "libs/cdk/src/index.ts",
+        "assets": ["libs/cdk/*.md"]
+      }
+    },
+    "publish": {
+      "command": "cd dist/libs/cdk && npm publish --access=public",
+      "dependsOn": ["build"]
+    },
     "lint": {
       "executor": "@nx/linter:eslint",
       "outputs": ["{options.outputFile}"],

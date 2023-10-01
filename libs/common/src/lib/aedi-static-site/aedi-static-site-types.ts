@@ -1,5 +1,3 @@
-import type { GENERATED } from '../aedi-constants';
-import { RestApiRef } from '../aedi-rest-api';
 import type {
   IResourceRef,
   IResourceTypeMap,
@@ -21,7 +19,7 @@ export interface StaticSiteRef<C> extends IResourceRef {
    * The domain name and zone to use for the static site.
    * The certificate is created in us-east-1 and is verified using DNS verification.
    */
-  domain?: { name: string; zone: string } | typeof GENERATED;
+  domain?: { name: string; zone: string };
 
   /**
    * Client config will be provided to the static site and can be accessed using the aedi browser client library.

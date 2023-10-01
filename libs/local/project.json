@@ -4,6 +4,21 @@
   "sourceRoot": "libs/local/src",
   "projectType": "library",
   "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/local",
+        "tsConfig": "libs/local/tsconfig.lib.json",
+        "packageJson": "libs/local/package.json",
+        "main": "libs/local/src/index.ts",
+        "assets": ["libs/local/*.md"]
+      }
+    },
+    "publish": {
+      "command": "cd dist/libs/local && npm publish --access=public",
+      "dependsOn": ["build"]
+    },
     "lint": {
       "executor": "@nx/linter:eslint",
       "outputs": ["{options.outputFile}"],

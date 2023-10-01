@@ -4,6 +4,21 @@
   "sourceRoot": "libs/browser-client/src",
   "projectType": "library",
   "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/browser-client",
+        "tsConfig": "libs/browser-client/tsconfig.lib.json",
+        "packageJson": "libs/browser-client/package.json",
+        "main": "libs/browser-client/src/index.ts",
+        "assets": ["libs/browser-client/*.md"]
+      }
+    },
+    "publish": {
+      "command": "cd dist/libs/browser-client && npm publish --access=public",
+      "dependsOn": ["build"]
+    },
     "lint": {
       "executor": "@nx/linter:eslint",
       "outputs": ["{options.outputFile}"],

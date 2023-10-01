@@ -1,13 +1,13 @@
 import type { BucketTypeMap } from './aedi-bucket/aedi-bucket-types';
-import { ConstructTypeMap } from './aedi-construct';
-import { CustomResourceTypeMap } from './aedi-custom-resource';
+import type { ConstructTypeMap } from './aedi-construct';
+import type { CustomResourceTypeMap } from './aedi-custom-resource';
 import type { DynamoTypeMap } from './aedi-dynamo/aedi-dynamo-types';
 import type { LambdaTypeMap } from './aedi-lambda/aedi-lambda-types';
 import type { RestApiTypeMap } from './aedi-rest-api/aedi-rest-api-types';
-import { SecretTypeMap } from './aedi-secret/aedi-secret-types';
-import { StackTypeMap } from './aedi-stack';
-import { StaticSiteTypeMap } from './aedi-static-site';
-import { UserPoolTypeMap } from './aedi-user-pool/aedi-user-pool-types';
+import type { SecretTypeMap } from './aedi-secret/aedi-secret-types';
+import type { StackTypeMap } from './aedi-stack';
+import type { StaticSiteTypeMap } from './aedi-static-site';
+import type { UserPoolTypeMap } from './aedi-user-pool/aedi-user-pool-types';
 
 /**
  * All available ref types.

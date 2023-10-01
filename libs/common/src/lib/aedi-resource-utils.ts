@@ -11,13 +11,13 @@ import {
   type Scope,
 } from './aedi-types';
 import {
-  TransformedRef,
-  ResolveRef,
+  type TransformedRef,
+  type ResolveRef,
   TransformedRefScope,
-  EventTransformRef,
+  type EventTransformRef,
 } from './aedi-lambda';
-import { Callback, Context } from 'aws-lambda';
-import { StackRef } from './aedi-stack';
+import type { Callback, Context } from 'aws-lambda';
+import type { StackRef } from './aedi-stack';
 
 /**
  * The base resource creation function used by all resource types. This function registers the

@@ -12,7 +12,9 @@ export * from './lib/aedi-user-pool';
 
 // Utilities
 export * from './lib/aedi-app';
-export * from './lib/aedi-constants';
 export * from './lib/aedi-client-utils';
 export * from './lib/aedi-types';
 export * from './lib/aedi-resource-utils';
+
+// Typebox
+export * from '@sinclair/typebox';

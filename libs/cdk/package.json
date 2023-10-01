@@ -1,0 +1,11 @@
+{
+  "name": "@aedi/cdk",
+  "version": "0.0.4",
+  "dependencies": {
+    "@aedi/common": "^0.0.8"
+  },
+  "peerDependencies": {
+    "aws-cdk-lib": "^2.x.x",
+    "constructs": "^10.x.x"
+  }
+}

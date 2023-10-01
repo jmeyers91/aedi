@@ -1,0 +1,7 @@
+{
+  "name": "@aedi/browser-client",
+  "version": "0.0.4",
+  "dependencies": {
+    "@aedi/common": "^0.0.8"
+  }
+}

@@ -4,6 +4,21 @@
   "sourceRoot": "libs/common/src",
   "projectType": "library",
   "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/common",
+        "tsConfig": "libs/common/tsconfig.lib.json",
+        "packageJson": "libs/common/package.json",
+        "main": "libs/common/src/index.ts",
+        "assets": ["libs/common/*.md"]
+      }
+    },
+    "publish": {
+      "command": "cd dist/libs/common && npm publish --access=public",
+      "dependsOn": ["build"]
+    },
     "lint": {
       "executor": "@nx/linter:eslint",
       "outputs": ["{options.outputFile}"],

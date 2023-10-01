@@ -1,7 +1,6 @@
 import { Construct } from 'constructs';
 import { ILambdaDependency } from '../aedi-infra-types';
 import {
-  GENERATED,
   RefType,
   StaticSiteConstructRef,
   StaticSiteRef,
@@ -84,7 +83,7 @@ export class AediStaticSite
     };
 
     // Add the domain name and certificate to the distribution
-    if (staticSiteRef.domain && staticSiteRef.domain !== GENERATED) {
+    if (staticSiteRef.domain) {
       const usEast1Stack = getRegionStack(this, 'us-east-1'); // Cloudfront distribution certs must be in us-east-1
       const certId = `${staticSiteRef.uid.split('.').join('-')}-domain-cert`;
       const hostedZoneId = `${staticSiteRef.uid
@@ -108,7 +107,7 @@ export class AediStaticSite
     );
 
     // Create an A-record pointing from the domain to the distribution
-    if (staticSiteRef.domain && staticSiteRef.domain !== GENERATED) {
+    if (staticSiteRef.domain) {
       new ARecord(this, 'ARecord', {
         recordName: staticSiteRef.domain.name,
         target: RecordTarget.fromAlias(new CloudFrontTarget(this.distribution)),
