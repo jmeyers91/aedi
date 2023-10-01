@@ -96,7 +96,11 @@ export interface LambdaRef<C extends LambdaDependencyGroup, E, R>
   fn: BrandedLambdaRefFnWithEvent<C, E, R>;
   lambdaHandler: Handler;
   context: C;
+  memorySize?: number;
+  timeout?: number;
 }
+
+export type LambdaRefOptions = Pick<AnyLambdaRef, 'memorySize' | 'timeout'>;
 
 export type LambdaRefTypes<T> = T extends LambdaRef<infer C, infer E, infer R>
   ? {

@@ -30,10 +30,12 @@ export function DiscordBot<C extends LambdaDependencyGroup>(
     appId,
     serverId,
     botToken,
+    memorySize,
     ...restApiOptions
   }: Parameters<typeof RestApi>[2] & {
     discordPublicKey: string;
     interactionPath?: string;
+    memorySize?: number;
   } & DiscordCommandOptions,
   lambdaDependencies: C,
   commandDefs: {
@@ -122,6 +124,13 @@ export function DiscordBot<C extends LambdaDependencyGroup>(
             console.error(`Caught`, error);
             throw error;
           }
+        },
+        {
+          /**
+           * Using the default memory size of 128 on this function causes it to cold-start too slowly to
+           * finish before discord's 3 second timeout even with deferred responses.
+           */
+          memorySize: memorySize ?? 1024,
         },
       ),
     },

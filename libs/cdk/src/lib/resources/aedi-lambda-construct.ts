@@ -11,7 +11,6 @@ import {
   AediAppHandlerEnv,
   LambdaConstructRef,
   LambdaRef,
-  ConstructRefLookupMap,
   getClientRefFromRef,
   LambdaDependencyGroup,
   RefType,
@@ -35,7 +34,6 @@ export class AediLambdaFunction
 
     const lambdaRef = (this.lambdaRef = this.resourceRef);
 
-    const constructUidMap: ConstructRefLookupMap = {};
     const dependencies: {
       clientRef: ClientRef;
       construct: ILambdaDependency<any> | Construct;
@@ -85,10 +83,11 @@ export class AediLambdaFunction
 
     const baseNodejsFunctionProps: NodejsFunctionProps = {
       runtime: Runtime.NODEJS_18_X,
-      timeout: Duration.seconds(15),
+      timeout: Duration.seconds(lambdaRef.timeout ?? 15),
       handler: lambdaRef.handlerLocation.exportKey,
       entry: lambdaRef.handlerLocation.filepath,
       environment: environment,
+      memorySize: lambdaRef.memorySize,
     };
 
     // Allow each dependency resrouce the opportunity to extend the nodejs options

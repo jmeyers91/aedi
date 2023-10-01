@@ -4,6 +4,7 @@ import type {
   BrandedLambdaRefFnWithEvent,
   LambdaHandlerLocation,
   LambdaDependencyGroup,
+  LambdaRefOptions,
 } from './aedi-lambda-types';
 import { getLambdaRefHandler } from './aedi-lambda-handler';
 import { RefType, Scope } from '../aedi-types';
@@ -14,6 +15,7 @@ export function Lambda<const C extends LambdaDependencyGroup, E, R>(
   id: string,
   context: C,
   fn: LambdaRefFnWithEvent<C, E, R>,
+  lambdaOptions: LambdaRefOptions = {},
 ): LambdaRef<C, E, R> {
   const lambdaHandler = getLambdaRefHandler({
     uid: 'uid' in scope ? `${scope.uid}.${id}` : id,
@@ -22,6 +24,7 @@ export function Lambda<const C extends LambdaDependencyGroup, E, R>(
   });
 
   const lambda = createResource<LambdaRef<C, E, R>>(RefType.LAMBDA, scope, id, {
+    ...lambdaOptions,
     context,
     fn: fn as BrandedLambdaRefFnWithEvent<C, E, R>,
     lambdaHandler,

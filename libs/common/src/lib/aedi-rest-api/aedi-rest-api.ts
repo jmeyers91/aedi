@@ -6,6 +6,7 @@ import type {
   LambdaDependencyGroup,
   LambdaRef,
   LambdaRefFnWithEvent,
+  LambdaRefOptions,
 } from '../aedi-lambda/aedi-lambda-types';
 import type {
   InferRequestBody,
@@ -95,6 +96,7 @@ export function FullRoute<
     RouteEvent & { pathParameters: PathParameters<P> },
     R
   >,
+  lambdaOptions?: LambdaRefOptions,
 ): LambdaRef<C, RouteEvent, RouteResponse<R>> &
   ApiRouteBrand<{
     path: P;
@@ -136,6 +138,7 @@ export function FullRoute<
     lambdaId,
     lambdaContext,
     wrappedLambdaHandlerFn,
+    lambdaOptions,
   );
 
   return LambdaRoute(restApiRef, method, path, lambda) as any;
@@ -155,6 +158,7 @@ export function Route<
     RouteEvent & { pathParameters: PathParameters<P> },
     R
   >,
+  lambdaOptions?: LambdaRefOptions,
 ): ((
   restApiRef: RestApiRef,
   lambdaId: L,
@@ -169,7 +173,15 @@ export function Route<
     lambdaContext: C;
   }> {
   return (restApiRef: RestApiRef, lambdaId: L) =>
-    FullRoute(restApiRef, lambdaId, method, path, lambdaContext, fn);
+    FullRoute(
+      restApiRef,
+      lambdaId,
+      method,
+      path,
+      lambdaContext,
+      fn,
+      lambdaOptions,
+    );
 }
 
 export function GetLambda<
@@ -187,8 +199,17 @@ export function GetLambda<
     RouteEvent & { pathParameters: PathParameters<P> },
     R
   >,
+  lambdaOptions?: LambdaRefOptions,
 ) {
-  return FullRoute(restApiRef, lambdaId, 'GET', path, lambdaContext, fn);
+  return FullRoute(
+    restApiRef,
+    lambdaId,
+    'GET',
+    path,
+    lambdaContext,
+    fn,
+    lambdaOptions,
+  );
 }
 
 export function PostLambda<
@@ -206,8 +227,17 @@ export function PostLambda<
     RouteEvent & { pathParameters: PathParameters<P> },
     R
   >,
+  lambdaOptions?: LambdaRefOptions,
 ) {
-  return FullRoute(restApiRef, lambdaId, 'POST', path, lambdaContext, fn);
+  return FullRoute(
+    restApiRef,
+    lambdaId,
+    'POST',
+    path,
+    lambdaContext,
+    fn,
+    lambdaOptions,
+  );
 }
 
 export function PutLambda<
@@ -225,8 +255,17 @@ export function PutLambda<
     RouteEvent & { pathParameters: PathParameters<P> },
     R
   >,
+  lambdaOptions?: LambdaRefOptions,
 ) {
-  return FullRoute(restApiRef, lambdaId, 'PUT', path, lambdaContext, fn);
+  return FullRoute(
+    restApiRef,
+    lambdaId,
+    'PUT',
+    path,
+    lambdaContext,
+    fn,
+    lambdaOptions,
+  );
 }
 
 export function PatchLambda<
@@ -244,8 +283,17 @@ export function PatchLambda<
     RouteEvent & { pathParameters: PathParameters<P> },
     R
   >,
+  lambdaOptions?: LambdaRefOptions,
 ) {
-  return FullRoute(restApiRef, lambdaId, 'PATCH', path, lambdaContext, fn);
+  return FullRoute(
+    restApiRef,
+    lambdaId,
+    'PATCH',
+    path,
+    lambdaContext,
+    fn,
+    lambdaOptions,
+  );
 }
 
 export function DeleteLambda<
@@ -263,8 +311,17 @@ export function DeleteLambda<
     RouteEvent & { pathParameters: PathParameters<P> },
     R
   >,
+  lambdaOptions?: LambdaRefOptions,
 ) {
-  return FullRoute(restApiRef, lambdaId, 'DELETE', path, lambdaContext, fn);
+  return FullRoute(
+    restApiRef,
+    lambdaId,
+    'DELETE',
+    path,
+    lambdaContext,
+    fn,
+    lambdaOptions,
+  );
 }
 
 export function Get<
@@ -280,8 +337,9 @@ export function Get<
     RouteEvent & { pathParameters: PathParameters<P> },
     R
   >,
+  lambdaOptions?: LambdaRefOptions,
 ) {
-  return Route<P, L, C, R>('GET', path, lambdaContext, fn);
+  return Route<P, L, C, R>('GET', path, lambdaContext, fn, lambdaOptions);
 }
 
 export function Post<
@@ -297,8 +355,9 @@ export function Post<
     RouteEvent & { pathParameters: PathParameters<P> },
     R
   >,
+  lambdaOptions?: LambdaRefOptions,
 ) {
-  return Route<P, L, C, R>('POST', path, lambdaContext, fn);
+  return Route<P, L, C, R>('POST', path, lambdaContext, fn, lambdaOptions);
 }
 
 export function Put<
@@ -314,8 +373,9 @@ export function Put<
     RouteEvent & { pathParameters: PathParameters<P> },
     R
   >,
+  lambdaOptions?: LambdaRefOptions,
 ) {
-  return Route<P, L, C, R>('PUT', path, lambdaContext, fn);
+  return Route<P, L, C, R>('PUT', path, lambdaContext, fn, lambdaOptions);
 }
 
 export function Patch<
@@ -331,8 +391,9 @@ export function Patch<
     RouteEvent & { pathParameters: PathParameters<P> },
     R
   >,
+  lambdaOptions?: LambdaRefOptions,
 ) {
-  return Route<P, L, C, R>('PATCH', path, lambdaContext, fn);
+  return Route<P, L, C, R>('PATCH', path, lambdaContext, fn, lambdaOptions);
 }
 
 export function Delete<
@@ -348,8 +409,9 @@ export function Delete<
     RouteEvent & { pathParameters: PathParameters<P> },
     R
   >,
+  lambdaOptions?: LambdaRefOptions,
 ) {
-  return Route<P, L, C, R>('DELETE', path, lambdaContext, fn);
+  return Route<P, L, C, R>('DELETE', path, lambdaContext, fn, lambdaOptions);
 }
 
 export class Reply<T> implements RouteResponse<T> {
@@ -376,6 +438,7 @@ export function reply<T>(
     return bodyObject;
   }
 
+  // TODO: Add CORS protections
   const headers: Record<string, string> = {
     'Access-Control-Allow-Headers':
       'Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token',
