@@ -1,12 +1,22 @@
 import { RemovalPolicy, Stack } from 'aws-cdk-lib';
 import { Bucket } from 'aws-cdk-lib/aws-s3';
-import { BucketDeployment, Source } from 'aws-cdk-lib/aws-s3-deployment';
+import {
+  BucketDeployment,
+  ISource,
+  Source,
+} from 'aws-cdk-lib/aws-s3-deployment';
 import { Construct } from 'constructs';
-import { BucketConstructRef, BucketRef, RefType } from '@aedi/common';
+import {
+  BucketConstructRef,
+  BucketRef,
+  RefType,
+  isTypescriptAsset,
+} from '@aedi/common';
 import { ILambdaDependency } from '../aedi-infra-types';
 import { AediLambdaFunction } from './aedi-lambda-construct';
 import { AediBaseConstruct } from '../aedi-base-construct';
 import { getMode } from '../aedi-infra-utils';
+import { TypeScriptSource } from '@mrgrain/cdk-esbuild';
 
 export class AediBucket
   extends AediBaseConstruct<RefType.BUCKET>
@@ -28,10 +38,19 @@ export class AediBucket
     });
     this.bucket = bucket;
 
+    const sources: ISource[] = [];
+
+    if (typeof bucketRef.assetPath === 'string') {
+      sources.push(Source.asset(bucketRef.assetPath));
+    } else if (isTypescriptAsset(bucketRef.assetPath)) {
+      const { typescriptAssetPath, ...rest } = bucketRef.assetPath;
+      sources.push(new TypeScriptSource(typescriptAssetPath, rest));
+    }
+
     // Deploy assets to the bucket if the asset path is set
     if (bucketRef.assetPath) {
       new BucketDeployment(this, 'deployment', {
-        sources: [Source.asset(bucketRef.assetPath)],
+        sources,
         destinationBucket: bucket,
       });
     }

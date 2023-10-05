@@ -1,3 +1,4 @@
+import { TypescriptAsset } from '../aedi-bucket';
 import type {
   IResourceRef,
   IResourceTypeMap,
@@ -13,7 +14,7 @@ export interface StaticSiteRef<C> extends IResourceRef {
    * The local path to the directory that should be uploaded as the contents of the bucket
    * during deployments.
    */
-  assetPath: string;
+  assetPath: string | TypescriptAsset;
 
   /**
    * The domain name and zone to use for the static site.

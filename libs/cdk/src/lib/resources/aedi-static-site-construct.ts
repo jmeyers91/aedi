@@ -18,7 +18,11 @@ import {
 } from 'aws-cdk-lib/aws-cloudfront';
 import { RestApiOrigin, S3Origin } from 'aws-cdk-lib/aws-cloudfront-origins';
 import { Bucket } from 'aws-cdk-lib/aws-s3';
-import { BucketDeployment, Source } from 'aws-cdk-lib/aws-s3-deployment';
+import {
+  BucketDeployment,
+  ISource,
+  Source,
+} from 'aws-cdk-lib/aws-s3-deployment';
 import { AediBaseConstruct } from '../aedi-base-construct';
 import {
   NotReadOnly,
@@ -37,6 +41,7 @@ import {
 } from 'aws-cdk-lib/aws-route53';
 import { CloudFrontTarget } from 'aws-cdk-lib/aws-route53-targets';
 import { ClientConfigProvider } from '../constructs/client-config-provider/client-config-provider';
+import { TypeScriptSource } from '@mrgrain/cdk-esbuild';
 
 export class AediStaticSite
   extends AediBaseConstruct<RefType.STATIC_SITE>
@@ -117,7 +122,14 @@ export class AediStaticSite
       });
     }
 
-    const sources = [Source.asset(staticSiteRef.assetPath)];
+    const sources: ISource[] = [];
+
+    if (typeof staticSiteRef.assetPath === 'string') {
+      sources.push(Source.asset(staticSiteRef.assetPath));
+    } else {
+      const { typescriptAssetPath, ...rest } = staticSiteRef.assetPath;
+      sources.push(new TypeScriptSource(typescriptAssetPath, rest));
+    }
 
     if (this.resourceRef.clientConfig) {
       sources.push(

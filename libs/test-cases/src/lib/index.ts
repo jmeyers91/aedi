@@ -11,6 +11,7 @@ import './lambda-handler-proxy';
 import './secret-access';
 import './static-site';
 import './transforms';
+import './ts-site-source';
 import './user-pool-client';
 
 export { staticSite } from './static-site';

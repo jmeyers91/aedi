@@ -1,9 +1,10 @@
 import type { IResourceRef, IResourceTypeMap, RefType } from '../aedi-types';
 import { defaultBucketRefClientOptions } from './aedi-bucket-constants';
+import { TypescriptAsset } from './aedi-bucket-ts-asset';
 
 export interface BucketRef extends IResourceRef {
   type: RefType.BUCKET;
-  assetPath?: string;
+  assetPath?: string | TypescriptAsset;
 }
 
 export interface BucketClientRef<T extends BucketRef, O extends object> {
