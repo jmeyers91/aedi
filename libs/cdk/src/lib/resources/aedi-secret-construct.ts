@@ -3,8 +3,8 @@ import { ILambdaDependency } from '../aedi-infra-types';
 import { AediLambdaFunction } from './aedi-lambda-construct';
 import { ISecret, Secret } from 'aws-cdk-lib/aws-secretsmanager';
 import { RefType, SecretConstructRef, SecretRef } from '@aedi/common';
-import { NodejsFunctionProps } from 'aws-cdk-lib/aws-lambda-nodejs';
 import {
+  FunctionProps,
   ParamsAndSecretsLayerVersion,
   ParamsAndSecretsVersions,
 } from 'aws-cdk-lib/aws-lambda';
@@ -37,7 +37,7 @@ export class AediSecret
     this.secret.grantRead(lambda.lambdaFunction);
   }
 
-  transformLambdaProps(lambdaProps: NodejsFunctionProps): NodejsFunctionProps {
+  transformLambdaProps(lambdaProps: FunctionProps): FunctionProps {
     if (lambdaProps.paramsAndSecrets) {
       // The secret plugin is already enabled.
       return lambdaProps;

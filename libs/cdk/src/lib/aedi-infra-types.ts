@@ -1,4 +1,4 @@
-import { NodejsFunctionProps } from 'aws-cdk-lib/aws-lambda-nodejs';
+import { FunctionProps } from 'aws-cdk-lib/aws-lambda';
 import { AediLambdaFunction } from './resources/aedi-lambda-construct';
 
 export interface ILambdaDependency<C> {
@@ -9,5 +9,5 @@ export interface ILambdaDependency<C> {
    * Used when a resource needs to manipulate the lambda's creation options rather than just
    * supply a construct ref and permissions.
    */
-  transformLambdaProps?(lambdaProps: NodejsFunctionProps): NodejsFunctionProps;
+  transformLambdaProps?(lambdaProps: FunctionProps): FunctionProps;
 }

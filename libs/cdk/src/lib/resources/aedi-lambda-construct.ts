@@ -2,10 +2,8 @@ import { Construct } from 'constructs';
 import { resolveConstruct, isLambdaDependency } from '../aedi-infra-utils';
 import { Stack, Duration } from 'aws-cdk-lib';
 import { Runtime } from 'aws-cdk-lib/aws-lambda';
-import {
-  NodejsFunction,
-  NodejsFunctionProps,
-} from 'aws-cdk-lib/aws-lambda-nodejs';
+import { Function, FunctionProps } from 'aws-cdk-lib/aws-lambda';
+import { TypeScriptCode } from '@mrgrain/cdk-esbuild';
 import {
   ClientRef,
   AediAppHandlerEnv,
@@ -62,7 +60,7 @@ export class AediLambdaFunction
             .replace(/-/g, '_')
             .replace(/\./g, '__')}` as const;
           const constructRef = construct.getConstructRef();
-          console.log('ENV', ref.uid, '->', envKey);
+
           environment[envKey] =
             typeof constructRef === 'string'
               ? constructRef
@@ -79,33 +77,31 @@ export class AediLambdaFunction
       );
     }
 
-    console.log('ENV', environment);
-
-    const baseNodejsFunctionProps: NodejsFunctionProps = {
+    const baseFunctionProps: FunctionProps = {
       runtime: Runtime.NODEJS_18_X,
       timeout: Duration.seconds(lambdaRef.timeout ?? 15),
       handler: lambdaRef.handlerLocation.exportKey,
-      entry: lambdaRef.handlerLocation.filepath,
+      code: new TypeScriptCode(lambdaRef.handlerLocation.filepath, {
+        buildOptions: {
+          outfile: 'index.js',
+        },
+      }),
       environment: environment,
       memorySize: lambdaRef.memorySize,
     };
 
-    // Allow each dependency resrouce the opportunity to extend the nodejs options
-    const transformedNodejsFunctionProps = dependencies
+    // Allow each dependency resource the opportunity to extend the function props
+    const transformedFunctionProps = dependencies
       .map((it) => it.construct)
       .filter(isLambdaDependency)
       .reduce(
         (props, construct) => construct.transformLambdaProps?.(props) ?? props,
-        baseNodejsFunctionProps,
+        baseFunctionProps,
       );
 
     // Create the nodejs function
-    const nodeJsFunction = new NodejsFunction(
-      this,
-      'function',
-      transformedNodejsFunctionProps,
-    );
-    this.lambdaFunction = nodeJsFunction;
+    const fn = new Function(this, 'function', transformedFunctionProps);
+    this.lambdaFunction = fn;
 
     console.log(
       `- Lambda ${lambdaRef.id} -> ${lambdaRef.filepath} ${lambdaRef.handlerLocation.filepath} ${lambdaRef.handlerLocation.exportKey}`,
