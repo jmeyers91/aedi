@@ -2,6 +2,7 @@ import type { BucketTypeMap } from './aedi-bucket/aedi-bucket-types';
 import type { ConstructTypeMap } from './aedi-construct';
 import type { CustomResourceTypeMap } from './aedi-custom-resource';
 import type { DynamoTypeMap } from './aedi-dynamo/aedi-dynamo-types';
+import { FargateServiceTypeMap } from './aedi-fargate-service';
 import type { LambdaTypeMap } from './aedi-lambda/aedi-lambda-types';
 import type { RestApiTypeMap } from './aedi-rest-api/aedi-rest-api-types';
 import type { SecretTypeMap } from './aedi-secret/aedi-secret-types';
@@ -17,6 +18,7 @@ export enum RefType {
   CONSTRUCT = 'construct',
   CUSTOM_RESOURCE = 'custom-resource',
   DYNAMO = 'dynamo',
+  FARGATE_SERVICE = 'fargate-service',
   LAMBDA = 'lambda',
   REST_API = 'rest-api',
   SECRET = 'secret',
@@ -33,6 +35,7 @@ export interface ResourceRefTypeMap extends Record<RefType, IResourceTypeMap> {
   [RefType.CONSTRUCT]: ConstructTypeMap;
   [RefType.CUSTOM_RESOURCE]: CustomResourceTypeMap;
   [RefType.DYNAMO]: DynamoTypeMap;
+  [RefType.FARGATE_SERVICE]: FargateServiceTypeMap;
   [RefType.LAMBDA]: LambdaTypeMap;
   [RefType.REST_API]: RestApiTypeMap;
   [RefType.SECRET]: SecretTypeMap;

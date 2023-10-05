@@ -8,7 +8,6 @@ import type {
   ResourceRef,
 } from '../aedi-types';
 
-export type AnyFn = (...args: any[]) => any;
 export type LambdaRefFnWithEvent<C extends LambdaDependencyGroup, E, R> = (
   context: WrapContext<C>,
   event: E,
