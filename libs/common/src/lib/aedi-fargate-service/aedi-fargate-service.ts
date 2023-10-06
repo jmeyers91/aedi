@@ -30,5 +30,13 @@ export function FargateService<const C extends FargateServiceDependencyGroup>(
   };
   service.handlerLocation = initialLocation;
 
+  if (process.env['AEDI_FARGATE_EXECUTE_SERVICE_UID'] === service.uid) {
+    console.log(`Executing fargate service: ${service.uid}`);
+    process.nextTick(() =>
+      // TODO: Add dependency resolution
+      fn({} as any),
+    );
+  }
+
   return service;
 }

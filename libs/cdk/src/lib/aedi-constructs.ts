@@ -10,12 +10,14 @@ import { AediSecret } from './resources/aedi-secret-construct';
 import { AediStack } from './resources/aedi-stack-construct';
 import { AediStaticSite } from './resources/aedi-static-site-construct';
 import { AediUserPool } from './resources/aedi-user-pool-construct';
+import { AediFargateService } from './resources/aedi-fargate-service-construct';
 
 export const aediConstructs = {
   [RefType.BUCKET]: AediBucket,
   [RefType.CONSTRUCT]: AediConstruct,
   [RefType.CUSTOM_RESOURCE]: AediCustomResource,
   [RefType.DYNAMO]: AediDynamoTable,
+  [RefType.FARGATE_SERVICE]: AediFargateService,
   [RefType.LAMBDA]: AediLambdaFunction,
   [RefType.REST_API]: AediRestApi,
   [RefType.SECRET]: AediSecret,

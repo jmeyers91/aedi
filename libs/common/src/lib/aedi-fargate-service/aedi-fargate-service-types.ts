@@ -47,7 +47,6 @@ export interface FargateServiceClientRef<
 }
 
 export interface FargateServiceConstructRef {
-  functionName: string;
   region: string;
 }
 
