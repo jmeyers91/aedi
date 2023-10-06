@@ -8,14 +8,14 @@ import {
   UserPoolTriggers,
 } from 'aws-cdk-lib/aws-cognito';
 import { AediLambdaFunction } from './aedi-lambda-construct';
-import { ILambdaDependency } from '../aedi-infra-types';
+import { IComputeDependency } from '../aedi-infra-types';
 import { resolveConstruct } from '../aedi-infra-utils';
-import { Role, WebIdentityPrincipal } from 'aws-cdk-lib/aws-iam';
+import { IGrantable, Role, WebIdentityPrincipal } from 'aws-cdk-lib/aws-iam';
 import { AediBaseConstruct } from '../aedi-base-construct';
 
 export class AediUserPool
   extends AediBaseConstruct<RefType.USER_POOL>
-  implements ILambdaDependency<UserPoolConstructRef>
+  implements IComputeDependency<UserPoolConstructRef>
 {
   public readonly userPool: UserPool;
   public readonly userPoolRef: UserPoolRef;
@@ -124,7 +124,7 @@ export class AediUserPool
     };
   }
 
-  grantLambdaAccess(lambda: AediLambdaFunction): void {
-    this.userPool.grant(lambda.lambdaFunction, 'cognito-idp:*');
+  grantComputeAccess(grantable: IGrantable): void {
+    this.userPool.grant(grantable, 'cognito-idp:*');
   }
 }

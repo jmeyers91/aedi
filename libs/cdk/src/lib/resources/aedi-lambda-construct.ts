@@ -1,5 +1,5 @@
 import { Construct } from 'constructs';
-import { resolveConstruct, isLambdaDependency } from '../aedi-infra-utils';
+import { resolveConstruct, isComputeDependency } from '../aedi-infra-utils';
 import { Stack, Duration } from 'aws-cdk-lib';
 import { Runtime } from 'aws-cdk-lib/aws-lambda';
 import { Function, FunctionProps } from 'aws-cdk-lib/aws-lambda';
@@ -13,12 +13,13 @@ import {
   LambdaDependencyGroup,
   RefType,
 } from '@aedi/common';
-import { ILambdaDependency } from '../aedi-infra-types';
+import { IComputeDependency } from '../aedi-infra-types';
 import { AediBaseConstruct } from '../aedi-base-construct';
+import { IGrantable } from 'aws-cdk-lib/aws-iam';
 
 export class AediLambdaFunction
   extends AediBaseConstruct<RefType.LAMBDA>
-  implements ILambdaDependency<LambdaConstructRef>
+  implements IComputeDependency<LambdaConstructRef>
 {
   public readonly lambdaFunction;
   public readonly lambdaRef: LambdaRef<any, any, any>;
@@ -34,7 +35,7 @@ export class AediLambdaFunction
 
     const dependencies: {
       clientRef: ClientRef;
-      construct: ILambdaDependency<any> | Construct;
+      construct: IComputeDependency<any> | Construct;
     }[] = [];
     const environment: Omit<AediAppHandlerEnv, 'AEDI_CONSTRUCT_UID_MAP'> &
       Record<`AEDI_REF_${string}`, string> = {
@@ -93,7 +94,7 @@ export class AediLambdaFunction
     // Allow each dependency resource the opportunity to extend the function props
     const transformedFunctionProps = dependencies
       .map((it) => it.construct)
-      .filter(isLambdaDependency)
+      .filter(isComputeDependency)
       .reduce(
         (props, construct) => construct.transformLambdaProps?.(props) ?? props,
         baseFunctionProps,
@@ -109,9 +110,9 @@ export class AediLambdaFunction
 
     // Grant the lambda access to each of its dependencies.
     for (const { construct, clientRef } of dependencies) {
-      if ('grantLambdaAccess' in construct) {
-        construct.grantLambdaAccess?.(
-          this,
+      if ('grantComputeAccess' in construct) {
+        construct.grantComputeAccess?.(
+          this.lambdaFunction,
           'options' in clientRef ? clientRef.options : undefined,
         );
       }
@@ -125,7 +126,7 @@ export class AediLambdaFunction
     };
   }
 
-  grantLambdaAccess(lambda: AediLambdaFunction): void {
-    this.lambdaFunction.grantInvoke(lambda.lambdaFunction);
+  grantComputeAccess(grantable: IGrantable): void {
+    this.lambdaFunction.grantInvoke(grantable);
   }
 }

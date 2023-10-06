@@ -8,13 +8,13 @@ import {
 } from '@aedi/common';
 import { AttributeType, TableV2 } from 'aws-cdk-lib/aws-dynamodb';
 import { RemovalPolicy, Stack } from 'aws-cdk-lib';
-import { ILambdaDependency } from '../aedi-infra-types';
-import { AediLambdaFunction } from './aedi-lambda-construct';
+import { IComputeDependency } from '../aedi-infra-types';
 import { AediBaseConstruct } from '../aedi-base-construct';
+import { IGrantable } from 'aws-cdk-lib/aws-iam';
 
 export class AediDynamoTable
   extends AediBaseConstruct<RefType.DYNAMO>
-  implements ILambdaDependency<DynamoConstructRef>
+  implements IComputeDependency<DynamoConstructRef>
 {
   public readonly table: TableV2;
   public readonly dynamoRef: DynamoRef<any, any>;
@@ -50,19 +50,19 @@ export class AediDynamoTable
     };
   }
 
-  grantLambdaAccess(
-    { lambdaFunction }: AediLambdaFunction,
+  grantComputeAccess(
+    grantable: IGrantable,
     options?: DynamoRefClientOptions,
   ): void {
     options = { ...defaultDynamoRefClientOptions, ...options };
     if (options.fullAccess) {
-      this.table.grantFullAccess(lambdaFunction);
+      this.table.grantFullAccess(grantable);
     } else if (options.read && options.write) {
-      this.table.grantReadWriteData(lambdaFunction);
+      this.table.grantReadWriteData(grantable);
     } else if (options.read) {
-      this.table.grantReadData(lambdaFunction);
+      this.table.grantReadData(grantable);
     } else if (options.write) {
-      this.table.grantWriteData(lambdaFunction);
+      this.table.grantWriteData(grantable);
     }
   }
 }

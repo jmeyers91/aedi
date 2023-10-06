@@ -2,7 +2,10 @@ import { App, Stack, StackProps } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { IResourceRef, AediApp, RefType, ResourceRef } from '@aedi/common';
 import { AediConstructs, aediConstructs } from './aedi-constructs';
-import { ILambdaDependency } from './aedi-infra-types';
+import {
+  ICloudfrontBehaviorSource,
+  IComputeDependency,
+} from './aedi-infra-types';
 import { AsyncLocalStorage } from 'async_hooks';
 import { AediStack } from './resources/aedi-stack-construct';
 
@@ -34,10 +37,16 @@ export function createConstructName(resourceRef: IResourceRef): string {
   return `${resourceRef.uid.replace(/\./g, '-')}`;
 }
 
-export function isLambdaDependency(
+export function isComputeDependency(
   construct: object,
-): construct is ILambdaDependency<any> {
-  return 'grantLambdaAccess' in construct;
+): construct is IComputeDependency<any> {
+  return 'grantComputeAccess' in construct;
+}
+
+export function isCloudfrontBehaviorSource(
+  construct: object,
+): construct is ICloudfrontBehaviorSource {
+  return 'addCloudfrontBehavior' in construct;
 }
 
 export function resolveConstruct<R extends ResourceRef>(

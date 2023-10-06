@@ -5,10 +5,12 @@ import {
   RefType,
   AuthorizerRef,
   UserPoolRef,
+  StaticSiteBehaviorOptions,
 } from '@aedi/common';
 import {
   NotReadOnly,
   createConstructName,
+  fromEnumKey,
   resolveConstruct,
 } from '../aedi-infra-utils';
 import {
@@ -22,7 +24,10 @@ import {
   RestApi,
   RestApiProps,
 } from 'aws-cdk-lib/aws-apigateway';
-import { ILambdaDependency } from '../aedi-infra-types';
+import {
+  ICloudfrontBehaviorSource,
+  IComputeDependency,
+} from '../aedi-infra-types';
 import { AediBaseConstruct } from '../aedi-base-construct';
 import {
   Certificate,
@@ -34,10 +39,18 @@ import {
   RecordTarget,
 } from 'aws-cdk-lib/aws-route53';
 import { ApiGateway } from 'aws-cdk-lib/aws-route53-targets';
+import {
+  AllowedMethods,
+  CachePolicy,
+  Distribution,
+  OriginRequestPolicy,
+  ViewerProtocolPolicy,
+} from 'aws-cdk-lib/aws-cloudfront';
+import { RestApiOrigin } from 'aws-cdk-lib/aws-cloudfront-origins';
 
 export class AediRestApi
   extends AediBaseConstruct<RefType.REST_API>
-  implements ILambdaDependency<RestApiConstructRef>
+  implements IComputeDependency<RestApiConstructRef>, ICloudfrontBehaviorSource
 {
   public readonly restApi: RestApi;
   private readonly authorizers = new Map<string, CognitoUserPoolsAuthorizer>();
@@ -168,6 +181,34 @@ export class AediRestApi
     }
   }
 
+  addCloudfrontBehavior(
+    distribution: Distribution,
+    options: StaticSiteBehaviorOptions,
+  ): void {
+    distribution.addBehavior(options.path, new RestApiOrigin(this.restApi), {
+      viewerProtocolPolicy: fromEnumKey(
+        ViewerProtocolPolicy,
+        options.viewerProtocolPolicy,
+        'REDIRECT_TO_HTTPS',
+      ),
+      cachePolicy: fromEnumKey(
+        CachePolicy,
+        options.cachePolicy,
+        'CACHING_DISABLED',
+      ),
+      allowedMethods: fromEnumKey(
+        AllowedMethods,
+        options.allowedMethods,
+        'ALLOW_ALL',
+      ),
+      originRequestPolicy: fromEnumKey(
+        OriginRequestPolicy,
+        options.originRequestPolicy,
+        'ALL_VIEWER_EXCEPT_HOST_HEADER',
+      ),
+    });
+  }
+
   /**
    * Manages the authorizer cache. This is used to avoid creating unnecessary duplicate authorizer constructs.
    */
@@ -198,9 +239,5 @@ export class AediRestApi
     return {
       url: this.restApi.url,
     };
-  }
-
-  grantLambdaAccess() {
-    // TODO: Anything to add here?
   }
 }

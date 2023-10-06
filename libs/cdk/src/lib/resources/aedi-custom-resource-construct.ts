@@ -4,7 +4,7 @@ import {
   CustomResourceRef,
   RefType,
 } from '@aedi/common';
-import { ILambdaDependency } from '../aedi-infra-types';
+import { IComputeDependency } from '../aedi-infra-types';
 import { AediLambdaFunction } from './aedi-lambda-construct';
 import { AediBaseConstruct } from '../aedi-base-construct';
 import { resolveConstruct } from '../aedi-infra-utils';
@@ -13,7 +13,7 @@ import { CustomResource } from 'aws-cdk-lib';
 
 export class AediCustomResource
   extends AediBaseConstruct<RefType.CUSTOM_RESOURCE>
-  implements ILambdaDependency<CustomResourceConstructRef>
+  implements IComputeDependency<CustomResourceConstructRef>
 {
   public readonly customResourceRef: CustomResourceRef<any, any>;
   public readonly result: string;
@@ -45,9 +45,5 @@ export class AediCustomResource
 
   getConstructRef() {
     return this.result as any;
-  }
-
-  grantLambdaAccess(_lambda: AediLambdaFunction): void {
-    // N/A
   }
 }

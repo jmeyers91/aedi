@@ -10,17 +10,29 @@ import {
   BucketConstructRef,
   BucketRef,
   RefType,
+  StaticSiteBehaviorOptions,
   isTypescriptAsset,
 } from '@aedi/common';
-import { ILambdaDependency } from '../aedi-infra-types';
-import { AediLambdaFunction } from './aedi-lambda-construct';
+import {
+  ICloudfrontBehaviorSource,
+  IComputeDependency,
+} from '../aedi-infra-types';
 import { AediBaseConstruct } from '../aedi-base-construct';
-import { getMode } from '../aedi-infra-utils';
+import { fromEnumKey, getMode } from '../aedi-infra-utils';
 import { TypeScriptSource } from '@mrgrain/cdk-esbuild';
+import { IGrantable } from 'aws-cdk-lib/aws-iam';
+import {
+  AllowedMethods,
+  CachePolicy,
+  Distribution,
+  OriginRequestPolicy,
+  ViewerProtocolPolicy,
+} from 'aws-cdk-lib/aws-cloudfront';
+import { S3Origin } from 'aws-cdk-lib/aws-cloudfront-origins';
 
 export class AediBucket
   extends AediBaseConstruct<RefType.BUCKET>
-  implements ILambdaDependency<BucketConstructRef>
+  implements IComputeDependency<BucketConstructRef>, ICloudfrontBehaviorSource
 {
   public readonly bucket: Bucket;
   public readonly bucketRef: BucketRef;
@@ -56,6 +68,32 @@ export class AediBucket
     }
   }
 
+  addCloudfrontBehavior(
+    distribution: Distribution,
+    options: StaticSiteBehaviorOptions,
+  ): void {
+    distribution.addBehavior(options.path, new S3Origin(this.bucket), {
+      viewerProtocolPolicy: fromEnumKey(
+        ViewerProtocolPolicy,
+        options.viewerProtocolPolicy,
+        'REDIRECT_TO_HTTPS',
+      ),
+      cachePolicy: fromEnumKey(
+        CachePolicy,
+        options.cachePolicy,
+        'CACHING_OPTIMIZED',
+      ),
+      allowedMethods: fromEnumKey(
+        AllowedMethods,
+        options.allowedMethods,
+        'ALLOW_GET_HEAD',
+      ),
+      originRequestPolicy: options.originRequestPolicy
+        ? OriginRequestPolicy[options.originRequestPolicy]
+        : undefined,
+    });
+  }
+
   getConstructRef() {
     return {
       bucketName: this.bucket.bucketName,
@@ -63,7 +101,7 @@ export class AediBucket
     };
   }
 
-  grantLambdaAccess(lambda: AediLambdaFunction): void {
-    this.bucket.grantReadWrite(lambda.lambdaFunction);
+  grantComputeAccess(grantable: IGrantable): void {
+    this.bucket.grantReadWrite(grantable);
   }
 }

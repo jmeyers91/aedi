@@ -1,5 +1,5 @@
 import { Construct } from 'constructs';
-import { ILambdaDependency } from '../aedi-infra-types';
+import { IComputeDependency } from '../aedi-infra-types';
 import { AediLambdaFunction } from './aedi-lambda-construct';
 import { ISecret, Secret } from 'aws-cdk-lib/aws-secretsmanager';
 import { RefType, SecretConstructRef, SecretRef } from '@aedi/common';
@@ -9,10 +9,11 @@ import {
   ParamsAndSecretsVersions,
 } from 'aws-cdk-lib/aws-lambda';
 import { AediBaseConstruct } from '../aedi-base-construct';
+import { IGrantable } from 'aws-cdk-lib/aws-iam';
 
 export class AediSecret
   extends AediBaseConstruct<RefType.SECRET>
-  implements ILambdaDependency<SecretConstructRef>
+  implements IComputeDependency<SecretConstructRef>
 {
   public readonly secretRef: SecretRef;
   public readonly secret: ISecret;
@@ -33,8 +34,8 @@ export class AediSecret
     };
   }
 
-  grantLambdaAccess(lambda: AediLambdaFunction): void {
-    this.secret.grantRead(lambda.lambdaFunction);
+  grantComputeAccess(grantable: IGrantable): void {
+    this.secret.grantRead(grantable);
   }
 
   transformLambdaProps(lambdaProps: FunctionProps): FunctionProps {

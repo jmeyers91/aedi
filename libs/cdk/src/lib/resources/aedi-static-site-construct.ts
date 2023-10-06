@@ -1,22 +1,20 @@
 import { Construct } from 'constructs';
-import { ILambdaDependency } from '../aedi-infra-types';
+import { IComputeDependency } from '../aedi-infra-types';
 import {
   RefType,
   StaticSiteConstructRef,
   StaticSiteRef,
   isBehavior,
+  isTypescriptAsset,
 } from '@aedi/common';
 import { RemovalPolicy, Stack } from 'aws-cdk-lib';
 import {
   OriginAccessIdentity,
   Distribution,
   ViewerProtocolPolicy,
-  CachePolicy,
-  AllowedMethods,
-  OriginRequestPolicy,
   DistributionProps,
 } from 'aws-cdk-lib/aws-cloudfront';
-import { RestApiOrigin, S3Origin } from 'aws-cdk-lib/aws-cloudfront-origins';
+import { S3Origin } from 'aws-cdk-lib/aws-cloudfront-origins';
 import { Bucket } from 'aws-cdk-lib/aws-s3';
 import {
   BucketDeployment,
@@ -26,8 +24,8 @@ import {
 import { AediBaseConstruct } from '../aedi-base-construct';
 import {
   NotReadOnly,
-  fromEnumKey,
   getRegionStack,
+  isCloudfrontBehaviorSource,
   resolveConstruct,
 } from '../aedi-infra-utils';
 import {
@@ -45,7 +43,7 @@ import { TypeScriptSource } from '@mrgrain/cdk-esbuild';
 
 export class AediStaticSite
   extends AediBaseConstruct<RefType.STATIC_SITE>
-  implements ILambdaDependency<StaticSiteConstructRef>
+  implements IComputeDependency<StaticSiteConstructRef>
 {
   public readonly staticSiteRef;
   public readonly bucket: Bucket;
@@ -126,7 +124,7 @@ export class AediStaticSite
 
     if (typeof staticSiteRef.assetPath === 'string') {
       sources.push(Source.asset(staticSiteRef.assetPath));
-    } else {
+    } else if (isTypescriptAsset(staticSiteRef.assetPath)) {
       const { typescriptAssetPath, ...rest } = staticSiteRef.assetPath;
       sources.push(new TypeScriptSource(typescriptAssetPath, rest));
     }
@@ -139,74 +137,17 @@ export class AediStaticSite
       );
     }
 
+    /**
+     * Add additional behaviors to the distribution.
+     */
     for (const behavior of Object.values(this.resourceRef.clientConfig)) {
       if (!isBehavior(behavior)) continue;
 
       const { behaviorRef, behaviorOptions } = behavior;
 
-      // TODO: Move the logic for adding these behaviors into the individual constructs using an interface
-      /**
-       * TODO: The default values for these behavior options should be clearly defined somewhere.
-       * They're different for each behavior type because they can be very confusing and difficult to
-       * configure correctly, and ideally all of the behavior types have reasonable defaults that
-       * behave in a way a developer expects without being too permissive.
-       */
-      if (behaviorRef.type === RefType.REST_API) {
-        const restApi = resolveConstruct(behaviorRef);
-
-        this.distribution.addBehavior(
-          behaviorOptions.path,
-          new RestApiOrigin(restApi.restApi),
-          {
-            viewerProtocolPolicy: fromEnumKey(
-              ViewerProtocolPolicy,
-              behaviorOptions.viewerProtocolPolicy,
-              'REDIRECT_TO_HTTPS',
-            ),
-            cachePolicy: fromEnumKey(
-              CachePolicy,
-              behaviorOptions.cachePolicy,
-              'CACHING_DISABLED',
-            ),
-            allowedMethods: fromEnumKey(
-              AllowedMethods,
-              behaviorOptions.allowedMethods,
-              'ALLOW_ALL',
-            ),
-            originRequestPolicy: fromEnumKey(
-              OriginRequestPolicy,
-              behaviorOptions.originRequestPolicy,
-              'ALL_VIEWER_EXCEPT_HOST_HEADER',
-            ),
-          },
-        );
-      } else if (behaviorRef.type === RefType.BUCKET) {
-        const { bucket } = resolveConstruct(behaviorRef);
-
-        this.distribution.addBehavior(
-          behaviorOptions.path,
-          new S3Origin(bucket),
-          {
-            viewerProtocolPolicy: fromEnumKey(
-              ViewerProtocolPolicy,
-              behaviorOptions.viewerProtocolPolicy,
-              'REDIRECT_TO_HTTPS',
-            ),
-            cachePolicy: fromEnumKey(
-              CachePolicy,
-              behaviorOptions.cachePolicy,
-              'CACHING_OPTIMIZED',
-            ),
-            allowedMethods: fromEnumKey(
-              AllowedMethods,
-              behaviorOptions.allowedMethods,
-              'ALLOW_GET_HEAD',
-            ),
-            originRequestPolicy: behaviorOptions.originRequestPolicy
-              ? OriginRequestPolicy[behaviorOptions.originRequestPolicy]
-              : undefined,
-          },
-        );
+      const construct = resolveConstruct(behaviorRef);
+      if (isCloudfrontBehaviorSource(construct)) {
+        construct.addCloudfrontBehavior(this.distribution, behaviorOptions);
       } else {
         throw new Error(
           `Unsupported rest API behavior target type: ${behaviorRef.type}`,
@@ -227,9 +168,5 @@ export class AediStaticSite
       bucketName: this.bucket.bucketName,
       url: `https://${this.distribution.domainName}`,
     };
-  }
-
-  grantLambdaAccess() {
-    // No special permissions needed to grant lambda functions access to static sites
   }
 }

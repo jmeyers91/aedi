@@ -4,10 +4,13 @@ import {
   RefType,
   ResourceRef,
 } from '@aedi/common';
-import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { Construct } from 'constructs';
+import { IComputeDependency } from './aedi-infra-types';
 
-export abstract class AediBaseConstruct<R extends RefType> extends Construct {
+export abstract class AediBaseConstruct<R extends RefType>
+  extends Construct
+  implements IComputeDependency<LookupConstructRef<R>>
+{
   public readonly resourceRef: LookupRef<R>;
 
   constructor(
@@ -21,6 +24,4 @@ export abstract class AediBaseConstruct<R extends RefType> extends Construct {
   }
 
   abstract getConstructRef(): LookupConstructRef<R>;
-
-  abstract grantLambdaAccess(lambda: { lambdaFunction: NodejsFunction }): void;
 }

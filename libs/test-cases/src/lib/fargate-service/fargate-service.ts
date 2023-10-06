@@ -1,13 +1,9 @@
-import { FargateService } from '@aedi/common';
+import { Behavior, FargateService, StaticSite } from '@aedi/common';
 import fastify from 'fastify';
 import { Scope } from '../app';
 
 const scope = Scope('fargate-service');
-
-console.log(
-  'Defining fargate service: ',
-  process.env['AEDI_FARGATE_EXECUTE_SERVICE_UID'],
-);
+const domain = { name: 'aedi-fargate-example.smplj.xyz', zone: 'smplj.xyz' };
 
 export const api = FargateService(scope, 'api', {}, async () => {
   console.log(`Starting fargate service: ${api.uid}`);
@@ -21,4 +17,12 @@ export const api = FargateService(scope, 'api', {}, async () => {
 
   await app.listen({ port, host: '0.0.0.0' });
   console.log(`Listening on port ${port}`);
+});
+
+export const staticSite = StaticSite(scope, 'site', {
+  domain,
+  assetPath: './dist/apps/test-app',
+  clientConfig: {
+    api: Behavior('/api/*', api),
+  },
 });

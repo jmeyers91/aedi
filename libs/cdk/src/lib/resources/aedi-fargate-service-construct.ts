@@ -1,5 +1,5 @@
 import { Construct } from 'constructs';
-import { resolveConstruct } from '../aedi-infra-utils';
+import { fromEnumKey, resolveConstruct } from '../aedi-infra-utils';
 import { Duration, Stack } from 'aws-cdk-lib';
 import {
   ClientRef,
@@ -9,10 +9,13 @@ import {
   FargateServiceDependencyGroup,
   RefType,
   AnyFargateServiceRef,
+  StaticSiteBehaviorOptions,
 } from '@aedi/common';
-import { ILambdaDependency } from '../aedi-infra-types';
+import {
+  ICloudfrontBehaviorSource,
+  IComputeDependency,
+} from '../aedi-infra-types';
 import { AediBaseConstruct } from '../aedi-base-construct';
-import { AediLambdaFunction } from './aedi-lambda-construct';
 import { resolve } from 'path';
 import { tmpdir } from 'os';
 import { randomUUID } from 'crypto';
@@ -26,13 +29,24 @@ import {
 } from 'aws-cdk-lib/aws-ecs';
 import { DockerImageAsset } from 'aws-cdk-lib/aws-ecr-assets';
 import { SecurityGroup, Vpc } from 'aws-cdk-lib/aws-ec2';
-import { Protocol } from 'aws-cdk-lib/aws-elasticloadbalancingv2';
+import {
+  AllowedMethods,
+  CachePolicy,
+  Distribution,
+  OriginProtocolPolicy,
+  OriginRequestPolicy,
+} from 'aws-cdk-lib/aws-cloudfront';
+import { LoadBalancerV2Origin } from 'aws-cdk-lib/aws-cloudfront-origins';
 
 export class AediFargateService
   extends AediBaseConstruct<RefType.FARGATE_SERVICE>
-  implements ILambdaDependency<FargateServiceConstructRef>
+  implements
+    IComputeDependency<FargateServiceConstructRef>,
+    ICloudfrontBehaviorSource
 {
   public readonly fargateServiceRef: AnyFargateServiceRef;
+  public readonly loadBalancedFargateService: ApplicationLoadBalancedFargateService;
+  public readonly port: number;
 
   constructor(
     scope: Construct,
@@ -45,7 +59,7 @@ export class AediFargateService
 
     const dependencies: {
       clientRef: ClientRef;
-      construct: ILambdaDependency<any> | Construct;
+      construct: IComputeDependency<any> | Construct;
     }[] = [];
     const environment: Omit<AediAppHandlerEnv, 'AEDI_CONSTRUCT_UID_MAP'> &
       Record<`AEDI_REF_${string}`, string> = {
@@ -88,12 +102,12 @@ export class AediFargateService
       );
     }
 
-    const port = 4200;
+    const port = (this.port = 4200);
     const vpc = new Vpc(this, 'vpc', {
       maxAzs: 2,
     });
 
-    // TODO: Create
+    // Generate the Dockerfile and use esbuild to bundle the handler
     const tempBuildDir = resolve(tmpdir(), randomUUID());
     mkdirSync(tempBuildDir);
     execSync(
@@ -114,7 +128,6 @@ export class AediFargateService
         `CMD [ "node", "index.js" ]`,
       ].join('\n'),
     );
-    console.log('>>>>>> tempBuildDir', tempBuildDir);
 
     const taskDefinition = new FargateTaskDefinition(this, 'task-definition', {
       cpu: 1024,
@@ -168,19 +181,56 @@ export class AediFargateService
           rollback: true,
         },
       });
+    this.loadBalancedFargateService = loadBalancedFargateService;
 
     loadBalancedFargateService.targetGroup.configureHealthCheck({
       path: '/api/healthcheck',
     });
+
+    // Grant the service access to each of its dependencies.
+    for (const { construct, clientRef } of dependencies) {
+      if ('grantComputeAccess' in construct) {
+        construct.grantComputeAccess?.(
+          loadBalancedFargateService.taskDefinition.taskRole,
+          'options' in clientRef ? clientRef.options : undefined,
+        );
+      }
+    }
+  }
+
+  addCloudfrontBehavior(
+    distribution: Distribution,
+    options: StaticSiteBehaviorOptions,
+  ): void {
+    distribution.addBehavior(
+      options.path,
+      new LoadBalancerV2Origin(this.loadBalancedFargateService.loadBalancer, {
+        protocolPolicy: OriginProtocolPolicy.HTTP_ONLY,
+        httpPort: this.port,
+      }),
+      {
+        cachePolicy: fromEnumKey(
+          CachePolicy,
+          options.cachePolicy,
+          'CACHING_DISABLED',
+        ),
+        allowedMethods: fromEnumKey(
+          AllowedMethods,
+          options.allowedMethods,
+          'ALLOW_ALL',
+        ),
+        originRequestPolicy: fromEnumKey(
+          OriginRequestPolicy,
+          options.originRequestPolicy,
+          'ALL_VIEWER',
+        ),
+      },
+    );
   }
 
   getConstructRef() {
     return {
       region: Stack.of(this).region,
     };
-  }
-
-  grantLambdaAccess(lambda: AediLambdaFunction): void {
-    // TODO?
   }
 }
