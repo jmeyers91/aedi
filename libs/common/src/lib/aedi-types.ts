@@ -1,3 +1,4 @@
+import { Context } from 'aws-lambda';
 import type { BucketTypeMap } from './aedi-bucket/aedi-bucket-types';
 import type { ConstructTypeMap } from './aedi-construct';
 import type { CustomResourceTypeMap } from './aedi-custom-resource';
@@ -9,12 +10,15 @@ import type { SecretTypeMap } from './aedi-secret/aedi-secret-types';
 import type { StackTypeMap } from './aedi-stack';
 import type { StaticSiteTypeMap } from './aedi-static-site';
 import type { UserPoolTypeMap } from './aedi-user-pool/aedi-user-pool-types';
+import { VpcTypeMap } from './aedi-vpc/aedi-vpc-types';
+import { ClusterTypeMap } from './aedi-cluster';
 
 /**
  * All available ref types.
  */
 export enum RefType {
   BUCKET = 'bucket',
+  CLUSTER = 'cluster',
   CONSTRUCT = 'construct',
   CUSTOM_RESOURCE = 'custom-resource',
   DYNAMO = 'dynamo',
@@ -25,6 +29,7 @@ export enum RefType {
   STACK = 'stack',
   STATIC_SITE = 'static-site',
   USER_POOL = 'user-pool',
+  VPC = 'vpc',
 }
 
 /**
@@ -33,6 +38,7 @@ export enum RefType {
 export interface ResourceRefTypeMap extends Record<RefType, IResourceTypeMap> {
   [RefType.BUCKET]: BucketTypeMap;
   [RefType.CONSTRUCT]: ConstructTypeMap;
+  [RefType.CLUSTER]: ClusterTypeMap;
   [RefType.CUSTOM_RESOURCE]: CustomResourceTypeMap;
   [RefType.DYNAMO]: DynamoTypeMap;
   [RefType.FARGATE_SERVICE]: FargateServiceTypeMap;
@@ -42,6 +48,7 @@ export interface ResourceRefTypeMap extends Record<RefType, IResourceTypeMap> {
   [RefType.STACK]: StackTypeMap;
   [RefType.STATIC_SITE]: StaticSiteTypeMap;
   [RefType.USER_POOL]: UserPoolTypeMap;
+  [RefType.VPC]: VpcTypeMap;
 }
 
 /**
@@ -168,8 +175,8 @@ export type ConstructRefLookupMap = Record<string, LookupConstructRef<RefType>>;
  * These are the environment variables supplied to every aedi lambda function.
  */
 export interface AediAppHandlerEnv {
-  AEDI_FUNCTION_ID: string;
-  AEDI_FUNCTION_UID: string;
+  AEDI_COMPUTE_ID: string;
+  AEDI_COMPUTE_UID: string;
   AEDI_CONSTRUCT_UID_MAP: ConstructRefLookupMap;
 }
 
@@ -209,3 +216,67 @@ export interface IResourceRef {
   filepath: string;
   getScope(): Scope;
 }
+
+export type ResolveRef<R> = R extends TransformedRef<any, infer C>
+  ? Awaited<C>
+  : R extends EventTransformRef<any, infer C>
+  ? Awaited<C>
+  : ResolveSimpleRef<R>;
+
+export type ResolveSimpleRef<R> = R extends ClientRef
+  ? ResolvedClientRef<R>
+  : R extends ResourceRef
+  ? ResolvedClientRef<{ refType: R['type']; ref: R }>
+  : R;
+
+export type ComputeDependencyGroup = Record<
+  string,
+  | ResourceRef
+  | ClientRef
+  | TransformedRef<any, any>
+  | EventTransformRef<any, any>
+>;
+
+/**
+ * Adds the construct ref data to the dependency object supplied when defining a lambda function.
+ * This additional data is what is needed by construct client libraries to connect to their resources.
+ */
+export type WrapContext<C> = {
+  [K in keyof C]: ResolveRef<C[K]>;
+};
+
+export type EventTransformRef<E, C> = {
+  transformEvent(event: E, context: Context): C;
+};
+
+export enum TransformedRefScope {
+  STATIC = 'STATIC',
+  INVOKE = 'INVOKE',
+}
+
+export type InvokeTransformedRef<
+  R extends ResourceRef | ClientRef | TransformedRef<any, any>,
+  C,
+> = {
+  transformedRefScope: TransformedRefScope.INVOKE;
+  transformedRef: R;
+  transform(ref: ResolveRef<R>, event: any, context: Context): C;
+};
+
+export type StaticTransformedRef<
+  R extends ResourceRef | ClientRef | TransformedRef<any, any>,
+  C,
+> = {
+  transformedRefScope: TransformedRefScope.STATIC;
+  transformedRef: R;
+  transform(ref: ResolveRef<R>): C;
+};
+
+export type TransformedRef<
+  R extends ResourceRef | ClientRef | TransformedRef<any, any>,
+  C,
+> = StaticTransformedRef<R, C> | InvokeTransformedRef<R, C>;
+
+export type UnwrapTransformedRef<T> = T extends TransformedRef<infer R, infer C>
+  ? { ref: R; result: C; input: ResolveRef<R> }
+  : unknown;

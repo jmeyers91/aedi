@@ -2,7 +2,6 @@ import type { APIGatewayEvent, Context } from 'aws-lambda';
 import { Static, TObject } from '@sinclair/typebox';
 import type {
   AnyLambdaRef,
-  EventTransformRef,
   LambdaDependencyGroup,
   LambdaRef,
   LambdaRefFnWithEvent,
@@ -15,7 +14,12 @@ import type {
   RestApiRef,
   RestApiRefRoute,
 } from './aedi-rest-api-types';
-import { CreateResourceOptions, RefType, Scope } from '../aedi-types';
+import {
+  CreateResourceOptions,
+  EventTransformRef,
+  RefType,
+  Scope,
+} from '../aedi-types';
 import {
   LambdaResultError,
   createResource,

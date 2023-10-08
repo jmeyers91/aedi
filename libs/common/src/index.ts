@@ -1,6 +1,7 @@
 // Resources
 export * from './lib/aedi-bucket';
 export * from './lib/aedi-construct';
+export * from './lib/aedi-cluster';
 export * from './lib/aedi-custom-resource';
 export * from './lib/aedi-dynamo';
 export * from './lib/aedi-fargate-service';
@@ -10,6 +11,7 @@ export * from './lib/aedi-secret';
 export * from './lib/aedi-stack';
 export * from './lib/aedi-static-site';
 export * from './lib/aedi-user-pool';
+export * from './lib/aedi-vpc';
 
 // Utilities
 export * from './lib/aedi-app';

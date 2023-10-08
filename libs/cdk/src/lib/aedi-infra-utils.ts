@@ -1,6 +1,15 @@
 import { App, Stack, StackProps } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
-import { IResourceRef, AediApp, RefType, ResourceRef } from '@aedi/common';
+import {
+  IResourceRef,
+  AediApp,
+  RefType,
+  ResourceRef,
+  AediAppHandlerEnv,
+  ComputeDependencyGroup,
+  getClientRefFromRef,
+  ClientRef,
+} from '@aedi/common';
 import { AediConstructs, aediConstructs } from './aedi-constructs';
 import {
   ICloudfrontBehaviorSource,
@@ -152,3 +161,47 @@ export interface AediCdkAppContext {
 }
 
 export type NotReadOnly<T> = { -readonly [K in keyof T]: T[K] };
+
+export function createComputeDependencyEnv(
+  ref: ResourceRef,
+  dependencyMap: ComputeDependencyGroup,
+) {
+  const environment: Omit<AediAppHandlerEnv, 'AEDI_CONSTRUCT_UID_MAP'> &
+    Record<`AEDI_REF_${string}`, string> = {
+    AEDI_COMPUTE_ID: ref.id,
+    AEDI_COMPUTE_UID: ref.uid,
+  };
+  const dependencies: {
+    clientRef: ClientRef;
+    construct: IComputeDependency<any> | Construct;
+  }[] = [];
+
+  // Collect dependencies from the lambda context refs
+  for (const contextValue of Object.values(dependencyMap)) {
+    // Ignore event transforms here - they're only relevant at runtime and require no additional permissions or construct refs
+    if ('transformEvent' in contextValue) {
+      continue;
+    }
+    const clientRef = getClientRefFromRef(contextValue);
+    const ref = clientRef.ref;
+    const construct = resolveConstruct(ref);
+
+    if (construct) {
+      if ('getConstructRef' in construct) {
+        const envKey = `AEDI_REF_${ref.uid
+          .replace(/-/g, '_')
+          .replace(/\./g, '__')}` as const;
+        const constructRef = construct.getConstructRef();
+
+        environment[envKey] =
+          typeof constructRef === 'string'
+            ? constructRef
+            : JSON.stringify(construct.getConstructRef());
+      }
+
+      dependencies.push({ construct, clientRef });
+    }
+  }
+
+  return { environment, dependencies };
+}

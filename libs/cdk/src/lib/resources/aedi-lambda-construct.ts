@@ -1,5 +1,9 @@
 import { Construct } from 'constructs';
-import { resolveConstruct, isComputeDependency } from '../aedi-infra-utils';
+import {
+  resolveConstruct,
+  isComputeDependency,
+  createComputeDependencyEnv,
+} from '../aedi-infra-utils';
 import { Stack, Duration } from 'aws-cdk-lib';
 import { Runtime } from 'aws-cdk-lib/aws-lambda';
 import { Function, FunctionProps } from 'aws-cdk-lib/aws-lambda';
@@ -29,48 +33,15 @@ export class AediLambdaFunction
     id: string,
     props: { resourceRef: LambdaRef<any, any, any> },
   ) {
+    // TODO: Add support for lambdas in VPCs - make this class implement IConnectable
     super(scope, id, props);
 
     const lambdaRef = (this.lambdaRef = this.resourceRef);
 
-    const dependencies: {
-      clientRef: ClientRef;
-      construct: IComputeDependency<any> | Construct;
-    }[] = [];
-    const environment: Omit<AediAppHandlerEnv, 'AEDI_CONSTRUCT_UID_MAP'> &
-      Record<`AEDI_REF_${string}`, string> = {
-      AEDI_FUNCTION_ID: lambdaRef.id,
-      AEDI_FUNCTION_UID: lambdaRef.uid,
-    };
-
-    // Collect dependencies from the lambda context refs
-    for (const contextValue of Object.values(
-      lambdaRef.context as LambdaDependencyGroup,
-    )) {
-      // Ignore event transforms here - they're only relevant at runtime and require no additional permissions or construct refs
-      if ('transformEvent' in contextValue) {
-        continue;
-      }
-      const clientRef = getClientRefFromRef(contextValue);
-      const ref = clientRef.ref;
-      const construct = resolveConstruct(ref);
-
-      if (construct) {
-        if ('getConstructRef' in construct) {
-          const envKey = `AEDI_REF_${ref.uid
-            .replace(/-/g, '_')
-            .replace(/\./g, '__')}` as const;
-          const constructRef = construct.getConstructRef();
-
-          environment[envKey] =
-            typeof constructRef === 'string'
-              ? constructRef
-              : JSON.stringify(construct.getConstructRef());
-        }
-
-        dependencies.push({ construct, clientRef });
-      }
-    }
+    const { dependencies, environment } = createComputeDependencyEnv(
+      lambdaRef,
+      lambdaRef.context,
+    );
 
     if (!lambdaRef.handlerLocation) {
       throw new Error(

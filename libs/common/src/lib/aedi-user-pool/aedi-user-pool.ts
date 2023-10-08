@@ -1,7 +1,11 @@
 import type { AuthorizerRef, UserPoolRef } from './aedi-user-pool-types';
-import { CreateResourceOptions, RefType, Scope } from '../aedi-types';
+import {
+  CreateResourceOptions,
+  EventTransformRef,
+  RefType,
+  Scope,
+} from '../aedi-types';
 import { createResource, mapEvent } from '../aedi-resource-utils';
-import { EventTransformRef } from '../aedi-lambda';
 import {
   APIGatewayProxyCognitoAuthorizer,
   APIGatewayProxyEventBase,

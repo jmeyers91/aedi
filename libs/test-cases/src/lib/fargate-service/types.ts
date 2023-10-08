@@ -6,3 +6,8 @@ export interface Contact {
   email: string;
   phone: string;
 }
+
+export interface Counter {
+  counterId: string;
+  count: number;
+}

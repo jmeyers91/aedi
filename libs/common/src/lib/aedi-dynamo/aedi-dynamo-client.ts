@@ -26,8 +26,12 @@ import type {
   DynamoClientRef,
   DynamoRef,
 } from './aedi-dynamo-types';
-import { TransformedRef, TransformedRefScope } from '../aedi-lambda';
-import { OptionsWithDefaults } from '../aedi-types';
+import {
+  OptionsWithDefaults,
+  StaticTransformedRef,
+  TransformedRef,
+  TransformedRefScope,
+} from '../aedi-types';
 import { once } from '../aedi-resource-utils';
 
 export interface IReadableDynamoTable<T, PK extends keyof T> {
@@ -96,7 +100,7 @@ export function TableClient<
     | DynamoClientRef<DynamoRef<any, any>, any>,
 >(
   ref: R,
-): TransformedRef<
+): StaticTransformedRef<
   R,
   IDynamoTable<DynamoEntityType<R>, DynamoEntityPk<R>, DynamoClientOptions<R>>
 > {

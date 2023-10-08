@@ -1,11 +1,10 @@
 import type { Context, Handler } from 'aws-lambda';
 import type {
-  ClientRef,
+  ComputeDependencyGroup,
   IResourceRef,
   IResourceTypeMap,
   RefType,
-  ResolvedClientRef,
-  ResourceRef,
+  WrapContext,
 } from '../aedi-types';
 
 export type LambdaRefFnWithEvent<C extends LambdaDependencyGroup, E, R> = (
@@ -14,61 +13,7 @@ export type LambdaRefFnWithEvent<C extends LambdaDependencyGroup, E, R> = (
   lambdaContext: Context,
 ) => R;
 
-export enum TransformedRefScope {
-  STATIC = 'STATIC',
-  INVOKE = 'INVOKE',
-}
-
-export type TransformedRef<
-  R extends ResourceRef | ClientRef | TransformedRef<any, any>,
-  C,
-> =
-  | {
-      transformedRefScope: TransformedRefScope.STATIC;
-      transformedRef: R;
-      transform(ref: ResolveRef<R>): C;
-    }
-  | {
-      transformedRefScope: TransformedRefScope.INVOKE;
-      transformedRef: R;
-      transform(ref: ResolveRef<R>, event: any, context: Context): C;
-    };
-
-export type EventTransformRef<E, C> = {
-  transformEvent(event: E, context: Context): C;
-};
-
-export type UnwrapTransformedRef<T> = T extends TransformedRef<infer R, infer C>
-  ? { ref: R; result: C; input: ResolveRef<R> }
-  : unknown;
-
-export type LambdaDependencyGroup = Record<
-  string,
-  | ResourceRef
-  | ClientRef
-  | TransformedRef<any, any>
-  | EventTransformRef<any, any>
->;
-
-export type ResolveSimpleRef<R> = R extends ClientRef
-  ? ResolvedClientRef<R>
-  : R extends ResourceRef
-  ? ResolvedClientRef<{ refType: R['type']; ref: R }>
-  : R;
-
-export type ResolveRef<R> = R extends TransformedRef<any, infer C>
-  ? Awaited<C>
-  : R extends EventTransformRef<any, infer C>
-  ? Awaited<C>
-  : ResolveSimpleRef<R>;
-
-/**
- * Adds the construct ref data to the dependency object supplied when defining a lambda function.
- * This additional data is what is needed by construct client libraries to connect to their resources.
- */
-export type WrapContext<C> = {
-  [K in keyof C]: ResolveRef<C[K]>;
-};
+export type LambdaDependencyGroup = ComputeDependencyGroup;
 
 export type BrandedLambdaRefFnWithEvent<
   C extends LambdaDependencyGroup,

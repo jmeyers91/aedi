@@ -1,20 +1,26 @@
+import { ClusterRef } from '../aedi-cluster';
 import type {
   ClientRef,
   IResourceRef,
   IResourceTypeMap,
   RefType,
   ResourceRef,
+  StaticTransformedRef,
+  WrapContext,
 } from '../aedi-types';
-import { TransformedRef, WrapContext } from '../aedi-lambda';
 
 export type FargateServiceDependencyGroup = Record<
   string,
-  ResourceRef | ClientRef | TransformedRef<any, any>
+  ResourceRef | ClientRef | StaticTransformedRef<any, any>
 >;
 
 export type FargateServiceRefFn<C extends FargateServiceDependencyGroup> = (
   context: WrapContext<C>,
 ) => any;
+
+export type FargateServiceImage<C extends FargateServiceDependencyGroup> =
+  | FargateServiceRefFn<C>
+  | { registry: string; environment?: Record<string, string> };
 
 export interface FargateServiceHandlerLocation {
   filepath: string;
@@ -25,8 +31,16 @@ export interface FargateServiceRef<C extends FargateServiceDependencyGroup>
   extends IResourceRef {
   type: RefType.FARGATE_SERVICE;
   handlerLocation?: FargateServiceHandlerLocation;
-  fn: FargateServiceRefFn<C>;
+  handler?: () => Promise<unknown>;
+  loadBalanced?: boolean;
+  image: FargateServiceImage<C>;
   context: C;
+  port: number;
+  cluster: ClusterRef;
+  healthcheck?: {
+    path?: string;
+    command?: string;
+  };
 }
 
 export type FargateServiceRefTypes<T> = T extends FargateServiceRef<infer C>
@@ -48,6 +62,7 @@ export interface FargateServiceClientRef<
 
 export interface FargateServiceConstructRef {
   region: string;
+  url: string;
 }
 
 export type FargateServiceRefClientOptions = object;

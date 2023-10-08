@@ -11,10 +11,13 @@ import { AediStack } from './resources/aedi-stack-construct';
 import { AediStaticSite } from './resources/aedi-static-site-construct';
 import { AediUserPool } from './resources/aedi-user-pool-construct';
 import { AediFargateService } from './resources/aedi-fargate-service-construct';
+import { AediVpc } from './resources/aedi-vpc-construct';
+import { AediCluster } from './resources/aedi-cluster-construct';
 
 export const aediConstructs = {
   [RefType.BUCKET]: AediBucket,
   [RefType.CONSTRUCT]: AediConstruct,
+  [RefType.CLUSTER]: AediCluster,
   [RefType.CUSTOM_RESOURCE]: AediCustomResource,
   [RefType.DYNAMO]: AediDynamoTable,
   [RefType.FARGATE_SERVICE]: AediFargateService,
@@ -24,5 +27,6 @@ export const aediConstructs = {
   [RefType.STACK]: AediStack,
   [RefType.STATIC_SITE]: AediStaticSite,
   [RefType.USER_POOL]: AediUserPool,
+  [RefType.VPC]: AediVpc,
 } satisfies Record<RefType, { new (...args: any): Construct }>;
 export type AediConstructs = typeof aediConstructs;

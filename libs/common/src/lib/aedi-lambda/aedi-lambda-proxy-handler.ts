@@ -1,6 +1,6 @@
 import { Handler } from 'aws-lambda';
 import { AnyLambdaRef, LambdaHandlerLocation } from './aedi-lambda-types';
-import { resolveLambdaRuntimeEnv } from '../aedi-client-utils';
+import { resolveComputeRuntimeEnv } from '../aedi-client-utils';
 import { getLambdaRefHandler } from './aedi-lambda-handler';
 import { getRootCallsiteFilepath } from '../aedi-resource-utils';
 
@@ -40,13 +40,13 @@ export function lambdaProxyHandler(
     proxiedRefs,
     lambdaProxyHandler: (event, context, callback) => {
       if (!cachedHandler) {
-        const { AEDI_FUNCTION_UID } = resolveLambdaRuntimeEnv();
+        const { AEDI_COMPUTE_UID } = resolveComputeRuntimeEnv();
         const lambdaRef = lambdaRefs.find(
-          (ref) => ref.uid === AEDI_FUNCTION_UID,
+          (ref) => ref.uid === AEDI_COMPUTE_UID,
         );
         if (!lambdaRef) {
           throw new Error(
-            `Unable to find lambda ref ${AEDI_FUNCTION_UID} in lambdas passed to lambda proxy handler ${handlerLocation.filepath}`,
+            `Unable to find lambda ref ${AEDI_COMPUTE_UID} in lambdas passed to lambda proxy handler ${handlerLocation.filepath}`,
           );
         }
         cachedHandler = getLambdaRefHandler(lambdaRef);

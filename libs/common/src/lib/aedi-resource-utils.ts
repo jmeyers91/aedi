@@ -1,6 +1,7 @@
 import { relative } from 'path';
 import {
   RefType,
+  TransformedRefScope,
   type ClientRef,
   type CreateResourceOptions,
   type IAediApp,
@@ -9,13 +10,10 @@ import {
   type LookupOptions,
   type ResourceRef,
   type Scope,
-} from './aedi-types';
-import {
   type TransformedRef,
   type ResolveRef,
-  TransformedRefScope,
   type EventTransformRef,
-} from './aedi-lambda';
+} from './aedi-types';
 import type { Callback, Context } from 'aws-lambda';
 import type { StackRef } from './aedi-stack';
 
