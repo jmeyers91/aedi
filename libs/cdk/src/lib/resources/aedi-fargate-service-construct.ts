@@ -1,7 +1,9 @@
 import { Construct } from 'constructs';
 import {
+  NotReadOnly,
   createComputeDependencyEnv,
   fromEnumKey,
+  getRegionStack,
   resolveConstruct,
 } from '../aedi-infra-utils';
 import { Duration, Stack } from 'aws-cdk-lib';
@@ -43,6 +45,7 @@ import {
   AllowedMethods,
   CachePolicy,
   Distribution,
+  DistributionProps,
   OriginProtocolPolicy,
   OriginRequestPolicy,
 } from 'aws-cdk-lib/aws-cloudfront';
@@ -51,6 +54,20 @@ import {
   LoadBalancerV2Origin,
 } from 'aws-cdk-lib/aws-cloudfront-origins';
 import { DnsRecordType, Service } from 'aws-cdk-lib/aws-servicediscovery';
+import {
+  ARecord,
+  IHostedZone,
+  PublicHostedZone,
+  RecordTarget,
+} from 'aws-cdk-lib/aws-route53';
+import {
+  Certificate,
+  CertificateValidation,
+} from 'aws-cdk-lib/aws-certificatemanager';
+import {
+  CloudFrontTarget,
+  LoadBalancerTarget,
+} from 'aws-cdk-lib/aws-route53-targets';
 
 export class AediFargateService
   extends AediBaseConstruct<RefType.FARGATE_SERVICE>
@@ -60,11 +77,10 @@ export class AediFargateService
     IConnectable
 {
   public readonly fargateServiceRef: AnyFargateServiceRef;
-  public readonly fargateService:
-    | ApplicationLoadBalancedFargateService
-    | FargateService;
+  public readonly fargateService: ApplicationLoadBalancedFargateService;
   public readonly port: number;
   public readonly privateDomainName: string;
+  public readonly publicDomainName?: string;
   public readonly connections: Connections;
 
   constructor(
@@ -136,9 +152,8 @@ export class AediFargateService
     }
 
     const taskDefinition = new FargateTaskDefinition(this, 'task-definition', {
-      // TODO: Make these values configurable - maybe with a union to avoid unsupported combinations
-      cpu: 1024,
-      memoryLimitMiB: 2048,
+      cpu: fargateServiceRef.cpu,
+      memoryLimitMiB: fargateServiceRef.memoryLimitMiB,
     });
 
     let healthcheckCommand: string;
@@ -185,35 +200,48 @@ export class AediFargateService
       defaultPort: Port.tcp(port),
     });
 
-    const serviceProps: ApplicationLoadBalancedFargateServiceProps &
-      FargateServiceProps = {
-      cluster,
-      desiredCount: 1,
-      securityGroups: [securityGroup],
-      taskDefinition,
-      circuitBreaker: {
-        rollback: true,
-      },
-    };
+    const serviceProps: NotReadOnly<ApplicationLoadBalancedFargateServiceProps> =
+      {
+        cluster,
+        desiredCount: 1,
+        securityGroups: [securityGroup],
+        taskDefinition,
+        listenerPort: port,
+        circuitBreaker: {
+          rollback: true,
+        },
+      };
 
-    const fargateService = fargateServiceRef.loadBalanced
-      ? new ApplicationLoadBalancedFargateService(this, 'alb-fargate-service', {
-          ...serviceProps,
-          listenerPort: port,
-        })
-      : new FargateService(this, 'fargate-service', serviceProps);
+    /**
+     * Only pass the domain name and certificate if the service is load balanced.
+     * Otherwise, the domain name and certificate will be handled using a cloudfront distribution
+     * that sits in front of the service.
+     */
+    let hostedZone: IHostedZone | undefined;
+    if (fargateServiceRef.domain) {
+      serviceProps.domainName = fargateServiceRef.domain.name;
+      hostedZone = serviceProps.domainZone = PublicHostedZone.fromLookup(
+        this,
+        'hosted-zone',
+        { domainName: fargateServiceRef.domain.zone },
+      );
+      serviceProps.certificate = new Certificate(this, 'certificate', {
+        domainName: fargateServiceRef.domain.name,
+        validation: CertificateValidation.fromDns(serviceProps.domainZone),
+      });
+    }
+
+    const fargateService = new ApplicationLoadBalancedFargateService(
+      this,
+      'alb-fargate-service',
+      serviceProps,
+    );
     this.fargateService = fargateService;
-
-    const service =
-      fargateService instanceof ApplicationLoadBalancedFargateService
-        ? fargateService.service
-        : fargateService;
+    this.privateDomainName =
+      this.fargateService.loadBalancer.loadBalancerDnsName;
 
     // Add ALB healthcheck path if specified
-    if (
-      fargateService instanceof ApplicationLoadBalancedFargateService &&
-      fargateServiceRef.healthcheck?.path
-    ) {
+    if (fargateServiceRef.healthcheck?.path) {
       fargateService.targetGroup.configureHealthCheck({
         path: fargateServiceRef.healthcheck?.path,
       });
@@ -233,30 +261,14 @@ export class AediFargateService
       }
     }
 
-    if (this.fargateService instanceof ApplicationLoadBalancedFargateService) {
-      this.privateDomainName =
-        this.fargateService.loadBalancer.loadBalancerDnsName;
-    } else {
-      /**
-       * Add the service to Cloud Map for service discovery. This will make the service available using
-       * a private DNS name within the VPC.
-       * This is only necessary for non-load-balanced services as the load balancer can be referenced
-       * directly using its DNS name.
-       */
-      const namespaceSubdomain = fargateServiceRef.id; // TODO: Make configurable
-      const namespace = aediCluster.getServiceNamespace();
-      const cloudMapService = new Service(this, 'cloud-map-service', {
-        namespace,
-        dnsRecordType: DnsRecordType.A,
-        dnsTtl: Duration.seconds(300),
-        name: namespaceSubdomain,
+    if (fargateServiceRef.domain) {
+      new ARecord(this, 'a-record', {
+        recordName: fargateServiceRef.domain.name,
+        target: RecordTarget.fromAlias(
+          new LoadBalancerTarget(fargateService.loadBalancer),
+        ),
+        zone: hostedZone!,
       });
-
-      service.associateCloudMapService({
-        service: cloudMapService,
-      });
-
-      this.privateDomainName = `${namespaceSubdomain}.${namespace.namespaceName}`;
     }
   }
 
@@ -299,7 +311,9 @@ export class AediFargateService
   getConstructRef() {
     return {
       region: Stack.of(this).region,
-      url: `http://${this.privateDomainName}:${this.port}`,
+      url: this.publicDomainName
+        ? `https://${this.publicDomainName}`
+        : `http://${this.privateDomainName}:${this.port}`,
     };
   }
 }

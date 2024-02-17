@@ -6,6 +6,7 @@ import type {
   RefType,
   WrapContext,
 } from '../aedi-types';
+import { VpcRef } from '../aedi-vpc';
 
 export type LambdaRefFnWithEvent<C extends LambdaDependencyGroup, E, R> = (
   context: WrapContext<C>,
@@ -40,11 +41,15 @@ export interface LambdaRef<C extends LambdaDependencyGroup, E, R>
   fn: BrandedLambdaRefFnWithEvent<C, E, R>;
   lambdaHandler: Handler;
   context: C;
+  vpc?: VpcRef;
   memorySize?: number;
   timeout?: number;
 }
 
-export type LambdaRefOptions = Pick<AnyLambdaRef, 'memorySize' | 'timeout'>;
+export type LambdaRefOptions = Pick<
+  AnyLambdaRef,
+  'memorySize' | 'timeout' | 'vpc'
+>;
 
 export type LambdaRefTypes<T> = T extends LambdaRef<infer C, infer E, infer R>
   ? {

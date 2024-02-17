@@ -13,7 +13,7 @@ export class AediCluster
 {
   public readonly clusterRef: ClusterRef;
   public readonly cluster: Cluster;
-  private serviceNamespace?: PrivateDnsNamespace;
+  private privateServiceNamespace?: PrivateDnsNamespace;
 
   constructor(
     scope: Construct,
@@ -36,15 +36,15 @@ export class AediCluster
    * Lazily create service private DNS namespace.
    * Used to enable service discovery for services that don't use load balancers.
    */
-  getServiceNamespace(): PrivateDnsNamespace {
-    if (!this.serviceNamespace) {
+  getPrivateServiceNamespace(): PrivateDnsNamespace {
+    if (!this.privateServiceNamespace) {
       /**
        * Create a private DNS namespace for the cluster.
        * This will allow services to communicate with each other using private domain names.
        *
        * TODO: This should be optional. If possible, the namespace should be able to span multiple clusters.
        */
-      this.serviceNamespace = new PrivateDnsNamespace(
+      this.privateServiceNamespace = new PrivateDnsNamespace(
         this,
         'service-namespace',
         {
@@ -55,7 +55,7 @@ export class AediCluster
         },
       );
     }
-    return this.serviceNamespace;
+    return this.privateServiceNamespace;
   }
 
   getConstructRef(): ClusterConstructRef {

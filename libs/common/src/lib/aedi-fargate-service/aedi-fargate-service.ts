@@ -3,6 +3,7 @@ import type {
   FargateServiceHandlerLocation,
   FargateServiceDependencyGroup,
   FargateServiceImage,
+  FargateServiceHardwareRequirementPair,
 } from './aedi-fargate-service-types';
 import { RefType, Scope } from '../aedi-types';
 import { createResource } from '../aedi-resource-utils';
@@ -13,8 +14,9 @@ export function FargateService<const C extends FargateServiceDependencyGroup>(
   id: string,
   options: Pick<
     FargateServiceRef<C>,
-    'cluster' | 'healthcheck' | 'port' | 'loadBalanced'
-  >,
+    'cluster' | 'healthcheck' | 'port' | 'domain'
+  > &
+    FargateServiceHardwareRequirementPair,
   context: C,
   image: FargateServiceImage<C>,
 ): FargateServiceRef<C> {
@@ -22,7 +24,7 @@ export function FargateService<const C extends FargateServiceDependencyGroup>(
     RefType.FARGATE_SERVICE,
     scope,
     id,
-    { ...options, loadBalanced: options.loadBalanced ?? true, context, image },
+    { ...options, context, image },
   );
 
   // Can be overridden

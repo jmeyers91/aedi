@@ -29,7 +29,6 @@ import type {
 import {
   OptionsWithDefaults,
   StaticTransformedRef,
-  TransformedRef,
   TransformedRefScope,
 } from '../aedi-types';
 import { once } from '../aedi-resource-utils';

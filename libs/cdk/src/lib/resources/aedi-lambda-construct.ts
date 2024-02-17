@@ -3,23 +3,22 @@ import {
   resolveConstruct,
   isComputeDependency,
   createComputeDependencyEnv,
+  NotReadOnly,
 } from '../aedi-infra-utils';
 import { Stack, Duration } from 'aws-cdk-lib';
 import { Runtime } from 'aws-cdk-lib/aws-lambda';
 import { Function, FunctionProps } from 'aws-cdk-lib/aws-lambda';
 import { TypeScriptCode } from '@mrgrain/cdk-esbuild';
-import {
-  ClientRef,
-  AediAppHandlerEnv,
-  LambdaConstructRef,
-  LambdaRef,
-  getClientRefFromRef,
-  LambdaDependencyGroup,
-  RefType,
-} from '@aedi/common';
+import { LambdaConstructRef, LambdaRef, RefType } from '@aedi/common';
 import { IComputeDependency } from '../aedi-infra-types';
 import { AediBaseConstruct } from '../aedi-base-construct';
 import { IGrantable } from 'aws-cdk-lib/aws-iam';
+import {
+  Connections,
+  IConnectable,
+  Port,
+  SecurityGroup,
+} from 'aws-cdk-lib/aws-ec2';
 
 export class AediLambdaFunction
   extends AediBaseConstruct<RefType.LAMBDA>
@@ -27,6 +26,7 @@ export class AediLambdaFunction
 {
   public readonly lambdaFunction;
   public readonly lambdaRef: LambdaRef<any, any, any>;
+  public readonly connections?: Connections;
 
   constructor(
     scope: Construct,
@@ -49,7 +49,7 @@ export class AediLambdaFunction
       );
     }
 
-    const baseFunctionProps: FunctionProps = {
+    const baseFunctionProps: NotReadOnly<FunctionProps> = {
       runtime: Runtime.NODEJS_18_X,
       timeout: Duration.seconds(lambdaRef.timeout ?? 15),
       handler: lambdaRef.handlerLocation.exportKey,
@@ -61,6 +61,19 @@ export class AediLambdaFunction
       environment: environment,
       memorySize: lambdaRef.memorySize,
     };
+
+    if (lambdaRef.vpc) {
+      const { vpc } = resolveConstruct(lambdaRef.vpc);
+      const securityGroup = new SecurityGroup(this, 'security-group', {
+        vpc,
+      });
+      baseFunctionProps.vpc = vpc;
+      baseFunctionProps.securityGroups = [securityGroup];
+      this.connections = new Connections({
+        securityGroups: [securityGroup],
+        defaultPort: Port.tcp(443),
+      });
+    }
 
     // Allow each dependency resource the opportunity to extend the function props
     const transformedFunctionProps = dependencies
@@ -81,11 +94,14 @@ export class AediLambdaFunction
 
     // Grant the lambda access to each of its dependencies.
     for (const { construct, clientRef } of dependencies) {
+      const options = 'options' in clientRef ? clientRef.options : undefined;
+
       if ('grantComputeAccess' in construct) {
-        construct.grantComputeAccess?.(
-          this.lambdaFunction,
-          'options' in clientRef ? clientRef.options : undefined,
-        );
+        construct.grantComputeAccess?.(this.lambdaFunction, options);
+      }
+
+      if (this.connections && 'grantComputeNetworkAccess' in construct) {
+        construct.grantComputeNetworkAccess?.(this as IConnectable, options);
       }
     }
   }
@@ -99,5 +115,11 @@ export class AediLambdaFunction
 
   grantComputeAccess(grantable: IGrantable): void {
     this.lambdaFunction.grantInvoke(grantable);
+  }
+
+  grantComputeNetworkAccess(connectable: IConnectable): void {
+    if (this.connections) {
+      this.connections.allowDefaultPortFrom(connectable);
+    }
   }
 }
